@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:localhost)",
+      "Read(//c/Users/Guilherme/Documents/claude/angular/**)",
+      "Bash(ng new *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "PowerShell(Get-Process *)"
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+.kpi-icon {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.topbar {
+  background-color: var(--bs-body-bg);
+  transition: background-color 0.2s ease;
+}

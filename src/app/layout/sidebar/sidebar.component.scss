@@ -1,0 +1,38 @@
+.sidebar {
+  width: 240px;
+  min-width: 240px;
+  min-height: 100vh;
+  background-color: #1e293b;
+  color: #cbd5e1;
+
+  [data-bs-theme="dark"] & {
+    background-color: #0f172a;
+    border-right: 1px solid #1e293b;
+  }
+}
+
+.sidebar-brand {
+  color: #f1f5f9;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #334155;
+}
+
+.sidebar-link {
+  color: #94a3b8;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+
+  &:hover {
+    background-color: #334155;
+    color: #f1f5f9;
+  }
+
+  &.active {
+    background-color: #3b82f6 !important;
+    color: #fff !important;
+  }
+}

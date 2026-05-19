@@ -1,0 +1,251 @@
+<div>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-bold mb-0">Notas Fiscais</h5>
+    <button class="btn btn-primary btn-sm" (click)="openCreate()">
+      <i class="bi bi-plus-lg me-1"></i>Nova Nota Fiscal
+    </button>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Número</th>
+                <th>Tipo</th>
+                <th>Fornecedor</th>
+                <th>CNPJ</th>
+                <th>Emissão</th>
+                <th>Valor Total</th>
+                <th>Status</th>
+                <th class="text-end pe-3">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (nf of notas(); track nf.id) {
+                <tr>
+                  <td class="ps-3 fw-medium">{{ nf.numero }}<span class="text-muted ms-1 small">/{{ nf.serie }}</span></td>
+                  <td>
+                    <span class="badge" [class]="tipoBadge(nf.tipo)">{{ nf.tipo | titlecase }}</span>
+                  </td>
+                  <td>{{ nf.fornecedorNome }}</td>
+                  <td class="text-muted small font-monospace">{{ nf.fornecedorCnpj }}</td>
+                  <td class="text-muted small">{{ nf.dataEmissao | date:'dd/MM/yyyy' }}</td>
+                  <td class="fw-medium">R$ {{ nf.valorTotal | number:'1.2-2' }}</td>
+                  <td><span class="badge" [class]="statusBadge(nf.status)">{{ nf.status | titlecase }}</span></td>
+                  <td class="text-end pe-3">
+                    <button class="btn btn-sm btn-outline-secondary" (click)="verDetalhes(nf)" title="Ver itens">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="8" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox me-2"></i>Nenhuma nota fiscal encontrada
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nova NF -->
+<div class="modal fade" #modalEl tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fw-semibold">Nova Nota Fiscal</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="form">
+          <!-- Cabeçalho da NF -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-3">
+              <label class="form-label fw-medium">Número <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="numero"
+                [class.is-invalid]="f('numero').invalid && f('numero').touched" />
+              <div class="invalid-feedback">Obrigatório (máx. 50).</div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label fw-medium">Série <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="serie"
+                [class.is-invalid]="f('serie').invalid && f('serie').touched" />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label fw-medium">Tipo <span class="text-danger">*</span></label>
+              <select class="form-select" formControlName="tipo">
+                <option value="entrada">Entrada</option>
+                <option value="saida">Saída</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-medium">Data de Emissão <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" formControlName="dataEmissao"
+                [class.is-invalid]="f('dataEmissao').invalid && f('dataEmissao').touched" />
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-medium">Fornecedor <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="fornecedorNome"
+                [class.is-invalid]="f('fornecedorNome').invalid && f('fornecedorNome').touched" />
+              <div class="invalid-feedback">Obrigatório.</div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-medium">CNPJ <span class="text-danger">*</span></label>
+              <input type="text" class="form-control font-monospace" formControlName="fornecedorCnpj"
+                placeholder="00000000000000" maxlength="14"
+                [class.is-invalid]="f('fornecedorCnpj').invalid && f('fornecedorCnpj').touched" />
+              <div class="invalid-feedback">CNPJ deve ter 14 dígitos numéricos.</div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-medium">Observação</label>
+              <input type="text" class="form-control" formControlName="observacao" />
+            </div>
+          </div>
+
+          <!-- Itens -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0 fw-semibold">Itens <span class="text-danger">*</span></h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" (click)="addItem()">
+              <i class="bi bi-plus-lg me-1"></i>Adicionar Item
+            </button>
+          </div>
+
+          <div class="table-responsive border rounded mb-3">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="min-width:200px">Produto <span class="text-danger">*</span></th>
+                  <th style="width:100px">Qtd <span class="text-danger">*</span></th>
+                  <th style="width:130px">Valor Unit. <span class="text-danger">*</span></th>
+                  <th style="width:110px">Subtotal</th>
+                  <th>Observação</th>
+                  <th style="width:48px"></th>
+                </tr>
+              </thead>
+              <tbody formArrayName="itens">
+                @for (item of itens.controls; track $index; let i = $index) {
+                  <tr [formGroupName]="i">
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="produtoId"
+                        [class.is-invalid]="itemCtrl(i,'produtoId').invalid && itemCtrl(i,'produtoId').touched">
+                        <option [value]="null">Selecione...</option>
+                        @for (p of produtos(); track p.id) {
+                          @if (p.ativo) { <option [value]="p.id">{{ p.nome }}</option> }
+                        }
+                      </select>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="quantidade" min="1"
+                        [class.is-invalid]="itemCtrl(i,'quantidade').invalid && itemCtrl(i,'quantidade').touched" />
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="valorUnitario" min="0" step="0.01"
+                        [class.is-invalid]="itemCtrl(i,'valorUnitario').invalid && itemCtrl(i,'valorUnitario').touched" />
+                    </td>
+                    <td class="fw-medium small">
+                      R$ {{ (itemCtrl(i,'quantidade').value ?? 0) * (itemCtrl(i,'valorUnitario').value ?? 0) | number:'1.2-2' }}
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="observacao" />
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn btn-sm btn-outline-danger p-1" (click)="removeItem(i)" [disabled]="itens.length === 1">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot class="table-light">
+                <tr>
+                  <td colspan="3" class="text-end fw-semibold">Valor Total:</td>
+                  <td class="fw-bold">R$ {{ valorTotalComputado() | number:'1.2-2' }}</td>
+                  <td colspan="2"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          @if (saveError()) {
+            <div class="alert alert-danger py-2 small">
+              <i class="bi bi-exclamation-triangle me-1"></i>{{ saveError() }}
+            </div>
+          }
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalhes NF -->
+<div class="modal fade" #detalhesModalEl tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fw-semibold">
+          Nota Fiscal {{ notaSelecionada()?.numero }}/{{ notaSelecionada()?.serie }}
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        @if (notaSelecionada(); as nf) {
+          <div class="row g-2 mb-3 small">
+            <div class="col-6"><span class="text-muted">Fornecedor:</span> {{ nf.fornecedorNome }}</div>
+            <div class="col-6"><span class="text-muted">CNPJ:</span> <span class="font-monospace">{{ nf.fornecedorCnpj }}</span></div>
+            <div class="col-4"><span class="text-muted">Tipo:</span> <span class="badge ms-1" [class]="tipoBadge(nf.tipo)">{{ nf.tipo | titlecase }}</span></div>
+            <div class="col-4"><span class="text-muted">Emissão:</span> {{ nf.dataEmissao | date:'dd/MM/yyyy' }}</div>
+            <div class="col-4"><span class="text-muted">Valor Total:</span> <strong>R$ {{ nf.valorTotal | number:'1.2-2' }}</strong></div>
+          </div>
+
+          <h6 class="fw-semibold mb-2">Movimentações Geradas</h6>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr><th>#</th><th>Produto</th><th>Qtd</th><th>Valor Unit.</th><th>Total</th><th>Obs.</th></tr>
+              </thead>
+              <tbody>
+                @for (m of movimentacoesNF(); track m.id) {
+                  <tr>
+                    <td class="text-muted small">{{ m.id }}</td>
+                    <td>Produto #{{ m.produtoId }}</td>
+                    <td>{{ m.quantidade }}</td>
+                    <td>R$ {{ m.valorUnitario | number:'1.2-2' }}</td>
+                    <td class="fw-medium">R$ {{ m.valorTotal | number:'1.2-2' }}</td>
+                    <td class="text-muted small">{{ m.observacao || '—' }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="6" class="text-center text-muted py-3">Nenhuma movimentação</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>

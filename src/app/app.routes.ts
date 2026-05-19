@@ -1,0 +1,46 @@
+import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
+
+export const routes: Routes = [
+  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+  {
+    path: 'login',
+    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent)
+  },
+  {
+    path: '',
+    loadComponent: () => import('./layout/shell/shell.component').then(m => m.ShellComponent),
+    canActivate: [authGuard],
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
+      },
+      {
+        path: 'produtos',
+        loadComponent: () => import('./features/produtos/produtos.component').then(m => m.ProdutosComponent)
+      },
+      {
+        path: 'categorias',
+        loadComponent: () => import('./features/categorias/categorias.component').then(m => m.CategoriasComponent)
+      },
+      {
+        path: 'movimentacoes',
+        loadComponent: () => import('./features/movimentacoes/movimentacoes.component').then(m => m.MovimentacoesComponent)
+      },
+      {
+        path: 'usuarios',
+        loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent)
+      },
+      {
+        path: 'notas-fiscais',
+        loadComponent: () => import('./features/notas-fiscais/notas-fiscais.component').then(m => m.NotasFiscaisComponent)
+      },
+      {
+        path: 'conferencia',
+        loadComponent: () => import('./features/conferencia/conferencia.component').then(m => m.ConferenciaComponent)
+      }
+    ]
+  },
+  { path: '**', redirectTo: 'dashboard' }
+];

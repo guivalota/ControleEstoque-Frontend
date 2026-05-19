@@ -1,0 +1,24 @@
+<header class="topbar border-bottom px-4 d-flex justify-content-between align-items-center">
+  <span class="text-muted small fw-medium">
+    Bem-vindo, <strong>{{ auth.currentUser()?.nome ?? 'Usuário' }}</strong>
+  </span>
+  <div class="d-flex align-items-center gap-2">
+    <span class="badge bg-secondary text-capitalize">{{ auth.currentUser()?.role }}</span>
+
+    <button
+      class="btn btn-sm btn-outline-secondary"
+      (click)="theme.toggle()"
+      [title]="theme.isDark() ? 'Mudar para tema claro' : 'Mudar para tema escuro'"
+    >
+      @if (theme.isDark()) {
+        <i class="bi bi-sun-fill"></i>
+      } @else {
+        <i class="bi bi-moon-stars-fill"></i>
+      }
+    </button>
+
+    <button class="btn btn-sm btn-outline-danger" (click)="auth.logout()">
+      <i class="bi bi-box-arrow-right me-1"></i>Sair
+    </button>
+  </div>
+</header>

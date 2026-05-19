@@ -1,0 +1,52 @@
+<div class="login-page d-flex align-items-center justify-content-center bg-light">
+  <div class="card shadow-sm login-card">
+    <div class="card-body p-4">
+      <div class="text-center mb-4">
+        <div class="login-icon mb-3">
+          <i class="bi bi-box-seam-fill text-primary" style="font-size: 2.5rem;"></i>
+        </div>
+        <h5 class="fw-bold mb-0">Controle de Estoque</h5>
+        <p class="text-muted small">Acesse sua conta para continuar</p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="mb-3">
+          <label class="form-label fw-medium">Email</label>
+          <input
+            type="email"
+            class="form-control"
+            formControlName="email"
+            placeholder="seu@email.com"
+            [class.is-invalid]="field('email').invalid && field('email').touched"
+          />
+          <div class="invalid-feedback">Informe um email válido.</div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-medium">Senha</label>
+          <input
+            type="password"
+            class="form-control"
+            formControlName="senha"
+            placeholder="••••••••"
+            [class.is-invalid]="field('senha').invalid && field('senha').touched"
+          />
+          <div class="invalid-feedback">Mínimo 8 caracteres.</div>
+        </div>
+
+        @if (error()) {
+          <div class="alert alert-danger py-2 small mb-3">
+            <i class="bi bi-exclamation-triangle me-1"></i>{{ error() }}
+          </div>
+        }
+
+        <button type="submit" class="btn btn-primary w-100" [disabled]="loading()">
+          @if (loading()) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+          }
+          Entrar
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
