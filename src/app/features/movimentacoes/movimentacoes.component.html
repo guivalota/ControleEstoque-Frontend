@@ -6,19 +6,52 @@
     </button>
   </div>
 
-  <!-- Filtro por produto -->
+  <!-- Filtros -->
   <div class="card border-0 shadow-sm mb-3">
-    <div class="card-body py-2">
-      <div class="d-flex align-items-center gap-2">
-        <label class="form-label mb-0 text-muted small fw-medium">Filtrar por produto:</label>
-        <select class="form-select form-select-sm" style="max-width: 280px;"
-          [value]="filterProdutoId()"
-          (change)="filterProdutoId.set($any($event.target).value ? +$any($event.target).value : null)">
-          <option [value]="null">Todos os produtos</option>
-          @for (p of produtos(); track p.id) {
-            <option [value]="p.id">{{ p.nome }}</option>
-          }
-        </select>
+    <div class="card-body py-3">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label form-label-sm fw-medium mb-1">Data início</label>
+          <input type="date" class="form-control form-control-sm"
+            [value]="filterDataInicio()"
+            (change)="filterDataInicio.set($any($event.target).value)" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label form-label-sm fw-medium mb-1">Data fim</label>
+          <input type="date" class="form-control form-control-sm"
+            [value]="filterDataFim()"
+            (change)="filterDataFim.set($any($event.target).value)" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label form-label-sm fw-medium mb-1">Categoria</label>
+          <select class="form-select form-select-sm"
+            [value]="filterCategoriaId()"
+            (change)="filterCategoriaId.set($any($event.target).value ? +$any($event.target).value : null)">
+            <option [value]="null">Todas as categorias</option>
+            @for (c of categorias(); track c.id) {
+              <option [value]="c.id">{{ c.nome }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label form-label-sm fw-medium mb-1">Produto</label>
+          <select class="form-select form-select-sm"
+            [value]="filterProdutoId()"
+            (change)="filterProdutoId.set($any($event.target).value ? +$any($event.target).value : null)">
+            <option [value]="null">Todos os produtos</option>
+            @for (p of produtos(); track p.id) {
+              <option [value]="p.id">{{ p.nome }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-auto d-flex gap-2">
+          <button class="btn btn-primary btn-sm" (click)="aplicarFiltros()">
+            <i class="bi bi-funnel me-1"></i>Filtrar
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" (click)="limparFiltros()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -39,6 +72,8 @@
                 <th>Produto</th>
                 <th>Tipo</th>
                 <th>Quantidade</th>
+                <th>Valor Unit.</th>
+                <th>Total</th>
                 <th>Observação</th>
                 <th>Data</th>
               </tr>
@@ -49,17 +84,17 @@
                   <td class="ps-3 text-muted small">{{ m.id }}</td>
                   <td>{{ m.produtoNome ?? 'Produto #' + m.produtoId }}</td>
                   <td>
-                    <span class="badge" [class]="tipoBadge(m.tipo)">
-                      {{ m.tipo | titlecase }}
-                    </span>
+                    <span class="badge" [class]="tipoBadge(m.tipo)">{{ m.tipo | titlecase }}</span>
                   </td>
                   <td class="fw-medium">{{ m.quantidade }}</td>
+                  <td class="text-muted small">R$ {{ (m.valorUnitario ?? 0) | number:'1.2-2' }}</td>
+                  <td class="fw-medium">R$ {{ (m.valorTotal ?? 0) | number:'1.2-2' }}</td>
                   <td class="text-muted small">{{ m.observacao || '—' }}</td>
                   <td class="text-muted small">{{ m.criadoEm | date:'dd/MM/yyyy HH:mm' }}</td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="6" class="text-center text-muted py-4">
+                  <td colspan="8" class="text-center text-muted py-4">
                     <i class="bi bi-inbox me-2"></i>Nenhuma movimentação encontrada
                   </td>
                 </tr>
@@ -88,9 +123,7 @@
               [class.is-invalid]="f('produtoId').invalid && f('produtoId').touched">
               <option [value]="null">Selecione...</option>
               @for (p of produtos(); track p.id) {
-                @if (p.ativo) {
-                  <option [value]="p.id">{{ p.nome }} ({{ p.sku }})</option>
-                }
+                @if (p.ativo) { <option [value]="p.id">{{ p.nome }} ({{ p.sku }})</option> }
               }
             </select>
             <div class="invalid-feedback">Selecione um produto.</div>
@@ -103,9 +136,7 @@
                 <div class="form-check">
                   <input class="form-check-input" type="radio" formControlName="tipo"
                     [value]="tipo" [id]="'tipo_' + tipo" />
-                  <label class="form-check-label text-capitalize" [for]="'tipo_' + tipo">
-                    {{ tipo }}
-                  </label>
+                  <label class="form-check-label text-capitalize" [for]="'tipo_' + tipo">{{ tipo }}</label>
                 </div>
               }
             </div>
@@ -114,15 +145,13 @@
           <div class="row g-3 mb-3">
             <div class="col-7">
               <label class="form-label fw-medium">Quantidade <span class="text-danger">*</span></label>
-              <input type="number" class="form-control" formControlName="quantidade"
-                min="1"
+              <input type="number" class="form-control" formControlName="quantidade" min="1"
                 [class.is-invalid]="f('quantidade').invalid && f('quantidade').touched" />
               <div class="invalid-feedback">Quantidade mínima: 1.</div>
             </div>
             <div class="col-5">
-              <label class="form-label fw-medium">Valor Unitário (R$) <span class="text-danger">*</span></label>
-              <input type="number" class="form-control" formControlName="valorUnitario"
-                min="0" step="0.01"
+              <label class="form-label fw-medium">Valor Unit. (R$) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" formControlName="valorUnitario" min="0" step="0.01"
                 [class.is-invalid]="f('valorUnitario').invalid && f('valorUnitario').touched" />
               <div class="invalid-feedback">Valor deve ser ≥ 0.</div>
             </div>

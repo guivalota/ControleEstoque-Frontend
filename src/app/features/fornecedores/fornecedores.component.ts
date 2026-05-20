@@ -1,0 +1,113 @@
+import { Component, inject, OnInit, signal, ViewChild, ElementRef, OnDestroy } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { DatePipe } from '@angular/common';
+import { Modal } from 'bootstrap';
+import { FornecedorService } from '../../core/services/fornecedor.service';
+import { Fornecedor, CreateFornecedorRequest, UpdateFornecedorRequest } from '../../core/models/fornecedor.model';
+
+@Component({
+  selector: 'app-fornecedores',
+  standalone: true,
+  imports: [ReactiveFormsModule, DatePipe],
+  templateUrl: './fornecedores.component.html'
+})
+export class FornecedoresComponent implements OnInit, OnDestroy {
+  private fb = inject(FormBuilder);
+  fornecedorService = inject(FornecedorService);
+
+  @ViewChild('modalEl') modalEl!: ElementRef;
+  private modal!: Modal;
+
+  fornecedores = this.fornecedorService.fornecedores;
+  loading = this.fornecedorService.loading;
+
+  editingId = signal<number | null>(null);
+  saving = signal(false);
+  saveError = signal('');
+  consultandoCnpj = signal(false);
+  cnpjMsg = signal('');
+
+  form = this.fb.group({
+    cnpj: ['', [Validators.required, Validators.pattern(/^\d{14}$/)]],
+    razaoSocial: ['', [Validators.required, Validators.maxLength(255)]],
+    nomeFantasia: ['' as string | null],
+    email: ['' as string | null, Validators.email],
+    telefone: ['' as string | null, Validators.maxLength(20)],
+    logradouro: ['' as string | null],
+    municipio: ['' as string | null, Validators.maxLength(100)],
+    uf: ['' as string | null, Validators.maxLength(2)],
+    ativo: [true]
+  });
+
+  ngOnInit() { this.fornecedorService.getAll().subscribe(); }
+  ngOnDestroy() { this.modal?.dispose(); }
+
+  private getModal(): Modal {
+    if (!this.modal) this.modal = new Modal(this.modalEl.nativeElement);
+    return this.modal;
+  }
+
+  openCreate() {
+    this.editingId.set(null);
+    this.form.reset({ ativo: true });
+    this.f('cnpj').enable();
+    this.saveError.set('');
+    this.cnpjMsg.set('');
+    this.getModal().show();
+  }
+
+  openEdit(f: Fornecedor) {
+    this.editingId.set(f.id);
+    this.form.patchValue(f);
+    this.f('cnpj').disable();
+    this.saveError.set('');
+    this.cnpjMsg.set('');
+    this.getModal().show();
+  }
+
+  consultarCnpj() {
+    const cnpj = this.f('cnpj').value?.replace(/\D/g, '') ?? '';
+    if (cnpj.length !== 14) { this.cnpjMsg.set('CNPJ deve ter 14 dígitos.'); return; }
+    this.consultandoCnpj.set(true);
+    this.cnpjMsg.set('');
+    this.fornecedorService.consultarCnpj(cnpj).subscribe({
+      next: (f) => {
+        this.form.patchValue(f);
+        this.cnpjMsg.set('Fornecedor encontrado e dados preenchidos.');
+        this.consultandoCnpj.set(false);
+      },
+      error: () => {
+        this.cnpjMsg.set('CNPJ não encontrado no cadastro.');
+        this.consultandoCnpj.set(false);
+      }
+    });
+  }
+
+  save() {
+    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    this.saving.set(true);
+    this.saveError.set('');
+
+    const val = this.form.getRawValue();
+    const id = this.editingId();
+
+    const op = id
+      ? this.fornecedorService.update(id, val as UpdateFornecedorRequest)
+      : this.fornecedorService.create(val as CreateFornecedorRequest);
+
+    op.subscribe({
+      next: () => { this.saving.set(false); this.getModal().hide(); },
+      error: (err) => {
+        this.saveError.set(err.error?.message ?? 'Erro ao salvar fornecedor.');
+        this.saving.set(false);
+      }
+    });
+  }
+
+  delete(f: Fornecedor) {
+    if (!confirm(`Excluir o fornecedor "${f.razaoSocial}"?`)) return;
+    this.fornecedorService.delete(f.id).subscribe();
+  }
+
+  f(name: string) { return this.form.get(name)!; }
+}

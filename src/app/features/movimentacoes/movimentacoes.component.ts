@@ -1,30 +1,37 @@
 import { Component, inject, OnInit, signal, computed, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DatePipe, TitleCasePipe } from '@angular/common';
+import { DatePipe, TitleCasePipe, DecimalPipe } from '@angular/common';
 import { Modal } from 'bootstrap';
 import { MovimentacaoService } from '../../core/services/movimentacao.service';
 import { ProdutoService } from '../../core/services/produto.service';
+import { CategoriaService } from '../../core/services/categoria.service';
 import { CreateMovimentacaoRequest, TipoMovimentacao } from '../../core/models/movimentacao.model';
 
 @Component({
   selector: 'app-movimentacoes',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe, TitleCasePipe],
+  imports: [ReactiveFormsModule, DatePipe, TitleCasePipe, DecimalPipe],
   templateUrl: './movimentacoes.component.html'
 })
 export class MovimentacoesComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   movimentacaoService = inject(MovimentacaoService);
   produtoService = inject(ProdutoService);
+  categoriaService = inject(CategoriaService);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
   private modal!: Modal;
 
   movimentacoes = this.movimentacaoService.movimentacoes;
   produtos = this.produtoService.produtos;
+  categorias = this.categoriaService.categorias;
   loading = this.movimentacaoService.loading;
 
   filterProdutoId = signal<number | null>(null);
+  filterDataInicio = signal('');
+  filterDataFim = signal('');
+  filterCategoriaId = signal<number | null>(null);
+
   saving = signal(false);
   saveError = signal('');
 
@@ -48,15 +55,30 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.movimentacaoService.getAll().subscribe();
     this.produtoService.getAll().subscribe();
+    this.categoriaService.getAll().subscribe();
   }
 
-  ngOnDestroy() {
-    this.modal?.dispose();
-  }
+  ngOnDestroy() { this.modal?.dispose(); }
 
   private getModal(): Modal {
     if (!this.modal) this.modal = new Modal(this.modalEl.nativeElement);
     return this.modal;
+  }
+
+  aplicarFiltros() {
+    this.movimentacaoService.getAll({
+      DataInicio: this.filterDataInicio() || undefined,
+      DataFim: this.filterDataFim() || undefined,
+      CategoriaId: this.filterCategoriaId() ?? undefined
+    }).subscribe();
+  }
+
+  limparFiltros() {
+    this.filterDataInicio.set('');
+    this.filterDataFim.set('');
+    this.filterCategoriaId.set(null);
+    this.filterProdutoId.set(null);
+    this.movimentacaoService.getAll().subscribe();
   }
 
   openCreate() {
@@ -81,9 +103,7 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
 
   tipoBadge(tipo: TipoMovimentacao): string {
     const map: Record<TipoMovimentacao, string> = {
-      entrada: 'bg-success',
-      saida: 'bg-danger',
-      ajuste: 'bg-warning text-dark'
+      entrada: 'bg-success', saida: 'bg-danger', ajuste: 'bg-warning text-dark'
     };
     return map[tipo] ?? 'bg-secondary';
   }

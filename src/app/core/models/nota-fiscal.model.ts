@@ -31,6 +31,7 @@ export interface CreateNotaFiscalRequest {
   dataEmissao: string;
   valorTotal: number;
   observacao?: string | null;
+  fornecedorId?: number | null;
   itens: ItemNotaFiscalRequest[];
 }
 

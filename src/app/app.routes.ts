@@ -33,6 +33,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent)
       },
       {
+        path: 'fornecedores',
+        loadComponent: () => import('./features/fornecedores/fornecedores.component').then(m => m.FornecedoresComponent)
+      },
+      {
         path: 'notas-fiscais',
         loadComponent: () => import('./features/notas-fiscais/notas-fiscais.component').then(m => m.NotasFiscaisComponent)
       },

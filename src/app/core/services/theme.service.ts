@@ -19,7 +19,10 @@ export class ThemeService {
   }
 
   toggle() {
+    const html = document.documentElement;
+    html.classList.add('theme-transitioning');
     this._theme.update(t => (t === 'light' ? 'dark' : 'light'));
+    window.setTimeout(() => html.classList.remove('theme-transitioning'), 350);
   }
 
   private applyTheme(theme: Theme) {

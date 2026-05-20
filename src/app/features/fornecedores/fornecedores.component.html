@@ -1,0 +1,169 @@
+<div>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-bold mb-0">Fornecedores</h5>
+    <button class="btn btn-primary btn-sm" (click)="openCreate()">
+      <i class="bi bi-plus-lg me-1"></i>Novo Fornecedor
+    </button>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">CNPJ</th>
+                <th>Razão Social</th>
+                <th>Nome Fantasia</th>
+                <th>Município/UF</th>
+                <th>Contato</th>
+                <th>Status</th>
+                <th class="text-end pe-3">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (f of fornecedores(); track f.id) {
+                <tr>
+                  <td class="ps-3 font-monospace small">{{ f.cnpj }}</td>
+                  <td class="fw-medium">{{ f.razaoSocial }}</td>
+                  <td class="text-muted small">{{ f.nomeFantasia || '—' }}</td>
+                  <td class="text-muted small">{{ f.municipio || '—' }}{{ f.uf ? '/' + f.uf : '' }}</td>
+                  <td class="text-muted small">{{ f.email || f.telefone || '—' }}</td>
+                  <td>
+                    @if (f.ativo) {
+                      <span class="badge bg-success-subtle text-success">Ativo</span>
+                    } @else {
+                      <span class="badge bg-secondary-subtle text-secondary">Inativo</span>
+                    }
+                  </td>
+                  <td class="text-end pe-3">
+                    <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(f)">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" (click)="delete(f)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox me-2"></i>Nenhum fornecedor cadastrado
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" #modalEl tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fw-semibold">
+          {{ editingId() ? 'Editar Fornecedor' : 'Novo Fornecedor' }}
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="form">
+          <div class="row g-3">
+            <!-- CNPJ + consulta -->
+            <div class="col-md-5">
+              <label class="form-label fw-medium">CNPJ <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <input type="text" class="form-control font-monospace" formControlName="cnpj"
+                  placeholder="00000000000000" maxlength="14"
+                  [class.is-invalid]="f('cnpj').invalid && f('cnpj').touched" />
+                @if (!editingId()) {
+                  <button type="button" class="btn btn-outline-secondary" (click)="consultarCnpj()"
+                    [disabled]="consultandoCnpj()" title="Consultar cadastro">
+                    @if (consultandoCnpj()) { <span class="spinner-border spinner-border-sm"></span> }
+                    @else { <i class="bi bi-search"></i> }
+                  </button>
+                }
+                <div class="invalid-feedback">CNPJ deve ter 14 dígitos numéricos.</div>
+              </div>
+              @if (cnpjMsg()) {
+                <div class="form-text" [class.text-success]="cnpjMsg().includes('encontrado')" [class.text-danger]="!cnpjMsg().includes('encontrado')">
+                  {{ cnpjMsg() }}
+                </div>
+              }
+            </div>
+
+            <div class="col-md-7">
+              <label class="form-label fw-medium">Razão Social <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="razaoSocial"
+                [class.is-invalid]="f('razaoSocial').invalid && f('razaoSocial').touched" />
+              <div class="invalid-feedback">Obrigatório (máx. 255).</div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-medium">Nome Fantasia</label>
+              <input type="text" class="form-control" formControlName="nomeFantasia" />
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label fw-medium">Email</label>
+              <input type="email" class="form-control" formControlName="email"
+                [class.is-invalid]="f('email').invalid && f('email').touched" />
+              <div class="invalid-feedback">Email inválido.</div>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label fw-medium">Telefone</label>
+              <input type="text" class="form-control" formControlName="telefone" maxlength="20" />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-medium">Logradouro</label>
+              <input type="text" class="form-control" formControlName="logradouro" />
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-medium">Município</label>
+              <input type="text" class="form-control" formControlName="municipio" />
+            </div>
+
+            <div class="col-md-2">
+              <label class="form-label fw-medium">UF</label>
+              <input type="text" class="form-control text-uppercase" formControlName="uf" maxlength="2" />
+            </div>
+
+            @if (editingId()) {
+              <div class="col-12">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" formControlName="ativo" id="fornAtivo" />
+                  <label class="form-check-label" for="fornAtivo">Fornecedor ativo</label>
+                </div>
+              </div>
+            }
+          </div>
+
+          @if (saveError()) {
+            <div class="alert alert-danger py-2 small mt-3">
+              <i class="bi bi-exclamation-triangle me-1"></i>{{ saveError() }}
+            </div>
+          }
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

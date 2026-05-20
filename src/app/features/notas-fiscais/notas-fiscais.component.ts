@@ -4,6 +4,8 @@ import { DecimalPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { Modal } from 'bootstrap';
 import { NotaFiscalService } from '../../core/services/nota-fiscal.service';
 import { ProdutoService } from '../../core/services/produto.service';
+import { FornecedorService } from '../../core/services/fornecedor.service';
+import { NfeService } from '../../core/services/nfe.service';
 import { NotaFiscal, TipoNotaFiscal } from '../../core/models/nota-fiscal.model';
 
 @Component({
@@ -16,6 +18,8 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   nfService = inject(NotaFiscalService);
   produtoService = inject(ProdutoService);
+  fornecedorService = inject(FornecedorService);
+  private nfeService = inject(NfeService);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
   @ViewChild('detalhesModalEl') detalhesModalEl!: ElementRef;
@@ -24,7 +28,10 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
 
   notas = this.nfService.notasFiscais;
   produtos = this.produtoService.produtos;
+  fornecedores = this.fornecedorService.fornecedores;
   loading = this.nfService.loading;
+  importando = signal(false);
+  importMsg = signal('');
 
   saving = signal(false);
   saveError = signal('');
@@ -43,6 +50,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
     numero: ['', [Validators.required, Validators.maxLength(50)]],
     serie: ['1', [Validators.required, Validators.maxLength(10)]],
     tipo: ['entrada' as TipoNotaFiscal, Validators.required],
+    fornecedorId: [null as number | null],
     fornecedorNome: ['', [Validators.required, Validators.maxLength(255)]],
     fornecedorCnpj: ['', [Validators.required, Validators.pattern(/^\d{14}$/)]],
     dataEmissao: ['', Validators.required],
@@ -57,6 +65,35 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.nfService.getAll().subscribe();
     this.produtoService.getAll().subscribe();
+    this.fornecedorService.getAll().subscribe();
+  }
+
+  selecionarFornecedor(id: number | null) {
+    this.form.patchValue({ fornecedorId: id });
+    if (!id) return;
+    const f = this.fornecedores().find(f => f.id === id);
+    if (f) this.form.patchValue({ fornecedorNome: f.razaoSocial, fornecedorCnpj: f.cnpj });
+  }
+
+  importarXml(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.importando.set(true);
+    this.importMsg.set('');
+    this.nfeService.importar(file).subscribe({
+      next: () => {
+        this.importMsg.set('NF-e importada com sucesso!');
+        this.nfService.getAll().subscribe();
+        this.importando.set(false);
+        input.value = '';
+      },
+      error: (err) => {
+        this.importMsg.set(err.error?.message ?? 'Erro ao importar NF-e.');
+        this.importando.set(false);
+        input.value = '';
+      }
+    });
   }
 
   ngOnDestroy() {

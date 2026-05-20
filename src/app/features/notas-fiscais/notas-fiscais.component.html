@@ -1,9 +1,20 @@
 <div>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-bold mb-0">Notas Fiscais</h5>
-    <button class="btn btn-primary btn-sm" (click)="openCreate()">
-      <i class="bi bi-plus-lg me-1"></i>Nova Nota Fiscal
-    </button>
+    <div class="d-flex gap-2 align-items-center">
+      @if (importMsg()) {
+        <small [class]="importMsg().includes('sucesso') ? 'text-success' : 'text-danger'">{{ importMsg() }}</small>
+      }
+      <label class="btn btn-outline-secondary btn-sm mb-0" [class.disabled]="importando()">
+        @if (importando()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+        @else { <i class="bi bi-file-earmark-arrow-up me-1"></i> }
+        Importar NF-e XML
+        <input type="file" accept=".xml" class="d-none" (change)="importarXml($event)" />
+      </label>
+      <button class="btn btn-primary btn-sm" (click)="openCreate()">
+        <i class="bi bi-plus-lg me-1"></i>Nova Nota Fiscal
+      </button>
+    </div>
   </div>
 
   <div class="card border-0 shadow-sm">
@@ -70,6 +81,19 @@
       </div>
       <div class="modal-body">
         <form [formGroup]="form">
+          <!-- Fornecedor cadastrado (opcional) -->
+          <div class="mb-3">
+            <label class="form-label fw-medium">Fornecedor Cadastrado</label>
+            <select class="form-select"
+              [value]="f('fornecedorId').value"
+              (change)="selecionarFornecedor($any($event.target).value ? +$any($event.target).value : null)">
+              <option [value]="null">Selecione ou preencha manualmente abaixo...</option>
+              @for (forn of fornecedores(); track forn.id) {
+                @if (forn.ativo) { <option [value]="forn.id">{{ forn.razaoSocial }} — {{ forn.cnpj }}</option> }
+              }
+            </select>
+          </div>
+
           <!-- Cabeçalho da NF -->
           <div class="row g-3 mb-3">
             <div class="col-md-3">
