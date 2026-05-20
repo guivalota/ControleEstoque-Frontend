@@ -1,9 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { map, tap, switchMap } from 'rxjs';
+import { tap, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Movimentacao, CreateMovimentacaoRequest, SaldoEstoque } from '../models/movimentacao.model';
-import { ApiResult } from '../models/nota-fiscal.model';
 
 export interface MovimentacaoFiltros {
   DataInicio?: string;
@@ -26,8 +25,7 @@ export class MovimentacaoService {
     if (filtros?.DataFim) params = params.set('DataFim', filtros.DataFim);
     if (filtros?.CategoriaId) params = params.set('CategoriaId', filtros.CategoriaId);
 
-    return this.http.get<ApiResult<Movimentacao>>(this.url, { params }).pipe(
-      map(res => res.value ?? []),
+    return this.http.get<Movimentacao[]>(this.url, { params }).pipe(
       tap(data => {
         this.movimentacoes.set(data);
         this.loading.set(false);
@@ -40,9 +38,7 @@ export class MovimentacaoService {
   }
 
   getByProduto(produtoId: number) {
-    return this.http.get<any>(`${this.url}/produto/${produtoId}`).pipe(
-      map(res => (Array.isArray(res) ? res : (res.value ?? [])) as Movimentacao[])
-    );
+    return this.http.get<Movimentacao[]>(`${this.url}/produto/${produtoId}`);
   }
 
   getSaldo(produtoId: number) {

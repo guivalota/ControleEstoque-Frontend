@@ -1,9 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { map, tap, switchMap } from 'rxjs';
+import { tap, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Fornecedor, CreateFornecedorRequest, UpdateFornecedorRequest } from '../models/fornecedor.model';
-import { ApiResult } from '../models/nota-fiscal.model';
 
 @Injectable({ providedIn: 'root' })
 export class FornecedorService {
@@ -15,8 +14,7 @@ export class FornecedorService {
 
   getAll() {
     this.loading.set(true);
-    return this.http.get<ApiResult<Fornecedor>>(this.url).pipe(
-      map(res => res.value ?? []),
+    return this.http.get<Fornecedor[]>(this.url).pipe(
       tap(data => {
         this.fornecedores.set(data);
         this.loading.set(false);

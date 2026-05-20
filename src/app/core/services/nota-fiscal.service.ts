@@ -1,8 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { map, tap, switchMap } from 'rxjs';
+import { tap, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { NotaFiscal, CreateNotaFiscalRequest, ApiResult } from '../models/nota-fiscal.model';
+import { NotaFiscal, CreateNotaFiscalRequest } from '../models/nota-fiscal.model';
 import { Movimentacao } from '../models/movimentacao.model';
 
 @Injectable({ providedIn: 'root' })
@@ -15,8 +15,7 @@ export class NotaFiscalService {
 
   getAll() {
     this.loading.set(true);
-    return this.http.get<ApiResult<NotaFiscal>>(this.url).pipe(
-      map(res => res.value ?? []),
+    return this.http.get<NotaFiscal[]>(this.url).pipe(
       tap(data => {
         this.notasFiscais.set(data);
         this.loading.set(false);
@@ -29,9 +28,9 @@ export class NotaFiscalService {
   }
 
   getMovimentacoes(notaFiscalId: number) {
-    return this.http.get<ApiResult<Movimentacao>>(
+    return this.http.get<Movimentacao[]>(
       `${environment.apiUrl}/movimentacoes/nota-fiscal/${notaFiscalId}`
-    ).pipe(map(res => res.value ?? []));
+    );
   }
 
   create(req: CreateNotaFiscalRequest) {
