@@ -40,7 +40,9 @@ export class MovimentacaoService {
   }
 
   getByProduto(produtoId: number) {
-    return this.http.get<Movimentacao[]>(`${this.url}/produto/${produtoId}`);
+    return this.http.get<any>(`${this.url}/produto/${produtoId}`).pipe(
+      map(res => (Array.isArray(res) ? res : (res.value ?? [])) as Movimentacao[])
+    );
   }
 
   getSaldo(produtoId: number) {

@@ -134,7 +134,10 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
   verDetalhes(nf: NotaFiscal) {
     this.notaSelecionada.set(nf);
     this.movimentacoesNF.set([]);
-    this.nfService.getMovimentacoes(nf.id).subscribe(movs => this.movimentacoesNF.set(movs));
+    const prodMap = new Map(this.produtos().map(p => [p.id, p.nome]));
+    this.nfService.getMovimentacoes(nf.id).subscribe(movs =>
+      this.movimentacoesNF.set(movs.map(m => ({ ...m, produtoNome: m.produtoNome ?? prodMap.get(m.produtoId) })))
+    );
     this.getDetalhesModal().show();
   }
 

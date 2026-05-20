@@ -1,105 +1,234 @@
 <div>
-  <h5 class="fw-bold mb-4">Conferência de Estoque</h5>
-
-  <!-- Seletor -->
-  <div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
-      <div class="row g-3 align-items-end">
-        <div class="col-md-6">
-          <label class="form-label fw-medium">Selecione o Produto</label>
-          <select class="form-select"
-            [value]="produtoSelecionadoId()"
-            (change)="produtoSelecionadoId.set($any($event.target).value ? +$any($event.target).value : null)">
-            <option [value]="null">Selecione um produto...</option>
-            @for (p of produtos(); track p.id) {
-              <option [value]="p.id">{{ p.nome }} — {{ p.sku }}</option>
-            }
-          </select>
-        </div>
-        <div class="col-auto">
-          <button class="btn btn-primary" (click)="conferir()" [disabled]="!produtoSelecionadoId() || loading()">
-            @if (loading()) { <span class="spinner-border spinner-border-sm me-2"></span> }
-            <i class="bi bi-clipboard-check me-1"></i>Conferir
-          </button>
-        </div>
-      </div>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-bold mb-0">Conferência de Estoque</h5>
+    <div class="btn-group" role="group">
+      <button type="button" class="btn btn-sm"
+        [class]="!modoGeral() ? 'btn-primary' : 'btn-outline-primary'"
+        (click)="alternarModo(false)">
+        <i class="bi bi-search me-1"></i>Produto Individual
+      </button>
+      <button type="button" class="btn btn-sm"
+        [class]="modoGeral() ? 'btn-primary' : 'btn-outline-primary'"
+        (click)="alternarModo(true)">
+        <i class="bi bi-table me-1"></i>Visão Geral
+      </button>
     </div>
   </div>
 
-  <!-- Resultado -->
-  @if (erro()) {
-    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ erro() }}</div>
-  }
+  <!-- ===== MODO INDIVIDUAL ===== -->
+  @if (!modoGeral()) {
+    <!-- Seletor -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-6">
+            <label class="form-label fw-medium">Selecione o Produto</label>
+            <select class="form-select"
+              [value]="produtoSelecionadoId()"
+              (change)="produtoSelecionadoId.set($any($event.target).value ? +$any($event.target).value : null)">
+              <option [value]="null">Selecione um produto...</option>
+              @for (p of produtos(); track p.id) {
+                <option [value]="p.id">{{ p.nome }} — {{ p.sku }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-primary" (click)="conferir()" [disabled]="!produtoSelecionadoId() || loading()">
+              @if (loading()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+              <i class="bi bi-clipboard-check me-1"></i>Conferir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  @if (resultado(); as r) {
-    <div class="row g-3">
-      <!-- Identificação -->
-      <div class="col-12">
-        <div class="card border-0 shadow-sm">
-          <div class="card-body">
-            <div class="d-flex align-items-center gap-3">
-              <div class="kpi-icon bg-primary bg-opacity-10 rounded-3 p-3">
-                <i class="bi bi-box fs-4 text-primary"></i>
-              </div>
-              <div>
-                <h5 class="mb-0 fw-bold">{{ r.nome }}</h5>
-                <div class="text-muted small">
-                  <code>{{ r.sku }}</code>
-                  <span class="mx-2">·</span>
-                  <span>{{ r.categoria }}</span>
+    @if (erro()) {
+      <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ erro() }}</div>
+    }
+
+    @if (resultado(); as r) {
+      <div class="row g-3 mb-4">
+        <!-- Identificação -->
+        <div class="col-12">
+          <div class="card border-0 shadow-sm">
+            <div class="card-body">
+              <div class="d-flex align-items-center gap-3">
+                <div class="kpi-icon bg-primary bg-opacity-10 rounded-3 p-3">
+                  <i class="bi bi-box fs-4 text-primary"></i>
+                </div>
+                <div>
+                  <h5 class="mb-0 fw-bold">{{ r.nome }}</h5>
+                  <div class="text-muted small">
+                    <code>{{ r.sku }}</code>
+                    <span class="mx-2">·</span>
+                    <span>{{ r.categoria }}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- KPIs do produto -->
-      <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-          <div class="card-body text-center">
-            <div class="text-muted small mb-1">Saldo em Estoque</div>
-            <div class="fs-2 fw-bold" [class]="saldoClass(r.saldoAtual)">{{ r.saldoAtual }}</div>
-            <div class="text-muted small">unidades</div>
+        <!-- KPIs do produto -->
+        <div class="col-sm-6 col-xl-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <div class="text-muted small mb-1">Saldo em Estoque</div>
+              <div class="fs-2 fw-bold" [class]="saldoClass(r.saldoAtual)">{{ r.saldoAtual }}</div>
+              <div class="text-muted small">unidades</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <div class="text-muted small mb-1">Preço Médio</div>
+              <div class="fs-4 fw-bold">R$ {{ r.precoMedio | number:'1.2-2' }}</div>
+              <div class="text-muted small">por unidade</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <div class="text-muted small mb-1">Valor Total em Estoque</div>
+              <div class="fs-4 fw-bold text-success">R$ {{ r.valorTotalEstoque | number:'1.2-2' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <div class="text-muted small mb-1">Última Movimentação</div>
+              <div class="fw-semibold">{{ r.ultimaMovimentacao | date:'dd/MM/yyyy' }}</div>
+              <div class="text-muted small">{{ r.ultimaMovimentacao | date:'HH:mm' }}</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-          <div class="card-body text-center">
-            <div class="text-muted small mb-1">Preço Médio</div>
-            <div class="fs-4 fw-bold">R$ {{ r.precoMedio | number:'1.2-2' }}</div>
-            <div class="text-muted small">por unidade</div>
-          </div>
+      <!-- Histórico de movimentos do produto -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom py-3">
+          <h6 class="mb-0 fw-semibold">Últimas Movimentações do Produto</h6>
+        </div>
+        <div class="card-body p-0">
+          @if (loadingMovimentos()) {
+            <div class="text-center py-4 text-muted">
+              <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+            </div>
+          } @else {
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th class="ps-3">#</th>
+                    <th>Tipo</th>
+                    <th>Quantidade</th>
+                    <th>Valor Unit.</th>
+                    <th>Total</th>
+                    <th>Observação</th>
+                    <th>Data</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (m of movimentacoesProduto(); track m.id) {
+                    <tr>
+                      <td class="ps-3 text-muted small">{{ m.id }}</td>
+                      <td>
+                        <span class="badge" [class]="tipoBadge(m.tipo)">{{ m.tipo | titlecase }}</span>
+                      </td>
+                      <td class="fw-medium">{{ m.quantidade }}</td>
+                      <td class="text-muted small">R$ {{ (m.valorUnitario ?? 0) | number:'1.2-2' }}</td>
+                      <td class="fw-medium">R$ {{ (m.valorTotal ?? 0) | number:'1.2-2' }}</td>
+                      <td class="text-muted small">{{ m.observacao || '—' }}</td>
+                      <td class="text-muted small">{{ m.criadoEm | date:'dd/MM/yyyy HH:mm' }}</td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="7" class="text-center text-muted py-4">
+                        <i class="bi bi-inbox me-2"></i>Nenhuma movimentação registrada
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
         </div>
       </div>
+    }
 
-      <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-          <div class="card-body text-center">
-            <div class="text-muted small mb-1">Valor Total em Estoque</div>
-            <div class="fs-4 fw-bold text-success">R$ {{ r.valorTotalEstoque | number:'1.2-2' }}</div>
-          </div>
-        </div>
+    @if (!resultado() && !loading() && !erro()) {
+      <div class="text-center text-muted py-5">
+        <i class="bi bi-clipboard-check fs-1 d-block mb-3 opacity-25"></i>
+        Selecione um produto para conferir o estoque
       </div>
-
-      <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
-          <div class="card-body text-center">
-            <div class="text-muted small mb-1">Última Movimentação</div>
-            <div class="fw-semibold">{{ r.ultimaMovimentacao | date:'dd/MM/yyyy' }}</div>
-            <div class="text-muted small">{{ r.ultimaMovimentacao | date:'HH:mm' }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
+    }
   }
 
-  @if (!resultado() && !loading() && !erro()) {
-    <div class="text-center text-muted py-5">
-      <i class="bi bi-clipboard-check fs-1 d-block mb-3 opacity-25"></i>
-      Selecione um produto para conferir o estoque
+  <!-- ===== MODO GERAL ===== -->
+  @if (modoGeral()) {
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+        <h6 class="mb-0 fw-semibold">Saldo de Estoque — Todos os Produtos</h6>
+        <button class="btn btn-sm btn-outline-primary" (click)="carregarVisaoGeral()" [disabled]="loadingGeral()">
+          @if (loadingGeral()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          @else { <i class="bi bi-arrow-clockwise me-1"></i> }
+          Atualizar
+        </button>
+      </div>
+      <div class="card-body p-0">
+        @if (loadingGeral()) {
+          <div class="text-center py-5 text-muted">
+            <div class="spinner-border spinner-border-sm me-2"></div>Carregando saldos...
+          </div>
+        } @else if (erroGeral()) {
+          <div class="p-3">
+            <div class="alert alert-danger mb-0"><i class="bi bi-exclamation-triangle me-2"></i>{{ erroGeral() }}</div>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3">Produto</th>
+                  <th>SKU</th>
+                  <th>Categoria</th>
+                  <th class="text-center">Saldo</th>
+                  <th class="text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of visaoGeral(); track item.produtoId) {
+                  <tr>
+                    <td class="ps-3 fw-medium">{{ item.nome }}</td>
+                    <td class="font-monospace text-muted small">{{ item.sku }}</td>
+                    <td class="text-muted small">{{ item.categoria }}</td>
+                    <td class="text-center fw-bold" [class]="saldoClass(item.saldo)">{{ item.saldo }}</td>
+                    <td class="text-center">
+                      <span class="badge" [class]="saldoBadgeClass(item.saldo)">
+                        @if (item.saldo <= 0) { Sem estoque }
+                        @else if (item.saldo <= 10) { Estoque baixo }
+                        @else { Normal }
+                      </span>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                      <i class="bi bi-inbox me-2"></i>Nenhum produto encontrado
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
     </div>
   }
 </div>

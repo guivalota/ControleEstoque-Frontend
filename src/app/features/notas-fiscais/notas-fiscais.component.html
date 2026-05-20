@@ -253,7 +253,7 @@
                 @for (m of movimentacoesNF(); track m.id) {
                   <tr>
                     <td class="text-muted small">{{ m.id }}</td>
-                    <td>Produto #{{ m.produtoId }}</td>
+                    <td>{{ m.produtoNome ?? 'Produto #' + m.produtoId }}</td>
                     <td>{{ m.quantidade }}</td>
                     <td>R$ {{ m.valorUnitario | number:'1.2-2' }}</td>
                     <td class="fw-medium">R$ {{ m.valorTotal | number:'1.2-2' }}</td>

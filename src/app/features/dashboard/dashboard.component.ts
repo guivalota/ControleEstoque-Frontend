@@ -4,6 +4,8 @@ import { RouterLink } from '@angular/router';
 import { ProdutoService } from '../../core/services/produto.service';
 import { CategoriaService } from '../../core/services/categoria.service';
 import { MovimentacaoService } from '../../core/services/movimentacao.service';
+import { FornecedorService } from '../../core/services/fornecedor.service';
+import { NotaFiscalService } from '../../core/services/nota-fiscal.service';
 import { TipoMovimentacao } from '../../core/models/movimentacao.model';
 
 @Component({
@@ -16,10 +18,14 @@ export class DashboardComponent implements OnInit {
   private produtoService = inject(ProdutoService);
   private categoriaService = inject(CategoriaService);
   private movimentacaoService = inject(MovimentacaoService);
+  private fornecedorService = inject(FornecedorService);
+  private notaFiscalService = inject(NotaFiscalService);
 
   produtos = this.produtoService.produtos;
   categorias = this.categoriaService.categorias;
   movimentacoes = this.movimentacaoService.movimentacoes;
+  fornecedores = this.fornecedorService.fornecedores;
+  notasFiscais = this.notaFiscalService.notasFiscais;
 
   produtosAtivos = computed(() => this.produtos().filter(p => p.ativo).length);
   categoriasAtivas = computed(() => this.categorias().filter(c => c.ativo).length);
@@ -29,6 +35,8 @@ export class DashboardComponent implements OnInit {
       .filter(p => p.ativo)
       .reduce((sum, p) => sum + p.precoUnitario, 0)
   );
+  fornecedoresAtivos = computed(() => this.fornecedores().filter(f => f.ativo).length);
+  totalNotasFiscais = computed(() => this.notasFiscais().length);
 
   ultimasMovimentacoes = computed(() => {
     const prodMap = new Map(this.produtos().map(p => [p.id, p.nome]));
@@ -42,6 +50,8 @@ export class DashboardComponent implements OnInit {
     this.produtoService.getAll().subscribe();
     this.categoriaService.getAll().subscribe();
     this.movimentacaoService.getAll().subscribe();
+    this.fornecedorService.getAll().subscribe();
+    this.notaFiscalService.getAll().subscribe();
   }
 
   tipoBadge(tipo: TipoMovimentacao): string {

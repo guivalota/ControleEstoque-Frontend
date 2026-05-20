@@ -3,7 +3,7 @@
 
   <!-- KPI Cards -->
   <div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-sm-6 col-lg-4 col-xl-2">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-body d-flex align-items-center gap-3">
           <div class="kpi-icon bg-primary bg-opacity-10 rounded-3 p-3">
@@ -17,7 +17,7 @@
       </div>
     </div>
 
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-sm-6 col-lg-4 col-xl-2">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-body d-flex align-items-center gap-3">
           <div class="kpi-icon bg-success bg-opacity-10 rounded-3 p-3">
@@ -31,7 +31,7 @@
       </div>
     </div>
 
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-sm-6 col-lg-4 col-xl-2">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-body d-flex align-items-center gap-3">
           <div class="kpi-icon bg-warning bg-opacity-10 rounded-3 p-3">
@@ -45,7 +45,7 @@
       </div>
     </div>
 
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-sm-6 col-lg-4 col-xl-2">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-body d-flex align-items-center gap-3">
           <div class="kpi-icon bg-info bg-opacity-10 rounded-3 p-3">
@@ -54,6 +54,34 @@
           <div>
             <div class="text-muted small">Valor em Catálogo</div>
             <div class="fs-5 fw-bold lh-1">R$ {{ valorCatalogo() | number:'1.2-2' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-4 col-xl-2">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="kpi-icon bg-secondary bg-opacity-10 rounded-3 p-3">
+            <i class="bi bi-truck fs-4 text-secondary"></i>
+          </div>
+          <div>
+            <div class="text-muted small">Fornecedores Ativos</div>
+            <div class="fs-3 fw-bold lh-1">{{ fornecedoresAtivos() }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-4 col-xl-2">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="kpi-icon bg-danger bg-opacity-10 rounded-3 p-3">
+            <i class="bi bi-file-earmark-text fs-4 text-danger"></i>
+          </div>
+          <div>
+            <div class="text-muted small">Notas Fiscais</div>
+            <div class="fs-3 fw-bold lh-1">{{ totalNotasFiscais() }}</div>
           </div>
         </div>
       </div>
