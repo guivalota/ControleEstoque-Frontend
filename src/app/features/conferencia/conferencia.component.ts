@@ -1,21 +1,11 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { DecimalPipe, DatePipe, TitleCasePipe } from '@angular/common';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
 import { ConferenciaService } from '../../core/services/conferencia.service';
 import { ProdutoService } from '../../core/services/produto.service';
 import { CategoriaService } from '../../core/services/categoria.service';
 import { MovimentacaoService } from '../../core/services/movimentacao.service';
 import { ConferenciaResult } from '../../core/models/conferencia.model';
 import { Movimentacao } from '../../core/models/movimentacao.model';
-
-interface SaldoGeral {
-  produtoId: number;
-  nome: string;
-  sku: string;
-  categoria: string;
-  saldo: number;
-}
 
 @Component({
   selector: 'app-conferencia',
@@ -34,6 +24,8 @@ export class ConferenciaComponent implements OnInit {
 
   // Modo individual
   produtoSelecionadoId = signal<number | null>(null);
+  filterDataInicio = signal('');
+  filterDataFim = signal('');
   resultado = signal<ConferenciaResult | null>(null);
   loading = signal(false);
   erro = signal('');
@@ -42,9 +34,16 @@ export class ConferenciaComponent implements OnInit {
 
   // Modo geral
   modoGeral = signal(false);
-  visaoGeral = signal<SaldoGeral[]>([]);
+  visaoGeral = signal<ConferenciaResult[]>([]);
   loadingGeral = signal(false);
   erroGeral = signal('');
+  filterGeralDataFim = signal('');
+  filterGeralCategoriaId = signal<number | null>(null);
+  filterGeralApenasComSaldo = signal(false);
+  filterGeralAbaixoDoMinimo = signal(false);
+  readonly geralPageSize = 50;
+  geralPage = signal(1);
+  geralHasNextPage = signal(false);
 
   ngOnInit() {
     this.produtoService.getAll().subscribe();
@@ -58,40 +57,21 @@ export class ConferenciaComponent implements OnInit {
     }
   }
 
-  carregarVisaoGeral() {
-    const prods = this.produtos();
-    if (!prods.length) {
-      this.visaoGeral.set([]);
-      return;
-    }
+  carregarVisaoGeral(page = 1) {
     this.loadingGeral.set(true);
     this.erroGeral.set('');
-    const catMap = new Map(this.categorias().map(c => [c.id, c.nome]));
-
-    forkJoin(
-      prods.map(p =>
-        this.movimentacaoService.getSaldo(p.id).pipe(
-          map(s => ({
-            produtoId: p.id,
-            nome: p.nome,
-            sku: p.sku,
-            categoria: catMap.get(p.categoriaId) ?? '—',
-            saldo: s.saldo
-          })),
-          catchError(() => of({
-            produtoId: p.id,
-            nome: p.nome,
-            sku: p.sku,
-            categoria: catMap.get(p.categoriaId) ?? '—',
-            saldo: 0
-          }))
-        )
-      )
-    ).subscribe({
+    this.conferenciaService.getGeral({
+      DataFim: this.filterGeralDataFim() || undefined,
+      CategoriaId: this.filterGeralCategoriaId() ?? undefined,
+      ApenasComSaldo: this.filterGeralApenasComSaldo() || undefined,
+      AbaixoDoMinimo: this.filterGeralAbaixoDoMinimo() || undefined,
+      Page: page,
+      PageSize: this.geralPageSize
+    }).subscribe({
       next: results => {
-        this.visaoGeral.set(
-          results.sort((a, b) => a.saldo - b.saldo || a.nome.localeCompare(b.nome))
-        );
+        this.visaoGeral.set(results.sort((a, b) => a.saldoAtual - b.saldoAtual || a.nome.localeCompare(b.nome)));
+        this.geralPage.set(page);
+        this.geralHasNextPage.set(results.length === this.geralPageSize);
         this.loadingGeral.set(false);
       },
       error: () => {
@@ -110,7 +90,10 @@ export class ConferenciaComponent implements OnInit {
     this.movimentacoesProduto.set([]);
     this.loadingMovimentos.set(true);
 
-    this.conferenciaService.conferir(id).subscribe({
+    this.conferenciaService.conferir(id, {
+      DataInicio: this.filterDataInicio() || undefined,
+      DataFim: this.filterDataFim() || undefined
+    }).subscribe({
       next: res => { this.resultado.set(res); this.loading.set(false); },
       error: err => {
         this.erro.set(err.error?.message ?? 'Erro ao conferir produto.');
@@ -145,8 +128,15 @@ export class ConferenciaComponent implements OnInit {
 
   tipoBadge(tipo: string): string {
     const map: Record<string, string> = {
-      entrada: 'bg-success', saida: 'bg-danger', ajuste: 'bg-warning text-dark'
+      entrada: 'bg-success', saida: 'bg-danger', ajuste: 'bg-warning text-dark', ajuste_saida: 'bg-secondary'
     };
     return map[tipo] ?? 'bg-secondary';
+  }
+
+  tipoLabel(tipo: string): string {
+    const map: Record<string, string> = {
+      entrada: 'Entrada', saida: 'Saída', ajuste: 'Ajuste', ajuste_saida: 'Aj. Saída'
+    };
+    return map[tipo] ?? tipo;
   }
 }

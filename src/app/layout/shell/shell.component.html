@@ -2,6 +2,12 @@
   <app-sidebar />
   <div class="flex-grow-1 d-flex flex-column overflow-hidden">
     <app-topbar />
+    @if (permissao.role() === 'leitura') {
+      <div class="alert alert-info mb-0 py-2 px-4 border-0 border-bottom rounded-0 text-center small">
+        <i class="bi bi-eye me-1"></i>
+        Modo somente leitura — você não tem permissão para criar, editar ou excluir registros.
+      </div>
+    }
     <main class="flex-grow-1 p-4 bg-light overflow-auto">
       <router-outlet />
     </main>

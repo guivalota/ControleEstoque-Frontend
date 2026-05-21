@@ -12,4 +12,22 @@ import { ThemeService } from '../../core/services/theme.service';
 export class TopbarComponent {
   auth = inject(AuthService);
   theme = inject(ThemeService);
+
+  roleBadgeClass(role: string | undefined): string {
+    const map: Record<string, string> = {
+      admin: 'bg-danger',
+      operador: 'bg-primary',
+      leitura: 'bg-secondary'
+    };
+    return map[role ?? ''] ?? 'bg-secondary';
+  }
+
+  roleLabel(role: string | undefined): string {
+    const map: Record<string, string> = {
+      admin: 'Admin',
+      operador: 'Operador',
+      leitura: 'Somente leitura'
+    };
+    return map[role ?? ''] ?? (role ?? '');
+  }
 }

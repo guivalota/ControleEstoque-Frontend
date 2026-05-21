@@ -25,15 +25,22 @@
         <i class="bi bi-arrow-left-right me-2"></i>Movimentações
       </a>
     </li>
-    <li class="nav-item">
-      <a class="nav-link sidebar-link" routerLink="/usuarios" routerLinkActive="active">
-        <i class="bi bi-people me-2"></i>Usuários
-      </a>
-    </li>
+    @if (permissao.canManageUsers()) {
+      <li class="nav-item">
+        <a class="nav-link sidebar-link" routerLink="/usuarios" routerLinkActive="active">
+          <i class="bi bi-people me-2"></i>Usuários
+        </a>
+      </li>
+    }
 
     <li class="nav-item">
       <a class="nav-link sidebar-link" routerLink="/fornecedores" routerLinkActive="active">
         <i class="bi bi-truck me-2"></i>Fornecedores
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link sidebar-link" routerLink="/clientes" routerLinkActive="active">
+        <i class="bi bi-person-lines-fill me-2"></i>Clientes
       </a>
     </li>
 

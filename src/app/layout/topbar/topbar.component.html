@@ -3,7 +3,9 @@
     Bem-vindo, <strong>{{ auth.currentUser()?.nome ?? 'Usuário' }}</strong>
   </span>
   <div class="d-flex align-items-center gap-2">
-    <span class="badge bg-secondary text-capitalize">{{ auth.currentUser()?.role }}</span>
+    <span class="badge" [class]="roleBadgeClass(auth.currentUser()?.role)">
+      {{ roleLabel(auth.currentUser()?.role) }}
+    </span>
 
     <button
       class="btn btn-sm btn-outline-secondary"

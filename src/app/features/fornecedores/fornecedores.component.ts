@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { Modal } from 'bootstrap';
 import { FornecedorService } from '../../core/services/fornecedor.service';
+import { PermissaoService } from '../../core/services/permissao.service';
 import { Fornecedor, CreateFornecedorRequest, UpdateFornecedorRequest } from '../../core/models/fornecedor.model';
 
 @Component({
@@ -14,6 +15,7 @@ import { Fornecedor, CreateFornecedorRequest, UpdateFornecedorRequest } from '..
 export class FornecedoresComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   fornecedorService = inject(FornecedorService);
+  permissao = inject(PermissaoService);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
   private modal!: Modal;

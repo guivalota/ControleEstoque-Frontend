@@ -4,7 +4,11 @@ export interface ConferenciaResult {
   nome: string;
   categoria: string;
   saldoAtual: number;
+  totalEntradas: number;
+  totalSaidas: number;
   precoMedio: number;
   valorTotalEstoque: number;
-  ultimaMovimentacao: string;
+  valorTotalMovimentado: number;
+  ultimaMovimentacao: string | null;
+  primeiraMovimentacao: string | null;
 }

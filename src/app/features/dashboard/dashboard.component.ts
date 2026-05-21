@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, computed } from '@angular/core';
-import { DecimalPipe, TitleCasePipe, DatePipe } from '@angular/common';
+import { DecimalPipe, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ProdutoService } from '../../core/services/produto.service';
 import { CategoriaService } from '../../core/services/categoria.service';
@@ -11,7 +11,7 @@ import { TipoMovimentacao } from '../../core/models/movimentacao.model';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [DecimalPipe, TitleCasePipe, DatePipe, RouterLink],
+  imports: [DecimalPipe, DatePipe, RouterLink],
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {
@@ -58,8 +58,16 @@ export class DashboardComponent implements OnInit {
     const map: Record<TipoMovimentacao, string> = {
       entrada: 'bg-success',
       saida: 'bg-danger',
-      ajuste: 'bg-warning text-dark'
+      ajuste: 'bg-warning text-dark',
+      ajuste_saida: 'bg-secondary'
     };
     return map[tipo] ?? 'bg-secondary';
+  }
+
+  tipoLabel(tipo: TipoMovimentacao): string {
+    const map: Record<TipoMovimentacao, string> = {
+      entrada: 'Entrada', saida: 'Saída', ajuste: 'Ajuste', ajuste_saida: 'Aj. Saída'
+    };
+    return map[tipo] ?? tipo;
   }
 }

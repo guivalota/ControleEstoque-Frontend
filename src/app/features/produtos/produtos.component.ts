@@ -4,6 +4,7 @@ import { DecimalPipe } from '@angular/common';
 import { Modal } from 'bootstrap';
 import { ProdutoService } from '../../core/services/produto.service';
 import { CategoriaService } from '../../core/services/categoria.service';
+import { PermissaoService } from '../../core/services/permissao.service';
 import { Produto, CreateProdutoRequest, UpdateProdutoRequest } from '../../core/models/produto.model';
 
 @Component({
@@ -16,6 +17,7 @@ export class ProdutosComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   produtoService = inject(ProdutoService);
   categoriaService = inject(CategoriaService);
+  permissao = inject(PermissaoService);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
   private modal!: Modal;
@@ -43,6 +45,8 @@ export class ProdutosComponent implements OnInit, OnDestroy {
     descricao: ['' as string | null],
     categoriaId: [null as number | null, Validators.required],
     precoUnitario: [0, [Validators.required, Validators.min(0)]],
+    estoqueMinimo: [null as number | null, Validators.min(0)],
+    pontoReposicao: [null as number | null, Validators.min(0)],
     ativo: [true]
   });
 
@@ -62,14 +66,14 @@ export class ProdutosComponent implements OnInit, OnDestroy {
 
   openCreate() {
     this.editingId.set(null);
-    this.form.reset({ ativo: true, precoUnitario: 0, descricao: null });
+    this.form.reset({ ativo: true, precoUnitario: 0, descricao: null, estoqueMinimo: null, pontoReposicao: null });
     this.saveError.set('');
     this.getModal().show();
   }
 
   openEdit(p: Produto) {
     this.editingId.set(p.id);
-    this.form.patchValue({ ...p, descricao: p.descricao ?? null });
+    this.form.patchValue({ ...p, descricao: p.descricao ?? null, estoqueMinimo: p.estoqueMinimo ?? null, pontoReposicao: p.pontoReposicao ?? null });
     this.saveError.set('');
     this.getModal().show();
   }

@@ -6,6 +6,7 @@ import { NotaFiscalService } from '../../core/services/nota-fiscal.service';
 import { ProdutoService } from '../../core/services/produto.service';
 import { FornecedorService } from '../../core/services/fornecedor.service';
 import { NfeService } from '../../core/services/nfe.service';
+import { PermissaoService } from '../../core/services/permissao.service';
 import { NotaFiscal, TipoNotaFiscal } from '../../core/models/nota-fiscal.model';
 
 @Component({
@@ -20,6 +21,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
   produtoService = inject(ProdutoService);
   fornecedorService = inject(FornecedorService);
   private nfeService = inject(NfeService);
+  permissao = inject(PermissaoService);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
   @ViewChild('detalhesModalEl') detalhesModalEl!: ElementRef;

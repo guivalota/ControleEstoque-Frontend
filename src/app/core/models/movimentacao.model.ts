@@ -1,4 +1,5 @@
-export type TipoMovimentacao = 'entrada' | 'saida' | 'ajuste';
+export type TipoMovimentacao = 'entrada' | 'saida' | 'ajuste' | 'ajuste_saida';
+export type MotivoAjuste = 'inventario' | 'quebra' | 'furto' | 'vencimento' | 'erro_lancamento' | 'devolucao' | 'outro';
 
 export interface Movimentacao {
   id: number;
@@ -10,7 +11,9 @@ export interface Movimentacao {
   valorUnitario?: number;
   valorTotal?: number;
   notaFiscalId?: number;
+  dataMovimentacao?: string;
   observacao?: string;
+  motivoAjuste?: MotivoAjuste;
   criadoEm: string;
   usuarioId?: number;
 }
@@ -20,7 +23,18 @@ export interface CreateMovimentacaoRequest {
   tipo: TipoMovimentacao;
   quantidade: number;
   valorUnitario: number;
+  dataMovimentacao?: string | null;
   observacao?: string | null;
+  motivoAjuste?: MotivoAjuste | null;
+}
+
+export interface UpdateMovimentacaoRequest {
+  tipo: TipoMovimentacao;
+  quantidade: number;
+  valorUnitario: number;
+  dataMovimentacao?: string | null;
+  observacao?: string | null;
+  motivoAjuste?: MotivoAjuste | null;
 }
 
 export interface SaldoEstoque {

@@ -1,9 +1,11 @@
 <div>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-bold mb-0">Movimentações de Estoque</h5>
-    <button class="btn btn-primary btn-sm" (click)="openCreate()">
-      <i class="bi bi-plus-lg me-1"></i>Nova Movimentação
-    </button>
+    @if (permissao.canCreate()) {
+      <button class="btn btn-primary btn-sm" (click)="openCreate()">
+        <i class="bi bi-plus-lg me-1"></i>Nova Movimentação
+      </button>
+    }
   </div>
 
   <!-- Filtros -->
@@ -71,11 +73,12 @@
                 <th class="ps-3">#</th>
                 <th>Produto</th>
                 <th>Tipo</th>
-                <th>Quantidade</th>
-                <th>Valor Unit.</th>
-                <th>Total</th>
+                <th class="text-end">Qtd.</th>
+                <th class="text-end">Valor Unit.</th>
+                <th class="text-end">Total</th>
                 <th>Observação</th>
                 <th>Data</th>
+                <th class="text-end pe-3">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -84,17 +87,34 @@
                   <td class="ps-3 text-muted small">{{ m.id }}</td>
                   <td>{{ m.produtoNome ?? 'Produto #' + m.produtoId }}</td>
                   <td>
-                    <span class="badge" [class]="tipoBadge(m.tipo)">{{ m.tipo | titlecase }}</span>
+                    <span class="badge" [class]="tipoBadge(m.tipo)">{{ tipoLabel(m.tipo) }}</span>
+                    @if (m.motivoAjuste) {
+                      <div class="text-muted" style="font-size:.7rem">{{ motivoLabel(m.motivoAjuste) }}</div>
+                    }
                   </td>
-                  <td class="fw-medium">{{ m.quantidade }}</td>
-                  <td class="text-muted small">R$ {{ (m.valorUnitario ?? 0) | number:'1.2-2' }}</td>
-                  <td class="fw-medium">R$ {{ (m.valorTotal ?? 0) | number:'1.2-2' }}</td>
+                  <td class="fw-medium text-end">{{ m.quantidade }}</td>
+                  <td class="text-muted small text-end">R$ {{ (m.valorUnitario ?? 0) | number:'1.2-2' }}</td>
+                  <td class="fw-medium text-end">R$ {{ (m.valorTotal ?? 0) | number:'1.2-2' }}</td>
                   <td class="text-muted small">{{ m.observacao || '—' }}</td>
-                  <td class="text-muted small">{{ m.criadoEm | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="text-muted small">
+                    {{ (m.dataMovimentacao ?? m.criadoEm) | date:'dd/MM/yyyy' }}
+                  </td>
+                  <td class="text-end pe-3">
+                    @if (permissao.canEdit()) {
+                      <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(m)" title="Editar">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                    }
+                    @if (permissao.canDelete()) {
+                      <button class="btn btn-sm btn-outline-danger" (click)="delete(m)" title="Excluir">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    }
+                  </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="8" class="text-center text-muted py-4">
+                  <td colspan="9" class="text-center text-muted py-4">
                     <i class="bi bi-inbox me-2"></i>Nenhuma movimentação encontrada
                   </td>
                 </tr>
@@ -102,54 +122,103 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Paginação -->
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+          <span class="text-muted small">
+            Página {{ currentPage() }} &mdash; {{ filteredMovimentacoes().length }} registro(s)
+          </span>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary"
+              [disabled]="currentPage() === 1 || loading()"
+              (click)="carregarPagina(currentPage() - 1)">
+              <i class="bi bi-chevron-left"></i> Anterior
+            </button>
+            <button class="btn btn-sm btn-outline-secondary"
+              [disabled]="!hasNextPage() || loading()"
+              (click)="carregarPagina(currentPage() + 1)">
+              Próxima <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+        </div>
       }
     </div>
   </div>
 </div>
 
-<!-- Modal Nova Movimentação -->
+<!-- Modal Movimentação -->
 <div class="modal fade" #modalEl tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h6 class="modal-title fw-semibold">Nova Movimentação</h6>
+        <h6 class="modal-title fw-semibold">
+          {{ editingId() ? 'Editar Movimentação #' + editingId() : 'Nova Movimentação' }}
+        </h6>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <form [formGroup]="form">
-          <div class="mb-3">
-            <label class="form-label fw-medium">Produto <span class="text-danger">*</span></label>
-            <select class="form-select" formControlName="produtoId"
-              [class.is-invalid]="f('produtoId').invalid && f('produtoId').touched">
-              <option [value]="null">Selecione...</option>
-              @for (p of produtos(); track p.id) {
-                @if (p.ativo) { <option [value]="p.id">{{ p.nome }} ({{ p.sku }})</option> }
-              }
-            </select>
-            <div class="invalid-feedback">Selecione um produto.</div>
-          </div>
 
+          <!-- Produto -->
+          @if (editingId()) {
+            <div class="mb-3">
+              <label class="form-label fw-medium">Produto</label>
+              <input type="text" class="form-control" [value]="editingProdutoNome()" readonly />
+            </div>
+          } @else {
+            <div class="mb-3">
+              <label class="form-label fw-medium">Produto <span class="text-danger">*</span></label>
+              <select class="form-select" formControlName="produtoId"
+                [class.is-invalid]="f('produtoId').invalid && f('produtoId').touched">
+                <option [value]="null">Selecione...</option>
+                @for (p of produtos(); track p.id) {
+                  @if (p.ativo) { <option [value]="p.id">{{ p.nome }} ({{ p.sku }})</option> }
+                }
+              </select>
+              <div class="invalid-feedback">Selecione um produto.</div>
+            </div>
+          }
+
+          <!-- Tipo -->
           <div class="mb-3">
             <label class="form-label fw-medium">Tipo <span class="text-danger">*</span></label>
-            <div class="d-flex gap-3">
-              @for (tipo of ['entrada', 'saida', 'ajuste']; track tipo) {
+            <div class="d-flex flex-wrap gap-3">
+              @for (tipo of [['entrada','Entrada'],['saida','Saída'],['ajuste','Ajuste'],['ajuste_saida','Ajuste Saída']]; track tipo[0]) {
                 <div class="form-check">
                   <input class="form-check-input" type="radio" formControlName="tipo"
-                    [value]="tipo" [id]="'tipo_' + tipo" />
-                  <label class="form-check-label text-capitalize" [for]="'tipo_' + tipo">{{ tipo }}</label>
+                    [value]="tipo[0]" [id]="'tipo_' + tipo[0]" />
+                  <label class="form-check-label" [for]="'tipo_' + tipo[0]">{{ tipo[1] }}</label>
                 </div>
               }
             </div>
           </div>
 
+          <!-- Motivo (só para ajuste) -->
+          @if (isAjuste()) {
+            <div class="mb-3">
+              <label class="form-label fw-medium">Motivo do Ajuste</label>
+              <select class="form-select" formControlName="motivoAjuste">
+                <option [value]="null">Selecione (opcional)...</option>
+                <option value="inventario">Inventário</option>
+                <option value="quebra">Quebra</option>
+                <option value="furto">Furto</option>
+                <option value="vencimento">Vencimento</option>
+                <option value="erro_lancamento">Erro de lançamento</option>
+                <option value="devolucao">Devolução</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+          }
+
+          <!-- Qtd / Valor -->
           <div class="row g-3 mb-3">
-            <div class="col-7">
+            <div class="col-6">
               <label class="form-label fw-medium">Quantidade <span class="text-danger">*</span></label>
               <input type="number" class="form-control" formControlName="quantidade" min="1"
                 [class.is-invalid]="f('quantidade').invalid && f('quantidade').touched" />
               <div class="invalid-feedback">Quantidade mínima: 1.</div>
             </div>
-            <div class="col-5">
+            <div class="col-6">
               <label class="form-label fw-medium">Valor Unit. (R$) <span class="text-danger">*</span></label>
               <input type="number" class="form-control" formControlName="valorUnitario" min="0" step="0.01"
                 [class.is-invalid]="f('valorUnitario').invalid && f('valorUnitario').touched" />
@@ -157,6 +226,14 @@
             </div>
           </div>
 
+          <!-- Data -->
+          <div class="mb-3">
+            <label class="form-label fw-medium">Data da Movimentação</label>
+            <input type="date" class="form-control" formControlName="dataMovimentacao" />
+            <div class="form-text">Deixe em branco para usar a data atual.</div>
+          </div>
+
+          <!-- Observação -->
           <div class="mb-1">
             <label class="form-label fw-medium">Observação</label>
             <textarea class="form-control" formControlName="observacao" rows="2"></textarea>
@@ -173,7 +250,7 @@
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving()">
           @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
-          Registrar
+          {{ editingId() ? 'Salvar' : 'Registrar' }}
         </button>
       </div>
     </div>

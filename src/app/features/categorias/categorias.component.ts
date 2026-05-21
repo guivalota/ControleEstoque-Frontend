@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal, ViewChild, ElementRef, OnDestroy } f
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Modal } from 'bootstrap';
 import { CategoriaService } from '../../core/services/categoria.service';
+import { PermissaoService } from '../../core/services/permissao.service';
 import { Categoria, CreateCategoriaRequest, UpdateCategoriaRequest } from '../../core/models/categoria.model';
 
 @Component({
@@ -13,6 +14,7 @@ import { Categoria, CreateCategoriaRequest, UpdateCategoriaRequest } from '../..
 export class CategoriasComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   categoriaService = inject(CategoriaService);
+  permissao = inject(PermissaoService);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
   private modal!: Modal;

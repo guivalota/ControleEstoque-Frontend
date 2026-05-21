@@ -1,9 +1,11 @@
 <div>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-bold mb-0">Categorias</h5>
-    <button class="btn btn-primary btn-sm" (click)="openCreate()">
-      <i class="bi bi-plus-lg me-1"></i>Nova Categoria
-    </button>
+    @if (permissao.canCreate()) {
+      <button class="btn btn-primary btn-sm" (click)="openCreate()">
+        <i class="bi bi-plus-lg me-1"></i>Nova Categoria
+      </button>
+    }
   </div>
 
   <div class="card border-0 shadow-sm">
@@ -38,12 +40,16 @@
                     }
                   </td>
                   <td class="text-end pe-3">
-                    <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(c)" title="Editar">
-                      <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" (click)="delete(c)" title="Excluir">
-                      <i class="bi bi-trash"></i>
-                    </button>
+                    @if (permissao.canEdit()) {
+                      <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(c)" title="Editar">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                    }
+                    @if (permissao.canDelete()) {
+                      <button class="btn btn-sm btn-outline-danger" (click)="delete(c)" title="Excluir">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    }
                   </td>
                 </tr>
               } @empty {

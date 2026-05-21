@@ -1,9 +1,11 @@
 <div>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-bold mb-0">Produtos</h5>
-    <button class="btn btn-primary btn-sm" (click)="openCreate()">
-      <i class="bi bi-plus-lg me-1"></i>Novo Produto
-    </button>
+    @if (permissao.canCreate()) {
+      <button class="btn btn-primary btn-sm" (click)="openCreate()">
+        <i class="bi bi-plus-lg me-1"></i>Novo Produto
+      </button>
+    }
   </div>
 
   <!-- Filtro -->
@@ -39,7 +41,8 @@
                 <th class="ps-3">SKU</th>
                 <th>Nome</th>
                 <th>Categoria</th>
-                <th>Preço</th>
+                <th class="text-end">Preço</th>
+                <th class="text-center">Est. Mín.</th>
                 <th>Status</th>
                 <th class="text-end pe-3">Ações</th>
               </tr>
@@ -50,7 +53,11 @@
                   <td class="ps-3"><code class="text-muted small">{{ p.sku }}</code></td>
                   <td>{{ p.nome }}</td>
                   <td class="text-muted">{{ p.categoriaNome }}</td>
-                  <td>R$ {{ p.precoUnitario | number:'1.2-2' }}</td>
+                  <td class="text-end">R$ {{ p.precoUnitario | number:'1.2-2' }}</td>
+                  <td class="text-center text-muted small">
+                    @if (p.estoqueMinimo != null) { {{ p.estoqueMinimo }} }
+                    @else { — }
+                  </td>
                   <td>
                     @if (p.ativo) {
                       <span class="badge bg-success-subtle text-success">Ativo</span>
@@ -59,17 +66,21 @@
                     }
                   </td>
                   <td class="text-end pe-3">
-                    <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(p)" title="Editar">
-                      <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" (click)="delete(p)" title="Excluir">
-                      <i class="bi bi-trash"></i>
-                    </button>
+                    @if (permissao.canEdit()) {
+                      <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(p)" title="Editar">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                    }
+                    @if (permissao.canDelete()) {
+                      <button class="btn btn-sm btn-outline-danger" (click)="delete(p)" title="Excluir">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    }
                   </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="6" class="text-center text-muted py-4">
+                  <td colspan="7" class="text-center text-muted py-4">
                     <i class="bi bi-inbox me-2"></i>Nenhum produto encontrado
                   </td>
                 </tr>
@@ -129,11 +140,25 @@
                 [class.is-invalid]="f('precoUnitario').invalid && f('precoUnitario').touched" />
               <div class="invalid-feedback">Preço deve ser ≥ 0.</div>
             </div>
+            <div class="col-md-4">
+              <label class="form-label fw-medium">Estoque Mínimo</label>
+              <input type="number" class="form-control" formControlName="estoqueMinimo" min="0"
+                placeholder="0"
+                [class.is-invalid]="f('estoqueMinimo').invalid && f('estoqueMinimo').touched" />
+              <div class="invalid-feedback">Deve ser ≥ 0.</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-medium">Ponto de Reposição</label>
+              <input type="number" class="form-control" formControlName="pontoReposicao" min="0"
+                placeholder="0"
+                [class.is-invalid]="f('pontoReposicao').invalid && f('pontoReposicao').touched" />
+              <div class="invalid-feedback">Deve ser ≥ 0.</div>
+            </div>
             @if (editingId()) {
-              <div class="col-md-2 d-flex align-items-end pb-1">
+              <div class="col-12">
                 <div class="form-check form-switch">
                   <input class="form-check-input" type="checkbox" formControlName="ativo" id="ativo" />
-                  <label class="form-check-label" for="ativo">Ativo</label>
+                  <label class="form-check-label" for="ativo">Produto ativo</label>
                 </div>
               </div>
             }

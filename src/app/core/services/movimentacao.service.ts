@@ -1,13 +1,16 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { tap, switchMap } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { Movimentacao, CreateMovimentacaoRequest, SaldoEstoque } from '../models/movimentacao.model';
+import { Movimentacao, CreateMovimentacaoRequest, UpdateMovimentacaoRequest, SaldoEstoque } from '../models/movimentacao.model';
 
 export interface MovimentacaoFiltros {
   DataInicio?: string;
   DataFim?: string;
   CategoriaId?: number;
+  ProdutoId?: number;
+  Page?: number;
+  PageSize?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -24,6 +27,9 @@ export class MovimentacaoService {
     if (filtros?.DataInicio) params = params.set('DataInicio', filtros.DataInicio);
     if (filtros?.DataFim) params = params.set('DataFim', filtros.DataFim);
     if (filtros?.CategoriaId) params = params.set('CategoriaId', filtros.CategoriaId);
+    if (filtros?.ProdutoId) params = params.set('ProdutoId', filtros.ProdutoId);
+    if (filtros?.Page != null) params = params.set('Page', filtros.Page);
+    if (filtros?.PageSize != null) params = params.set('PageSize', filtros.PageSize);
 
     return this.http.get<Movimentacao[]>(this.url, { params }).pipe(
       tap(data => {
@@ -46,8 +52,16 @@ export class MovimentacaoService {
   }
 
   create(req: CreateMovimentacaoRequest) {
-    return this.http.post<Movimentacao>(this.url, req).pipe(
-      switchMap(() => this.getAll())
+    return this.http.post<Movimentacao>(this.url, req);
+  }
+
+  update(id: number, req: UpdateMovimentacaoRequest) {
+    return this.http.put<Movimentacao>(`${this.url}/${id}`, req);
+  }
+
+  delete(id: number) {
+    return this.http.delete<void>(`${this.url}/${id}`).pipe(
+      tap(() => this.movimentacoes.update(list => list.filter(m => m.id !== id)))
     );
   }
 }

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -30,11 +31,16 @@ export const routes: Routes = [
       },
       {
         path: 'usuarios',
+        canActivate: [adminGuard],
         loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent)
       },
       {
         path: 'fornecedores',
         loadComponent: () => import('./features/fornecedores/fornecedores.component').then(m => m.FornecedoresComponent)
+      },
+      {
+        path: 'clientes',
+        loadComponent: () => import('./features/clientes/clientes.component').then(m => m.ClientesComponent)
       },
       {
         path: 'notas-fiscais',

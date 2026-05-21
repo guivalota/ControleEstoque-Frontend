@@ -5,15 +5,17 @@
       @if (importMsg()) {
         <small [class]="importMsg().includes('sucesso') ? 'text-success' : 'text-danger'">{{ importMsg() }}</small>
       }
-      <label class="btn btn-outline-secondary btn-sm mb-0" [class.disabled]="importando()">
-        @if (importando()) { <span class="spinner-border spinner-border-sm me-1"></span> }
-        @else { <i class="bi bi-file-earmark-arrow-up me-1"></i> }
-        Importar NF-e XML
-        <input type="file" accept=".xml" class="d-none" (change)="importarXml($event)" />
-      </label>
-      <button class="btn btn-primary btn-sm" (click)="openCreate()">
-        <i class="bi bi-plus-lg me-1"></i>Nova Nota Fiscal
-      </button>
+      @if (permissao.canCreate()) {
+        <label class="btn btn-outline-secondary btn-sm mb-0" [class.disabled]="importando()">
+          @if (importando()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          @else { <i class="bi bi-file-earmark-arrow-up me-1"></i> }
+          Importar NF-e XML
+          <input type="file" accept=".xml" class="d-none" (change)="importarXml($event)" />
+        </label>
+        <button class="btn btn-primary btn-sm" (click)="openCreate()">
+          <i class="bi bi-plus-lg me-1"></i>Nova Nota Fiscal
+        </button>
+      }
     </div>
   </div>
 

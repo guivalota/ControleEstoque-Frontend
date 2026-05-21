@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TitleCasePipe } from '@angular/common';
 import { Modal } from 'bootstrap';
 import { UserService } from '../../core/services/user.service';
+import { PermissaoService } from '../../core/services/permissao.service';
 import { User, CreateUserRequest, UpdateUserRequest, UserRole } from '../../core/models/user.model';
 
 @Component({
@@ -14,6 +15,7 @@ import { User, CreateUserRequest, UpdateUserRequest, UserRole } from '../../core
 export class UsersComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   userService = inject(UserService);
+  permissao = inject(PermissaoService);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
   private modal!: Modal;

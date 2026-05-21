@@ -21,7 +21,7 @@
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-body">
         <div class="row g-3 align-items-end">
-          <div class="col-md-6">
+          <div class="col-md-4">
             <label class="form-label fw-medium">Selecione o Produto</label>
             <select class="form-select"
               [value]="produtoSelecionadoId()"
@@ -31,6 +31,18 @@
                 <option [value]="p.id">{{ p.nome }} — {{ p.sku }}</option>
               }
             </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-medium">Data início</label>
+            <input type="date" class="form-control"
+              [value]="filterDataInicio()"
+              (change)="filterDataInicio.set($any($event.target).value)" />
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-medium">Data fim</label>
+            <input type="date" class="form-control"
+              [value]="filterDataFim()"
+              (change)="filterDataFim.set($any($event.target).value)" />
           </div>
           <div class="col-auto">
             <button class="btn btn-primary" (click)="conferir()" [disabled]="!produtoSelecionadoId() || loading()">
@@ -83,6 +95,20 @@
         <div class="col-sm-6 col-xl-3">
           <div class="card border-0 shadow-sm h-100">
             <div class="card-body text-center">
+              <div class="text-muted small mb-1">Entradas / Saídas</div>
+              <div class="fs-4 fw-bold">
+                <span class="text-success">+{{ r.totalEntradas }}</span>
+                <span class="text-muted mx-1">/</span>
+                <span class="text-danger">-{{ r.totalSaidas }}</span>
+              </div>
+              <div class="text-muted small">unidades no período</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
               <div class="text-muted small mb-1">Preço Médio</div>
               <div class="fs-4 fw-bold">R$ {{ r.precoMedio | number:'1.2-2' }}</div>
               <div class="text-muted small">por unidade</div>
@@ -93,8 +119,23 @@
         <div class="col-sm-6 col-xl-3">
           <div class="card border-0 shadow-sm h-100">
             <div class="card-body text-center">
-              <div class="text-muted small mb-1">Valor Total em Estoque</div>
-              <div class="fs-4 fw-bold text-success">R$ {{ r.valorTotalEstoque | number:'1.2-2' }}</div>
+              <div class="text-muted small mb-1">Valor Total Movimentado</div>
+              <div class="fs-4 fw-bold text-primary">R$ {{ r.valorTotalMovimentado | number:'1.2-2' }}</div>
+              <div class="text-muted small">Estoque: R$ {{ r.valorTotalEstoque | number:'1.2-2' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <div class="text-muted small mb-1">Primeira Movimentação</div>
+              @if (r.primeiraMovimentacao) {
+                <div class="fw-semibold">{{ r.primeiraMovimentacao | date:'dd/MM/yyyy' }}</div>
+                <div class="text-muted small">{{ r.primeiraMovimentacao | date:'HH:mm' }}</div>
+              } @else {
+                <div class="text-muted">—</div>
+              }
             </div>
           </div>
         </div>
@@ -103,8 +144,12 @@
           <div class="card border-0 shadow-sm h-100">
             <div class="card-body text-center">
               <div class="text-muted small mb-1">Última Movimentação</div>
-              <div class="fw-semibold">{{ r.ultimaMovimentacao | date:'dd/MM/yyyy' }}</div>
-              <div class="text-muted small">{{ r.ultimaMovimentacao | date:'HH:mm' }}</div>
+              @if (r.ultimaMovimentacao) {
+                <div class="fw-semibold">{{ r.ultimaMovimentacao | date:'dd/MM/yyyy' }}</div>
+                <div class="text-muted small">{{ r.ultimaMovimentacao | date:'HH:mm' }}</div>
+              } @else {
+                <div class="text-muted">—</div>
+              }
             </div>
           </div>
         </div>
@@ -139,7 +184,7 @@
                     <tr>
                       <td class="ps-3 text-muted small">{{ m.id }}</td>
                       <td>
-                        <span class="badge" [class]="tipoBadge(m.tipo)">{{ m.tipo | titlecase }}</span>
+                        <span class="badge" [class]="tipoBadge(m.tipo)">{{ tipoLabel(m.tipo) }}</span>
                       </td>
                       <td class="fw-medium">{{ m.quantidade }}</td>
                       <td class="text-muted small">R$ {{ (m.valorUnitario ?? 0) | number:'1.2-2' }}</td>
@@ -172,6 +217,50 @@
 
   <!-- ===== MODO GERAL ===== -->
   @if (modoGeral()) {
+    <!-- Filtros geral -->
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body py-3">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-2">
+            <label class="form-label form-label-sm fw-medium mb-1">Data fim</label>
+            <input type="date" class="form-control form-control-sm"
+              [value]="filterGeralDataFim()"
+              (change)="filterGeralDataFim.set($any($event.target).value)" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label form-label-sm fw-medium mb-1">Categoria</label>
+            <select class="form-select form-select-sm"
+              [value]="filterGeralCategoriaId()"
+              (change)="filterGeralCategoriaId.set($any($event.target).value ? +$any($event.target).value : null)">
+              <option [value]="null">Todas as categorias</option>
+              @for (c of categorias(); track c.id) {
+                <option [value]="c.id">{{ c.nome }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-auto d-flex gap-3 align-items-center">
+            <div class="form-check form-check-sm mb-0">
+              <input class="form-check-input" type="checkbox" id="apenasComSaldo"
+                [checked]="filterGeralApenasComSaldo()"
+                (change)="filterGeralApenasComSaldo.set($any($event.target).checked)" />
+              <label class="form-check-label small" for="apenasComSaldo">Apenas com saldo</label>
+            </div>
+            <div class="form-check form-check-sm mb-0">
+              <input class="form-check-input" type="checkbox" id="abaixoDoMinimo"
+                [checked]="filterGeralAbaixoDoMinimo()"
+                (change)="filterGeralAbaixoDoMinimo.set($any($event.target).checked)" />
+              <label class="form-check-label small" for="abaixoDoMinimo">Abaixo do mínimo</label>
+            </div>
+          </div>
+          <div class="col-auto d-flex gap-2">
+            <button class="btn btn-primary btn-sm" (click)="carregarVisaoGeral(1)" [disabled]="loadingGeral()">
+              <i class="bi bi-funnel me-1"></i>Filtrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="card border-0 shadow-sm">
       <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
         <h6 class="mb-0 fw-semibold">Saldo de Estoque — Todos os Produtos</h6>
@@ -198,7 +287,10 @@
                   <th class="ps-3">Produto</th>
                   <th>SKU</th>
                   <th>Categoria</th>
+                  <th class="text-end">Entradas</th>
+                  <th class="text-end">Saídas</th>
                   <th class="text-center">Saldo</th>
+                  <th class="text-end">Valor Estoque</th>
                   <th class="text-center">Status</th>
                 </tr>
               </thead>
@@ -208,24 +300,46 @@
                     <td class="ps-3 fw-medium">{{ item.nome }}</td>
                     <td class="font-monospace text-muted small">{{ item.sku }}</td>
                     <td class="text-muted small">{{ item.categoria }}</td>
-                    <td class="text-center fw-bold" [class]="saldoClass(item.saldo)">{{ item.saldo }}</td>
+                    <td class="text-end text-success small">+{{ item.totalEntradas }}</td>
+                    <td class="text-end text-danger small">-{{ item.totalSaidas }}</td>
+                    <td class="text-center fw-bold" [class]="saldoClass(item.saldoAtual)">{{ item.saldoAtual }}</td>
+                    <td class="text-end text-muted small">R$ {{ item.valorTotalEstoque | number:'1.2-2' }}</td>
                     <td class="text-center">
-                      <span class="badge" [class]="saldoBadgeClass(item.saldo)">
-                        @if (item.saldo <= 0) { Sem estoque }
-                        @else if (item.saldo <= 10) { Estoque baixo }
+                      <span class="badge" [class]="saldoBadgeClass(item.saldoAtual)">
+                        @if (item.saldoAtual <= 0) { Sem estoque }
+                        @else if (item.saldoAtual <= 10) { Estoque baixo }
                         @else { Normal }
                       </span>
                     </td>
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="5" class="text-center text-muted py-4">
+                    <td colspan="8" class="text-center text-muted py-4">
                       <i class="bi bi-inbox me-2"></i>Nenhum produto encontrado
                     </td>
                   </tr>
                 }
               </tbody>
             </table>
+          </div>
+
+          <!-- Paginação -->
+          <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+            <span class="text-muted small">
+              Página {{ geralPage() }} &mdash; {{ visaoGeral().length }} produto(s)
+            </span>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-outline-secondary"
+                [disabled]="geralPage() === 1 || loadingGeral()"
+                (click)="carregarVisaoGeral(geralPage() - 1)">
+                <i class="bi bi-chevron-left"></i> Anterior
+              </button>
+              <button class="btn btn-sm btn-outline-secondary"
+                [disabled]="!geralHasNextPage() || loadingGeral()"
+                (click)="carregarVisaoGeral(geralPage() + 1)">
+                Próxima <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
           </div>
         }
       </div>
