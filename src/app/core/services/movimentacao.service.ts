@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { tap } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { Movimentacao, CreateMovimentacaoRequest, UpdateMovimentacaoRequest, SaldoEstoque } from '../models/movimentacao.model';
 
@@ -11,6 +11,18 @@ export interface MovimentacaoFiltros {
   ProdutoId?: number;
   Page?: number;
   PageSize?: number;
+}
+
+interface PaginadoResponse<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface MovimentacaoPage {
+  items: Movimentacao[];
+  total: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -31,9 +43,14 @@ export class MovimentacaoService {
     if (filtros?.Page != null) params = params.set('Page', filtros.Page);
     if (filtros?.PageSize != null) params = params.set('PageSize', filtros.PageSize);
 
-    return this.http.get<Movimentacao[]>(this.url, { params }).pipe(
-      tap(data => {
-        this.movimentacoes.set(data);
+    return this.http.get<Movimentacao[] | PaginadoResponse<Movimentacao>>(this.url, { params }).pipe(
+      map(data => {
+        const items = Array.isArray(data) ? data : data.items ?? [];
+        const total = Array.isArray(data) ? data.length : data.total ?? 0;
+        return { items, total } as MovimentacaoPage;
+      }),
+      tap(({ items }) => {
+        this.movimentacoes.set(items);
         this.loading.set(false);
       })
     );

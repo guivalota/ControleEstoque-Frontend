@@ -44,6 +44,7 @@ export class ConferenciaComponent implements OnInit {
   readonly geralPageSize = 50;
   geralPage = signal(1);
   geralHasNextPage = signal(false);
+  geralTotal = signal(0);
 
   ngOnInit() {
     this.produtoService.getAll().subscribe();
@@ -68,10 +69,11 @@ export class ConferenciaComponent implements OnInit {
       Page: page,
       PageSize: this.geralPageSize
     }).subscribe({
-      next: results => {
-        this.visaoGeral.set(results.sort((a, b) => a.saldoAtual - b.saldoAtual || a.nome.localeCompare(b.nome)));
+      next: result => {
+        this.visaoGeral.set(result.items.sort((a, b) => a.saldoAtual - b.saldoAtual || a.nome.localeCompare(b.nome)));
         this.geralPage.set(page);
-        this.geralHasNextPage.set(results.length === this.geralPageSize);
+        this.geralTotal.set(result.total);
+        this.geralHasNextPage.set((page * this.geralPageSize) < result.total);
         this.loadingGeral.set(false);
       },
       error: () => {

@@ -97,10 +97,13 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
     };
   }
 
+  totalItems = signal(0);
+
   carregarPagina(page: number) {
-    this.movimentacaoService.getAll(this.buildFiltros(page)).subscribe(data => {
+    this.movimentacaoService.getAll(this.buildFiltros(page)).subscribe(result => {
       this.currentPage.set(page);
-      this.hasNextPage.set(data.length === this.pageSize);
+      this.totalItems.set(result.total);
+      this.hasNextPage.set((page * this.pageSize) < result.total);
     });
   }
 

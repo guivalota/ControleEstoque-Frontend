@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { ConferenciaResult } from '../models/conferencia.model';
 
@@ -15,6 +16,18 @@ export interface ConferenciaGeralFiltros {
   AbaixoDoMinimo?: boolean;
   Page?: number;
   PageSize?: number;
+}
+
+interface PaginadoResponse<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface ConferenciaPage {
+  items: ConferenciaResult[];
+  total: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -37,6 +50,13 @@ export class ConferenciaService {
     if (filtros?.AbaixoDoMinimo != null) params = params.set('AbaixoDoMinimo', String(filtros.AbaixoDoMinimo));
     if (filtros?.Page != null) params = params.set('Page', filtros.Page);
     if (filtros?.PageSize != null) params = params.set('PageSize', filtros.PageSize);
-    return this.http.get<ConferenciaResult[]>(this.baseUrl, { params });
+
+    return this.http.get<ConferenciaResult[] | PaginadoResponse<ConferenciaResult>>(this.baseUrl, { params }).pipe(
+      map(data => {
+        const items = Array.isArray(data) ? data : data.items ?? [];
+        const total = Array.isArray(data) ? data.length : data.total ?? 0;
+        return { items, total } as ConferenciaPage;
+      })
+    );
   }
 }
