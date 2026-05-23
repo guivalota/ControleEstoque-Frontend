@@ -1,6 +1,8 @@
-import { Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { PermissaoService } from '../../core/services/permissao.service';
+import { Offcanvas } from 'bootstrap';
+import { filter, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-sidebar',
@@ -9,6 +11,21 @@ import { PermissaoService } from '../../core/services/permissao.service';
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss'
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit, OnDestroy {
   permissao = inject(PermissaoService);
+  private router = inject(Router);
+  private routerSub?: Subscription;
+
+  ngOnInit() {
+    this.routerSub = this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd))
+      .subscribe(() => {
+        const el = document.getElementById('sidebarOffcanvas');
+        if (el) Offcanvas.getInstance(el)?.hide();
+      });
+  }
+
+  ngOnDestroy() {
+    this.routerSub?.unsubscribe();
+  }
 }
