@@ -23,3 +23,9 @@ export interface UpdateUserRequest {
   role?: UserRole | null;
   ativo?: boolean | null;
 }
+
+export interface UpdateMyProfileRequest {
+  nome?: string | null;
+  email?: string | null;
+  senha?: string | null;
+}

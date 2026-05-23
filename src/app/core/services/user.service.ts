@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, tap, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { User, CreateUserRequest, UpdateUserRequest } from '../models/user.model';
+import { User, CreateUserRequest, UpdateUserRequest, UpdateMyProfileRequest } from '../models/user.model';
 
 interface PagedResult<T> { items: T[]; total: number; }
 
@@ -46,5 +46,9 @@ export class UserService {
     return this.http.delete<void>(`${this.url}/${id}`).pipe(
       tap(() => this.users.update(list => list.filter(u => u.id !== id)))
     );
+  }
+
+  updateMe(req: UpdateMyProfileRequest) {
+    return this.http.put<void>(`${environment.apiUrl}/v1/users/me`, req);
   }
 }

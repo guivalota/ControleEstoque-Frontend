@@ -60,6 +60,11 @@ export class AuthService {
     return localStorage.getItem(this.TOKEN_KEY);
   }
 
+  patchCurrentUser(patch: { nome?: string; email?: string }) {
+    const current = this._currentUser();
+    if (current) this._currentUser.set({ ...current, ...patch });
+  }
+
   private decodeToken(token: string | null): JwtPayload | null {
     if (!token) return null;
     try {
