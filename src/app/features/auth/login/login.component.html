@@ -1,4 +1,13 @@
 <div class="login-page d-flex align-items-center justify-content-center bg-body-tertiary">
+  <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-3"
+    (click)="theme.toggle()"
+    [title]="theme.isDark() ? 'Mudar para tema claro' : 'Mudar para tema escuro'">
+    @if (theme.isDark()) {
+      <i class="bi bi-sun-fill"></i>
+    } @else {
+      <i class="bi bi-moon-stars-fill"></i>
+    }
+  </button>
   <div class="card shadow-sm login-card">
     <div class="card-body p-4">
       <div class="text-center mb-4">

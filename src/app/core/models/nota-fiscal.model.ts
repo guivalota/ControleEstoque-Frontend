@@ -35,7 +35,3 @@ export interface CreateNotaFiscalRequest {
   itens: ItemNotaFiscalRequest[];
 }
 
-export interface ApiResult<T> {
-  value: T[];
-  Count: number;
-}

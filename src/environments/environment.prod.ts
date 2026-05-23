@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'http://localhost:5062'
+  apiUrl: 'https://controle-estoque-dotnet-production.up.railway.app/v1'
 };

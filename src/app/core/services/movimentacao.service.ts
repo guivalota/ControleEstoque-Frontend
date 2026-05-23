@@ -13,7 +13,7 @@ export interface MovimentacaoFiltros {
   PageSize?: number;
 }
 
-interface PaginadoResponse<T> {
+interface PagedResult<T> {
   items: T[];
   page: number;
   pageSize: number;
@@ -43,12 +43,8 @@ export class MovimentacaoService {
     if (filtros?.Page != null) params = params.set('Page', filtros.Page);
     if (filtros?.PageSize != null) params = params.set('PageSize', filtros.PageSize);
 
-    return this.http.get<Movimentacao[] | PaginadoResponse<Movimentacao>>(this.url, { params }).pipe(
-      map(data => {
-        const items = Array.isArray(data) ? data : data.items ?? [];
-        const total = Array.isArray(data) ? data.length : data.total ?? 0;
-        return { items, total } as MovimentacaoPage;
-      }),
+    return this.http.get<PagedResult<Movimentacao>>(this.url, { params }).pipe(
+      map(data => ({ items: data.items, total: data.total } as MovimentacaoPage)),
       tap(({ items }) => {
         this.movimentacoes.set(items);
         this.loading.set(false);

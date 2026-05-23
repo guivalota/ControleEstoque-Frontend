@@ -34,6 +34,10 @@ export class AuthService {
   }
 
   logout() {
+    const refreshToken = localStorage.getItem(this.REFRESH_KEY);
+    if (refreshToken) {
+      this.http.post(`${environment.apiUrl}/auth/logout`, { refreshToken }).subscribe({ error: () => {} });
+    }
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_KEY);
     this._currentUser.set(null);

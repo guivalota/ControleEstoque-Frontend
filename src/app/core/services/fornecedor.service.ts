@@ -1,8 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { tap, switchMap } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { map, tap, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Fornecedor, CreateFornecedorRequest, UpdateFornecedorRequest } from '../models/fornecedor.model';
+
+interface PagedResult<T> { items: T[]; total: number; }
 
 @Injectable({ providedIn: 'root' })
 export class FornecedorService {
@@ -14,7 +16,9 @@ export class FornecedorService {
 
   getAll() {
     this.loading.set(true);
-    return this.http.get<Fornecedor[]>(this.url).pipe(
+    const params = new HttpParams().set('pageSize', 1000);
+    return this.http.get<PagedResult<Fornecedor>>(this.url, { params }).pipe(
+      map(res => res.items),
       tap(data => {
         this.fornecedores.set(data);
         this.loading.set(false);
