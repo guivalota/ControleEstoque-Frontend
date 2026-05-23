@@ -1,11 +1,13 @@
 .sidebar {
+  --bs-offcanvas-bg: #1e293b;
+  --bs-offcanvas-width: 280px;
   width: 240px;
   min-width: 240px;
-  min-height: 100vh;
   background-color: #1e293b;
   color: #cbd5e1;
 
   [data-bs-theme="dark"] & {
+    --bs-offcanvas-bg: #0f172a;
     background-color: #0f172a;
     border-right: 1px solid #1e293b;
   }

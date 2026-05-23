@@ -1,5 +1,24 @@
-<nav class="sidebar d-flex flex-column p-3">
-  <div class="sidebar-brand mb-4 px-2">
+<nav class="offcanvas-lg offcanvas-start sidebar d-flex flex-column p-3"
+     id="sidebarOffcanvas"
+     tabindex="-1"
+     aria-labelledby="sidebarBrandLabel">
+
+  <!-- Mobile: brand + botão fechar -->
+  <div class="d-flex justify-content-between align-items-center mb-4 px-2 d-lg-none">
+    <div class="sidebar-brand mb-0 border-0 pb-0" id="sidebarBrandLabel">
+      <i class="bi bi-box-seam-fill me-2"></i>
+      <span class="fw-semibold">Controle de Estoque</span>
+    </div>
+    <button type="button"
+      class="btn-close btn-close-white"
+      data-bs-dismiss="offcanvas"
+      data-bs-target="#sidebarOffcanvas"
+      aria-label="Fechar menu">
+    </button>
+  </div>
+
+  <!-- Desktop: brand -->
+  <div class="sidebar-brand mb-4 px-2 d-none d-lg-flex">
     <i class="bi bi-box-seam-fill me-2"></i>
     <span class="fw-semibold">Controle de Estoque</span>
   </div>

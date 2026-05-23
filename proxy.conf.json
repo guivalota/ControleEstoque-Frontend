@@ -1,7 +1,7 @@
 {
   "/api": {
-    "target": "https://controle-estoque-dotnet-production.up.railway.app",
-    "secure": true,
+    "target": "http://localhost:5062",
+    "secure": false,
     "changeOrigin": true,
     "pathRewrite": {
       "^/api": ""
