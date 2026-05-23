@@ -9,7 +9,7 @@ interface PagedResult<T> { items: T[]; total: number; }
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private http = inject(HttpClient);
-  private url = `${environment.apiUrl}/users`;
+  private url = `${environment.apiUrl}/v1/users`;
 
   users = signal<User[]>([]);
   loading = signal(false);

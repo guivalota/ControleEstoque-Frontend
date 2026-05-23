@@ -10,7 +10,7 @@ interface PagedResult<T> { items: T[]; total: number; }
 @Injectable({ providedIn: 'root' })
 export class NotaFiscalService {
   private http = inject(HttpClient);
-  private url = `${environment.apiUrl}/notas-fiscais`;
+  private url = `${environment.apiUrl}/v1/notas-fiscais`;
 
   notasFiscais = signal<NotaFiscal[]>([]);
   loading = signal(false);
@@ -33,7 +33,7 @@ export class NotaFiscalService {
 
   getMovimentacoes(notaFiscalId: number) {
     return this.http.get<Movimentacao[]>(
-      `${environment.apiUrl}/movimentacoes/nota-fiscal/${notaFiscalId}`
+      `${environment.apiUrl}/v1/movimentacoes/nota-fiscal/${notaFiscalId}`
     );
   }
 

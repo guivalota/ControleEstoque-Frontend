@@ -20,7 +20,7 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run build -- --base-href=/ControleEstoque-Frontend/
+      - run: npm run build
 
       - name: Fix SPA routing (404 → index.html)
         run: cp dist/controle-estoque/browser/index.html dist/controle-estoque/browser/404.html

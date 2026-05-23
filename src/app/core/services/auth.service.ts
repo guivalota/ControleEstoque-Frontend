@@ -24,7 +24,7 @@ export class AuthService {
   });
 
   login(req: LoginRequest) {
-    return this.http.post<TokenResponse>(`${environment.apiUrl}/auth/login`, req).pipe(
+    return this.http.post<TokenResponse>(`${environment.apiUrl}/v1/auth/login`, req).pipe(
       tap(res => {
         localStorage.setItem(this.TOKEN_KEY, res.accessToken);
         localStorage.setItem(this.REFRESH_KEY, res.refreshToken);
@@ -36,7 +36,7 @@ export class AuthService {
   logout() {
     const refreshToken = localStorage.getItem(this.REFRESH_KEY);
     if (refreshToken) {
-      this.http.post(`${environment.apiUrl}/auth/logout`, { refreshToken }).subscribe({ error: () => {} });
+      this.http.post(`${environment.apiUrl}/v1/auth/logout`, { refreshToken }).subscribe({ error: () => {} });
     }
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_KEY);
@@ -47,7 +47,7 @@ export class AuthService {
   refreshToken() {
     const refreshToken = localStorage.getItem(this.REFRESH_KEY);
     if (!refreshToken) return null;
-    return this.http.post<TokenResponse>(`${environment.apiUrl}/auth/refresh`, { refreshToken }).pipe(
+    return this.http.post<TokenResponse>(`${environment.apiUrl}/v1/auth/refresh`, { refreshToken }).pipe(
       tap(res => {
         localStorage.setItem(this.TOKEN_KEY, res.accessToken);
         localStorage.setItem(this.REFRESH_KEY, res.refreshToken);

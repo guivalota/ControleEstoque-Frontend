@@ -9,6 +9,6 @@ export class NfeService {
   importar(arquivo: File) {
     const form = new FormData();
     form.append('arquivo', arquivo);
-    return this.http.post<any>(`${environment.apiUrl}/nfe/importar`, form);
+    return this.http.post<any>(`${environment.apiUrl}/v1/nfe/importar`, form);
   }
 }

@@ -28,7 +28,7 @@ export interface MovimentacaoPage {
 @Injectable({ providedIn: 'root' })
 export class MovimentacaoService {
   private http = inject(HttpClient);
-  private url = `${environment.apiUrl}/movimentacoes`;
+  private url = `${environment.apiUrl}/v1/movimentacoes`;
 
   movimentacoes = signal<Movimentacao[]>([]);
   loading = signal(false);

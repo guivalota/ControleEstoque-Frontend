@@ -33,7 +33,7 @@ export interface ConferenciaPage {
 @Injectable({ providedIn: 'root' })
 export class ConferenciaService {
   private http = inject(HttpClient);
-  private baseUrl = `${environment.apiUrl}/conferencia`;
+  private baseUrl = `${environment.apiUrl}/v1/conferencia`;
 
   conferir(produtoId: number, filtros?: ConferenciaFiltros) {
     let params = new HttpParams();

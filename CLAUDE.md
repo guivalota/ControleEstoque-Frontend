@@ -15,7 +15,8 @@ ng lint            # ESLint
 
 API runs at `https://controle-estoque-dotnet-production.up.railway.app` (production).  
 Dev proxy in `proxy.conf.json` forwards `/api/*` → Railway (strips `/api`, keeps `/v1/...`).  
-`environment.ts` uses `apiUrl: '/api/v1'` (dev via proxy) · `environment.prod.ts` uses the full Railway URL.
+`environment.ts` uses `apiUrl: '/api'` (dev via proxy) · `environment.prod.ts` uses the Railway base URL (no `/v1`).  
+Each service appends `/v1/` explicitly: `${environment.apiUrl}/v1/categorias`, etc.
 
 **Test credentials** — `POST /v1/auth/login` with body `{ "email": "admin@example.com", "senha": "Admin@123456" }`.  
 Note: the login field is `senha`, not `password`. Response: `{ accessToken, refreshToken, expiresIn }`.

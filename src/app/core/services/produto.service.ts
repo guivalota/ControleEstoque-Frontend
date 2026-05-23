@@ -9,7 +9,7 @@ interface PagedResult<T> { items: T[]; total: number; }
 @Injectable({ providedIn: 'root' })
 export class ProdutoService {
   private http = inject(HttpClient);
-  private url = `${environment.apiUrl}/produtos`;
+  private url = `${environment.apiUrl}/v1/produtos`;
 
   produtos = signal<Produto[]>([]);
   loading = signal(false);
