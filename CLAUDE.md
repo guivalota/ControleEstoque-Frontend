@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Branches
+
+| Branch | Função |
+|---|---|
+| `master` | **Produção** — protegida; merge só via PR com 1 aprovação |
+| `develop` | Desenvolvimento — branch base para novas features/fixes |
+
+**Fluxo:** trabalhe em `develop` (ou feature branches) → abra PR para `master` → aprovação → merge → deploy automático no GitHub Pages.
+
 ## Commands
 
 ```bash
