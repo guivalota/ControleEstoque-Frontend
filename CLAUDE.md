@@ -27,7 +27,7 @@ Dev proxy in `proxy.conf.json` forwards `/api/*` → Railway (strips `/api`, kee
 `environment.ts` uses `apiUrl: '/api'` (dev via proxy) · `environment.prod.ts` uses the Railway base URL (no `/v1`).  
 Each service appends `/v1/` explicitly: `${environment.apiUrl}/v1/categorias`, etc.
 
-**Test credentials** — `POST /v1/auth/login` with body `{ "email": "admin@example.com", "senha": "Admin@123456" }`.  
+**Test credentials** — veja `.env.local` (não versionado). Endpoint: `POST /v1/auth/login` com body `{ "email": "...", "senha": "..." }`.  
 Note: the login field is `senha`, not `password`. Response: `{ accessToken, refreshToken, expiresIn }`.
 
 ### API response format
