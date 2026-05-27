@@ -13,6 +13,15 @@ export interface TokenResponse {
   expiresIn?: number;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  novaSenha: string;
+}
+
 export interface JwtPayload {
   sub: string;
   email: string;

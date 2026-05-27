@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { LoginRequest, TokenResponse, JwtPayload } from '../models/auth.model';
+import { LoginRequest, TokenResponse, JwtPayload, ForgotPasswordRequest, ResetPasswordRequest } from '../models/auth.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -58,6 +58,14 @@ export class AuthService {
 
   getToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  forgotPassword(req: ForgotPasswordRequest) {
+    return this.http.post(`${environment.apiUrl}/v1/auth/forgot-password`, req);
+  }
+
+  resetPassword(req: ResetPasswordRequest) {
+    return this.http.post(`${environment.apiUrl}/v1/auth/reset-password`, req);
   }
 
   patchCurrentUser(patch: { nome?: string; email?: string }) {
