@@ -6,7 +6,22 @@
       "Bash(ng new *)",
       "Bash(npm install *)",
       "Bash(npm run *)",
-      "PowerShell(Get-Process *)"
+      "PowerShell(Get-Process *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(curl *)",
+      "Bash(npx ng *)",
+      "Bash(npx tsc *)",
+      "Bash(npx playwright *)",
+      "Bash(node *)",
+      "Bash(git push *)",
+      "Bash(git checkout *)",
+      "Bash(gh run *)",
+      "Bash(gh pr *)",
+      "Bash(npm start *)",
+      "Bash(cat)",
+      "Bash(Select-String -Pattern *)",
+      "Bash(Select-Object *)"
     ]
   }
 }
