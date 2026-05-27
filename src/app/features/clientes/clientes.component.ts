@@ -4,6 +4,7 @@ import { DatePipe } from '@angular/common';
 import { Modal } from 'bootstrap';
 import { ClienteService } from '../../core/services/cliente.service';
 import { PermissaoService } from '../../core/services/permissao.service';
+import { CepService } from '../../core/services/cep.service';
 import { Cliente, CreateClienteRequest, UpdateClienteRequest } from '../../core/models/cliente.model';
 
 @Component({
@@ -14,6 +15,7 @@ import { Cliente, CreateClienteRequest, UpdateClienteRequest } from '../../core/
 })
 export class ClientesComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
+  private cepService = inject(CepService);
   clienteService = inject(ClienteService);
   permissao = inject(PermissaoService);
 
@@ -26,12 +28,15 @@ export class ClientesComponent implements OnInit, OnDestroy {
   editingId = signal<number | null>(null);
   saving = signal(false);
   saveError = signal('');
+  buscandoCep = signal(false);
+  cepMsg = signal('');
 
   form = this.fb.group({
     cpfCnpj: ['', [Validators.required, Validators.pattern(/^(\d{11}|\d{14})$/)]],
     nome: ['', [Validators.required, Validators.maxLength(255)]],
     email: ['' as string | null, [Validators.email, Validators.maxLength(255)]],
     telefone: ['' as string | null, Validators.maxLength(20)],
+    cep: ['' as string | null],
     logradouro: ['' as string | null, Validators.maxLength(255)],
     municipio: ['' as string | null, Validators.maxLength(100)],
     uf: ['' as string | null, Validators.maxLength(2)],
@@ -51,6 +56,7 @@ export class ClientesComponent implements OnInit, OnDestroy {
     this.form.reset({ ativo: true });
     this.f('cpfCnpj').enable();
     this.saveError.set('');
+    this.cepMsg.set('');
     this.getModal().show();
   }
 
@@ -59,7 +65,39 @@ export class ClientesComponent implements OnInit, OnDestroy {
     this.form.patchValue(c);
     this.f('cpfCnpj').disable();
     this.saveError.set('');
+    this.cepMsg.set('');
     this.getModal().show();
+  }
+
+  buscarCep() {
+    const cep = this.f('cep').value?.replace(/\D/g, '') ?? '';
+    if (cep.length !== 8) { this.cepMsg.set('CEP deve ter 8 dígitos.'); return; }
+    this.buscandoCep.set(true);
+    this.cepMsg.set('');
+    this.cepService.lookup(cep).subscribe({
+      next: (res) => {
+        if (res.erro) {
+          this.cepMsg.set('CEP não encontrado.');
+        } else {
+          this.form.patchValue({
+            logradouro: res.logradouro ?? null,
+            municipio: res.municipio ?? null,
+            uf: res.uf ?? null
+          });
+          this.cepMsg.set('Endereço preenchido.');
+        }
+        this.buscandoCep.set(false);
+      },
+      error: () => {
+        this.cepMsg.set('CEP não encontrado.');
+        this.buscandoCep.set(false);
+      }
+    });
+  }
+
+  onCepInput() {
+    const cep = this.f('cep').value?.replace(/\D/g, '') ?? '';
+    if (cep.length === 8) this.buscarCep();
   }
 
   save() {
