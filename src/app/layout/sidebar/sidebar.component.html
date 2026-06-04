@@ -76,4 +76,10 @@
       </a>
     </li>
   </ul>
+
+  <div class="mt-auto pt-3 px-2" style="border-top: 1px solid rgba(255,255,255,0.08)">
+    @if (version.versao()) {
+      <small style="color:#475569; font-size:.7rem;">{{ version.versao() }}</small>
+    }
+  </div>
 </nav>
