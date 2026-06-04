@@ -70,6 +70,11 @@ export const routes: Routes = [
         path: 'admin/audit-logs',
         canActivate: [adminGuard],
         loadComponent: () => import('./features/audit-logs/audit-logs.component').then(m => m.AuditLogsComponent)
+      },
+      {
+        path: 'admin/impressoes',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/impressoes/impressoes.component').then(m => m.ImpressoesComponent)
       }
     ]
   },

@@ -4,6 +4,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { PedidoCompraService } from '../../../core/services/pedido-compra.service';
+import { ImpressaoService } from '../../../core/services/impressao.service';
 import { ProdutoService } from '../../../core/services/produto.service';
 import { UserService } from '../../../core/services/user.service';
 import { PermissaoService } from '../../../core/services/permissao.service';
@@ -18,6 +19,7 @@ import { PedidoCompra, PedidoCompraItem } from '../../../core/models/pedido-comp
 export class PedidoDetalheComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private pedidoService = inject(PedidoCompraService);
+  private impressaoService = inject(ImpressaoService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   produtoService = inject(ProdutoService);
@@ -34,6 +36,8 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   erro = signal('');
   saving = signal(false);
   saveError = signal('');
+  imprimindo = signal(false);
+  impressaoErro = signal('');
 
   produtos = this.produtoService.produtos;
   usuarios = this.userService.users;
@@ -157,6 +161,18 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
       aberto: 'bg-primary', atendido: 'bg-success', cancelado: 'bg-secondary'
     };
     return map[status] ?? 'bg-secondary';
+  }
+
+  imprimir() {
+    this.imprimindo.set(true);
+    this.impressaoErro.set('');
+    this.impressaoService.imprimirPedido(this.pedidoId).subscribe({
+      next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindo.set(false); },
+      error: err => {
+        this.impressaoErro.set(err.error?.message ?? 'Erro ao gerar PDF.');
+        this.imprimindo.set(false);
+      }
+    });
   }
 
   voltar() { this.router.navigate(['/pedidos-compra']); }
