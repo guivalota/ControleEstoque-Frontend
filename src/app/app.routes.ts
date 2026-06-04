@@ -57,6 +57,11 @@ export const routes: Routes = [
       {
         path: 'conferencia',
         loadComponent: () => import('./features/conferencia/conferencia.component').then(m => m.ConferenciaComponent)
+      },
+      {
+        path: 'admin/audit-logs',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/audit-logs/audit-logs.component').then(m => m.AuditLogsComponent)
       }
     ]
   },

@@ -26,7 +26,7 @@ export class UserService {
     );
   }
 
-  getById(id: number) {
+  getById(id: string) {
     return this.http.get<User>(`${this.url}/${id}`);
   }
 
@@ -36,13 +36,13 @@ export class UserService {
     );
   }
 
-  update(id: number, req: UpdateUserRequest) {
+  update(id: string, req: UpdateUserRequest) {
     return this.http.put<User>(`${this.url}/${id}`, req).pipe(
       switchMap(() => this.getAll())
     );
   }
 
-  delete(id: number) {
+  delete(id: string) {
     return this.http.delete<void>(`${this.url}/${id}`).pipe(
       tap(() => this.users.update(list => list.filter(u => u.id !== id)))
     );

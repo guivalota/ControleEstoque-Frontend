@@ -15,7 +15,7 @@ export interface Movimentacao {
   observacao?: string;
   motivoAjuste?: MotivoAjuste;
   criadoEm: string;
-  usuarioId?: number;
+  usuarioId?: string;
 }
 
 export interface CreateMovimentacaoRequest {
