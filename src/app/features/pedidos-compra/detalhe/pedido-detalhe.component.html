@@ -10,7 +10,8 @@
     </div>
   } @else if (erro()) {
     <div class="alert alert-danger">{{ erro() }}</div>
-  } @else if (pedido(); as p) {
+  } @else {
+    @if (pedido(); as p) {
 
     <!-- Cabeçalho -->
     <div class="card border-0 shadow-sm mb-3">
@@ -117,6 +118,7 @@
         </div>
       </div>
     </div>
+    }
   }
 </div>
 
