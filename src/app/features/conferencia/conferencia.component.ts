@@ -26,6 +26,7 @@ export class ConferenciaComponent implements OnInit {
   produtoSelecionadoId = signal<number | null>(null);
   filterDataInicio = signal('');
   filterDataFim = signal('');
+  filterIncluirConsumoInterno = signal(false);
   resultado = signal<ConferenciaResult | null>(null);
   loading = signal(false);
   erro = signal('');
@@ -41,6 +42,7 @@ export class ConferenciaComponent implements OnInit {
   filterGeralCategoriaId = signal<number | null>(null);
   filterGeralApenasComSaldo = signal(false);
   filterGeralAbaixoDoMinimo = signal(false);
+  filterGeralIncluirConsumoInterno = signal(false);
   readonly geralPageSize = 50;
   geralPage = signal(1);
   geralHasNextPage = signal(false);
@@ -66,6 +68,7 @@ export class ConferenciaComponent implements OnInit {
       CategoriaId: this.filterGeralCategoriaId() ?? undefined,
       ApenasComSaldo: this.filterGeralApenasComSaldo() || undefined,
       AbaixoDoMinimo: this.filterGeralAbaixoDoMinimo() || undefined,
+      IncluirConsumoInterno: this.filterGeralIncluirConsumoInterno() || undefined,
       Page: page,
       PageSize: this.geralPageSize
     }).subscribe({
@@ -94,7 +97,8 @@ export class ConferenciaComponent implements OnInit {
 
     this.conferenciaService.conferir(id, {
       DataInicio: this.filterDataInicio() || undefined,
-      DataFim: this.filterDataFim() || undefined
+      DataFim: this.filterDataFim() || undefined,
+      IncluirConsumoInterno: this.filterIncluirConsumoInterno() || undefined
     }).subscribe({
       next: res => { this.resultado.set(res); this.loading.set(false); },
       error: err => {

@@ -109,17 +109,41 @@
               <input type="text" class="form-control" formControlName="telefone" maxlength="20" />
             </div>
 
-            <div class="col-md-6">
+            <div class="col-12"><hr class="my-0" /><small class="text-muted">Endereço</small></div>
+
+            <div class="col-md-3">
+              <label class="form-label fw-medium">CEP</label>
+              <div class="input-group">
+                <input type="text" class="form-control" formControlName="cep"
+                  placeholder="00000-000" maxlength="9"
+                  (input)="onCepInput()" />
+                <button type="button" class="btn btn-outline-secondary" (click)="buscarCep()"
+                  [disabled]="buscandoCep()" title="Buscar CEP">
+                  @if (buscandoCep()) {
+                    <span class="spinner-border spinner-border-sm"></span>
+                  } @else {
+                    <i class="bi bi-search"></i>
+                  }
+                </button>
+              </div>
+              @if (cepMsg()) {
+                <div class="form-text" [class.text-success]="cepMsg() === 'Endereço preenchido.'" [class.text-danger]="cepMsg() !== 'Endereço preenchido.'">
+                  {{ cepMsg() }}
+                </div>
+              }
+            </div>
+
+            <div class="col-md-5">
               <label class="form-label fw-medium">Logradouro</label>
               <input type="text" class="form-control" formControlName="logradouro" />
             </div>
 
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label class="form-label fw-medium">Município</label>
               <input type="text" class="form-control" formControlName="municipio" />
             </div>
 
-            <div class="col-md-2">
+            <div class="col-md-1">
               <label class="form-label fw-medium">UF</label>
               <input type="text" class="form-control text-uppercase" formControlName="uf" maxlength="2" />
             </div>

@@ -154,6 +154,13 @@
                 [class.is-invalid]="f('pontoReposicao').invalid && f('pontoReposicao').touched" />
               <div class="invalid-feedback">Deve ser ≥ 0.</div>
             </div>
+            <div class="col-12">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" formControlName="fazParteEstoque" id="fazParteEstoque" />
+                <label class="form-check-label fw-medium" for="fazParteEstoque">Faz parte do estoque</label>
+                <div class="form-text">Desmarque para produtos adquiridos para consumo próprio. Eles não aparecem nos relatórios de estoque.</div>
+              </div>
+            </div>
             @if (editingId()) {
               <div class="col-12">
                 <div class="form-check form-switch">

@@ -7,6 +7,7 @@ import { ConferenciaResult } from '../models/conferencia.model';
 export interface ConferenciaFiltros {
   DataInicio?: string;
   DataFim?: string;
+  IncluirConsumoInterno?: boolean;
 }
 
 export interface ConferenciaGeralFiltros {
@@ -14,6 +15,7 @@ export interface ConferenciaGeralFiltros {
   CategoriaId?: number;
   ApenasComSaldo?: boolean;
   AbaixoDoMinimo?: boolean;
+  IncluirConsumoInterno?: boolean;
   Page?: number;
   PageSize?: number;
 }
@@ -39,6 +41,7 @@ export class ConferenciaService {
     let params = new HttpParams();
     if (filtros?.DataInicio) params = params.set('DataInicio', filtros.DataInicio);
     if (filtros?.DataFim) params = params.set('DataFim', filtros.DataFim);
+    if (filtros?.IncluirConsumoInterno) params = params.set('IncluirConsumoInterno', 'true');
     return this.http.get<ConferenciaResult>(`${this.baseUrl}/${produtoId}`, { params });
   }
 
@@ -48,6 +51,7 @@ export class ConferenciaService {
     if (filtros?.CategoriaId) params = params.set('CategoriaId', filtros.CategoriaId);
     if (filtros?.ApenasComSaldo != null) params = params.set('ApenasComSaldo', String(filtros.ApenasComSaldo));
     if (filtros?.AbaixoDoMinimo != null) params = params.set('AbaixoDoMinimo', String(filtros.AbaixoDoMinimo));
+    if (filtros?.IncluirConsumoInterno) params = params.set('IncluirConsumoInterno', 'true');
     if (filtros?.Page != null) params = params.set('Page', filtros.Page);
     if (filtros?.PageSize != null) params = params.set('PageSize', filtros.PageSize);
 

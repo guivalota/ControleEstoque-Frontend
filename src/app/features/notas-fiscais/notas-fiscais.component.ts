@@ -1,13 +1,15 @@
 import { Component, inject, OnInit, signal, computed, ViewChild, ElementRef, OnDestroy } from '@angular/core';
-import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DecimalPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { Modal } from 'bootstrap';
 import { NotaFiscalService } from '../../core/services/nota-fiscal.service';
 import { ProdutoService } from '../../core/services/produto.service';
 import { FornecedorService } from '../../core/services/fornecedor.service';
+import { CategoriaService } from '../../core/services/categoria.service';
 import { NfeService } from '../../core/services/nfe.service';
 import { PermissaoService } from '../../core/services/permissao.service';
 import { NotaFiscal, TipoNotaFiscal } from '../../core/models/nota-fiscal.model';
+import { AnaliseNfeItem, AnaliseNfeResponse, ResolucaoItem } from '../../core/models/nfe.model';
 
 @Component({
   selector: 'app-notas-fiscais',
@@ -20,20 +22,28 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
   nfService = inject(NotaFiscalService);
   produtoService = inject(ProdutoService);
   fornecedorService = inject(FornecedorService);
+  private categoriaService = inject(CategoriaService);
   private nfeService = inject(NfeService);
   permissao = inject(PermissaoService);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
   @ViewChild('detalhesModalEl') detalhesModalEl!: ElementRef;
+  @ViewChild('resolucaoModalEl') resolucaoModalEl!: ElementRef;
   private modal!: Modal;
   private detalhesModal!: Modal;
+  private resolucaoModal!: Modal;
 
   notas = this.nfService.notasFiscais;
   produtos = this.produtoService.produtos;
   fornecedores = this.fornecedorService.fornecedores;
+  categorias = this.categoriaService.categorias;
   loading = this.nfService.loading;
+
   importando = signal(false);
   importMsg = signal('');
+  analiseResult = signal<AnaliseNfeResponse | null>(null);
+  xmlFile = signal<File | null>(null);
+  importacaoErro = signal('');
 
   saving = signal(false);
   saveError = signal('');
@@ -60,14 +70,16 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
     itens: this.fb.array([this.criarItemGroup()])
   });
 
-  get itens(): FormArray {
-    return this.form.get('itens') as FormArray;
-  }
+  resolucaoForm = this.fb.group({ itens: this.fb.array([]) });
+
+  get itens(): FormArray { return this.form.get('itens') as FormArray; }
+  get resolucaoItens(): FormArray { return this.resolucaoForm.get('itens') as FormArray; }
 
   ngOnInit() {
     this.nfService.getAll().subscribe();
     this.produtoService.getAll().subscribe();
     this.fornecedorService.getAll().subscribe();
+    this.categoriaService.getAll().subscribe();
   }
 
   selecionarFornecedor(id: number | null) {
@@ -81,26 +93,109 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+
     this.importando.set(true);
     this.importMsg.set('');
-    this.nfeService.importar(file).subscribe({
-      next: () => {
-        this.importMsg.set('NF-e importada com sucesso!');
-        this.nfService.getAll().subscribe();
+    this.importacaoErro.set('');
+
+    this.nfeService.analisar(file).subscribe({
+      next: (result) => {
+        this.analiseResult.set(result);
+        this.xmlFile.set(file);
         this.importando.set(false);
         input.value = '';
+
+        this.resolucaoItens.clear();
+        for (const item of result.itens) {
+          this.resolucaoItens.push(this.criarResolucaoItemGroup(item));
+        }
+
+        this.getResolucaoModal().show();
       },
       error: (err) => {
-        this.importMsg.set(err.error?.message ?? 'Erro ao importar NF-e.');
+        this.importMsg.set(err.error?.message ?? 'Erro ao analisar NF-e.');
         this.importando.set(false);
         input.value = '';
       }
     });
   }
 
+  criarResolucaoItemGroup(item: AnaliseNfeItem): FormGroup {
+    return this.fb.group({
+      itemIndex: [item.itemIndex],
+      acao: [item.produtoEncontrado ? 'mapear' : 'criar'],
+      produtoId: [item.produtoEncontrado?.id ?? null],
+      nome: [item.descricaoNF],
+      sku: [item.codigoProdutoNF],
+      categoriaId: [null as number | null],
+      preco: [item.valorUnitario],
+      fazParteEstoque: [true]
+    });
+  }
+
+  resolucaoAcao(i: number): string {
+    return this.resolucaoItens.at(i).get('acao')?.value ?? 'mapear';
+  }
+
+  confirmarImportacao() {
+    const itens = this.resolucaoItens.value as any[];
+
+    for (const item of itens) {
+      if (item.acao === 'mapear' && !item.produtoId) {
+        this.importacaoErro.set('Selecione um produto para todos os itens com ação "Mapear".');
+        return;
+      }
+      if (item.acao === 'criar' && !item.categoriaId) {
+        this.importacaoErro.set('Selecione uma categoria para todos os itens com ação "Criar".');
+        return;
+      }
+    }
+
+    const resolucoes: ResolucaoItem[] = itens.map(item => {
+      if (item.acao === 'mapear') {
+        return { itemIndex: item.itemIndex, acao: 'mapear', produtoId: +item.produtoId };
+      }
+      return {
+        itemIndex: item.itemIndex,
+        acao: 'criar' as const,
+        categoriaId: +item.categoriaId,
+        ...(item.nome ? { nome: item.nome } : {}),
+        ...(item.sku ? { sku: item.sku } : {}),
+        ...(item.preco != null ? { preco: +item.preco } : {}),
+        fazParteEstoque: item.fazParteEstoque ?? true
+      };
+    });
+
+    this.importando.set(true);
+    this.importacaoErro.set('');
+
+    this.nfeService.importar(this.xmlFile()!, resolucoes).subscribe({
+      next: (res) => {
+        this.importando.set(false);
+        this.getResolucaoModal().hide();
+        this.analiseResult.set(null);
+        this.importMsg.set(`NF-e ${res.numero}/${res.serie} importada! ${res.produtosNovos} produto(s) novo(s) criado(s).`);
+        this.nfService.getAll().subscribe();
+        this.produtoService.getAll().subscribe();
+      },
+      error: (err) => {
+        this.importacaoErro.set(err.error?.message ?? 'Erro ao importar NF-e.');
+        this.importando.set(false);
+      }
+    });
+  }
+
+  cancelarAnalise() {
+    this.analiseResult.set(null);
+    this.xmlFile.set(null);
+    this.importacaoErro.set('');
+    this.resolucaoModal?.hide();
+  }
+
   ngOnDestroy() {
     this.modal?.dispose();
     this.detalhesModal?.dispose();
+    this.resolucaoModal?.dispose();
   }
 
   criarItemGroup() {
@@ -123,6 +218,11 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
   private getDetalhesModal(): Modal {
     if (!this.detalhesModal) this.detalhesModal = new Modal(this.detalhesModalEl.nativeElement);
     return this.detalhesModal;
+  }
+
+  private getResolucaoModal(): Modal {
+    if (!this.resolucaoModal) this.resolucaoModal = new Modal(this.resolucaoModalEl.nativeElement, { backdrop: 'static' });
+    return this.resolucaoModal;
   }
 
   openCreate() {
@@ -170,4 +270,5 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
 
   f(name: string) { return this.form.get(name)!; }
   itemCtrl(i: number, name: string) { return this.itens.at(i).get(name)!; }
+  rCtrl(i: number, name: string) { return this.resolucaoItens.at(i).get(name)!; }
 }
