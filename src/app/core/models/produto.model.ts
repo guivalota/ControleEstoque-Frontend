@@ -9,6 +9,7 @@ export interface Produto {
   estoqueMinimo?: number;
   pontoReposicao?: number;
   ativo: boolean;
+  fazParteEstoque: boolean;
   criadoEm?: string;
 }
 
@@ -20,6 +21,7 @@ export interface CreateProdutoRequest {
   precoUnitario: number;
   estoqueMinimo?: number;
   pontoReposicao?: number;
+  fazParteEstoque?: boolean;
 }
 
 export interface UpdateProdutoRequest {
@@ -31,4 +33,5 @@ export interface UpdateProdutoRequest {
   ativo?: boolean | null;
   estoqueMinimo?: number | null;
   pontoReposicao?: number | null;
+  fazParteEstoque?: boolean | null;
 }

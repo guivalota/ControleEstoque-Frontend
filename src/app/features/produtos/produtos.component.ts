@@ -47,6 +47,7 @@ export class ProdutosComponent implements OnInit, OnDestroy {
     precoUnitario: [0, [Validators.required, Validators.min(0)]],
     estoqueMinimo: [null as number | null, Validators.min(0)],
     pontoReposicao: [null as number | null, Validators.min(0)],
+    fazParteEstoque: [true],
     ativo: [true]
   });
 
@@ -66,7 +67,7 @@ export class ProdutosComponent implements OnInit, OnDestroy {
 
   openCreate() {
     this.editingId.set(null);
-    this.form.reset({ ativo: true, precoUnitario: 0, descricao: null, estoqueMinimo: null, pontoReposicao: null });
+    this.form.reset({ ativo: true, precoUnitario: 0, descricao: null, estoqueMinimo: null, pontoReposicao: null, fazParteEstoque: true });
     this.saveError.set('');
     this.getModal().show();
   }
