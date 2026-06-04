@@ -26,6 +26,7 @@ export interface CreateMovimentacaoRequest {
   dataMovimentacao?: string | null;
   observacao?: string | null;
   motivoAjuste?: MotivoAjuste | null;
+  pedidoCompraItemId?: number | null;
 }
 
 export interface UpdateMovimentacaoRequest {

@@ -8,7 +8,9 @@ import { MovimentacaoService } from '../../core/services/movimentacao.service';
 import { ProdutoService } from '../../core/services/produto.service';
 import { CategoriaService } from '../../core/services/categoria.service';
 import { PermissaoService } from '../../core/services/permissao.service';
+import { PedidoCompraService } from '../../core/services/pedido-compra.service';
 import { Movimentacao, CreateMovimentacaoRequest, UpdateMovimentacaoRequest, TipoMovimentacao, MotivoAjuste } from '../../core/models/movimentacao.model';
+import { PedidoCompra } from '../../core/models/pedido-compra.model';
 
 @Component({
   selector: 'app-movimentacoes',
@@ -22,6 +24,7 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
   produtoService = inject(ProdutoService);
   categoriaService = inject(CategoriaService);
   permissao = inject(PermissaoService);
+  private pedidoService = inject(PedidoCompraService);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
   private modal!: Modal;
@@ -44,6 +47,7 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
   editingProdutoNome = signal('');
   saving = signal(false);
   saveError = signal('');
+  pedidosAbertos = signal<PedidoCompra[]>([]);
 
   filteredMovimentacoes = computed(() => {
     const prodMap = new Map(this.produtos().map(p => [p.id, p.nome]));
@@ -63,7 +67,8 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
     valorUnitario: [0, [Validators.required, Validators.min(0)]],
     dataMovimentacao: ['' as string | null],
     observacao: ['' as string | null],
-    motivoAjuste: [null as MotivoAjuste | null]
+    motivoAjuste: [null as MotivoAjuste | null],
+    pedidoCompraItemId: [null as number | null]
   });
 
   private tipoValue = toSignal(
@@ -71,7 +76,26 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
     { initialValue: 'entrada' as TipoMovimentacao }
   );
 
+  private produtoIdValue = toSignal(
+    this.form.controls['produtoId'].valueChanges.pipe(startWith(this.form.controls['produtoId'].value)),
+    { initialValue: null as number | null }
+  );
+
   isAjuste = computed(() => this.tipoValue() === 'ajuste' || this.tipoValue() === 'ajuste_saida');
+  isEntrada = computed(() => this.tipoValue() === 'entrada');
+
+  pedidoItensDisponiveis = computed(() => {
+    const prodId = this.produtoIdValue();
+    if (!prodId) return [];
+    return this.pedidosAbertos().flatMap(p =>
+      p.itens
+        .filter(i => i.produtoId === +prodId && i.quantidadeAtendida < i.quantidadeSolicitada)
+        .map(i => ({
+          id: i.id,
+          label: `Pedido #${p.id} — ${p.descricao} (${i.quantidadeSolicitada - i.quantidadeAtendida} restantes)`
+        }))
+    );
+  });
 
   ngOnInit() {
     this.carregarPagina(1);
@@ -120,9 +144,13 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
   openCreate() {
     this.editingId.set(null);
     this.editingProdutoNome.set('');
-    this.form.reset({ tipo: 'entrada', quantidade: 1, valorUnitario: 0, observacao: null, produtoId: null, dataMovimentacao: null, motivoAjuste: null });
+    this.form.reset({ tipo: 'entrada', quantidade: 1, valorUnitario: 0, observacao: null, produtoId: null, dataMovimentacao: null, motivoAjuste: null, pedidoCompraItemId: null });
     this.f('produtoId').enable();
     this.saveError.set('');
+    this.pedidoService.getAbertos().subscribe({
+      next: res => this.pedidosAbertos.set(res.items),
+      error: () => {}
+    });
     this.getModal().show();
   }
 
@@ -163,7 +191,8 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
       : this.movimentacaoService.create({
           ...val as CreateMovimentacaoRequest,
           dataMovimentacao: val.dataMovimentacao || null,
-          motivoAjuste: val.motivoAjuste || null
+          motivoAjuste: val.motivoAjuste || null,
+          pedidoCompraItemId: val.pedidoCompraItemId ? +val.pedidoCompraItemId : null
         });
 
     op.subscribe({

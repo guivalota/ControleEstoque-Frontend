@@ -8,6 +8,8 @@ import { FornecedorService } from '../../core/services/fornecedor.service';
 import { CategoriaService } from '../../core/services/categoria.service';
 import { NfeService } from '../../core/services/nfe.service';
 import { PermissaoService } from '../../core/services/permissao.service';
+import { PedidoCompraService } from '../../core/services/pedido-compra.service';
+import { PedidoCompra } from '../../core/models/pedido-compra.model';
 import { NotaFiscal, TipoNotaFiscal } from '../../core/models/nota-fiscal.model';
 import { AnaliseNfeItem, AnaliseNfeResponse, ResolucaoItem } from '../../core/models/nfe.model';
 
@@ -24,6 +26,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
   fornecedorService = inject(FornecedorService);
   private categoriaService = inject(CategoriaService);
   private nfeService = inject(NfeService);
+  private pedidoService = inject(PedidoCompraService);
   permissao = inject(PermissaoService);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
@@ -44,6 +47,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
   analiseResult = signal<AnaliseNfeResponse | null>(null);
   xmlFile = signal<File | null>(null);
   importacaoErro = signal('');
+  pedidosAbertos = signal<PedidoCompra[]>([]);
 
   saving = signal(false);
   saveError = signal('');
@@ -110,6 +114,12 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
           this.resolucaoItens.push(this.criarResolucaoItemGroup(item));
         }
 
+        this.pedidoService.getAbertos().subscribe({
+          next: res => this.pedidosAbertos.set(res.items),
+          error: () => {}
+        });
+
+        this.importacaoErro.set('');
         this.getResolucaoModal().show();
       },
       error: (err) => {
@@ -125,12 +135,25 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
       itemIndex: [item.itemIndex],
       acao: [item.produtoEncontrado ? 'mapear' : 'criar'],
       produtoId: [item.produtoEncontrado?.id ?? null],
+      pedidoCompraItemId: [null as number | null],
       nome: [item.descricaoNF],
       sku: [item.codigoProdutoNF],
       categoriaId: [null as number | null],
       preco: [item.valorUnitario],
       fazParteEstoque: [true]
     });
+  }
+
+  pedidoItensParaProduto(produtoId: number | null) {
+    if (!produtoId) return [];
+    return this.pedidosAbertos().flatMap(p =>
+      p.itens
+        .filter(i => i.produtoId === +produtoId && i.quantidadeAtendida < i.quantidadeSolicitada)
+        .map(i => ({
+          id: i.id,
+          label: `Pedido #${p.id} — ${p.descricao} (${i.quantidadeSolicitada - i.quantidadeAtendida} restantes)`
+        }))
+    );
   }
 
   resolucaoAcao(i: number): string {
@@ -153,7 +176,12 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
 
     const resolucoes: ResolucaoItem[] = itens.map(item => {
       if (item.acao === 'mapear') {
-        return { itemIndex: item.itemIndex, acao: 'mapear', produtoId: +item.produtoId };
+        return {
+          itemIndex: item.itemIndex,
+          acao: 'mapear' as const,
+          produtoId: +item.produtoId,
+          ...(item.pedidoCompraItemId ? { pedidoCompraItemId: +item.pedidoCompraItemId } : {})
+        };
       }
       return {
         itemIndex: item.itemIndex,

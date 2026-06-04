@@ -290,7 +290,7 @@
                         </div>
 
                         @if (resolucaoAcao(i) === 'mapear') {
-                          <div class="col-md-7">
+                          <div class="col-md-5">
                             <label class="form-label form-label-sm fw-medium mb-1">
                               Produto <span class="text-danger">*</span>
                             </label>
@@ -303,6 +303,17 @@
                               }
                             </select>
                           </div>
+                          @if (pedidoItensParaProduto(rCtrl(i,'produtoId').value).length > 0) {
+                            <div class="col-md-4">
+                              <label class="form-label form-label-sm fw-medium mb-1">Vincular a pedido</label>
+                              <select class="form-select form-select-sm" formControlName="pedidoCompraItemId">
+                                <option [value]="null">Não vincular</option>
+                                @for (pi of pedidoItensParaProduto(rCtrl(i,'produtoId').value); track pi.id) {
+                                  <option [value]="pi.id">{{ pi.label }}</option>
+                                }
+                              </select>
+                            </div>
+                          }
                         }
 
                         @if (resolucaoAcao(i) === 'criar') {

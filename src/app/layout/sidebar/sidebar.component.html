@@ -62,6 +62,11 @@
         <i class="bi bi-person-lines-fill me-2"></i>Clientes
       </a>
     </li>
+    <li class="nav-item">
+      <a class="nav-link sidebar-link" routerLink="/pedidos-compra" routerLinkActive="active">
+        <i class="bi bi-cart me-2"></i>Pedidos de Compra
+      </a>
+    </li>
 
     @if (permissao.canManageUsers()) {
       <li class="mt-2 px-2"><small class="text-uppercase fw-semibold" style="color:#475569;font-size:.7rem;letter-spacing:.05em">Admin</small></li>

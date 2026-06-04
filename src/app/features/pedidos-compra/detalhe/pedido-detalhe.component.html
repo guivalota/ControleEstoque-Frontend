@@ -1,0 +1,217 @@
+<div>
+  <!-- Voltar -->
+  <button class="btn btn-sm btn-outline-secondary mb-3" (click)="voltar()">
+    <i class="bi bi-arrow-left me-1"></i>Pedidos de Compra
+  </button>
+
+  @if (loading()) {
+    <div class="text-center py-5 text-muted">
+      <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+    </div>
+  } @else if (erro()) {
+    <div class="alert alert-danger">{{ erro() }}</div>
+  } @else if (pedido(); as p) {
+
+    <!-- Cabeçalho -->
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+          <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <h5 class="fw-bold mb-0">{{ p.descricao }}</h5>
+              <span class="badge" [class]="statusBadge(p.status)">
+                @if (p.status === 'aberto') { Aberto }
+                @else if (p.status === 'atendido') { Atendido }
+                @else { Cancelado }
+              </span>
+            </div>
+            <div class="row g-2 small text-muted">
+              <div class="col-auto"><i class="bi bi-person me-1"></i>Criado por <strong>{{ p.criadoPorNome }}</strong></div>
+              @if (p.destinadoANome) {
+                <div class="col-auto"><i class="bi bi-arrow-right me-1"></i>Destinado a <strong>{{ p.destinadoANome }}</strong></div>
+              }
+              <div class="col-auto"><i class="bi bi-calendar me-1"></i>{{ p.criadoEm | date:'dd/MM/yyyy HH:mm' }}</div>
+              @if (p.observacao) {
+                <div class="col-12 text-muted fst-italic">{{ p.observacao }}</div>
+              }
+            </div>
+          </div>
+
+          @if (p.status === 'aberto' && permissao.canEdit()) {
+            <div class="d-flex gap-2 flex-shrink-0">
+              <button class="btn btn-sm btn-outline-secondary" (click)="abrirEditar()">
+                <i class="bi bi-pencil me-1"></i>Editar
+              </button>
+              <button class="btn btn-sm btn-outline-primary" (click)="abrirAddItem()">
+                <i class="bi bi-plus-lg me-1"></i>Adicionar item
+              </button>
+              @if (permissao.canDelete()) {
+                <button class="btn btn-sm btn-outline-danger" (click)="cancelarPedido()">
+                  <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Itens -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header border-bottom py-3">
+        <h6 class="mb-0 fw-semibold">Itens do Pedido</h6>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Produto</th>
+                <th class="text-center">Qtd. Solicitada</th>
+                <th class="text-center">Qtd. Atendida</th>
+                <th style="min-width:150px">Progresso</th>
+                <th>Observação</th>
+                <th class="text-end pe-3">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of p.itens; track item.id) {
+                <tr>
+                  <td class="ps-3">
+                    <div class="fw-medium">{{ item.produtoNome }}</div>
+                    <code class="text-muted small">{{ item.produtoSku }}</code>
+                  </td>
+                  <td class="text-center">{{ item.quantidadeSolicitada }}</td>
+                  <td class="text-center">
+                    <span [class]="item.quantidadeAtendida >= item.quantidadeSolicitada ? 'text-success fw-semibold' : ''">
+                      {{ item.quantidadeAtendida }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="progress flex-grow-1" style="height:6px;">
+                        <div class="progress-bar" [class]="progressoClass(item.percentualAtendido)"
+                          [style.width.%]="item.percentualAtendido"></div>
+                      </div>
+                      <small class="text-muted text-nowrap">{{ item.percentualAtendido | number:'1.0-0' }}%</small>
+                    </div>
+                  </td>
+                  <td class="text-muted small">{{ item.observacao || '—' }}</td>
+                  <td class="text-end pe-3">
+                    @if (podeRemoverItem(item) && permissao.canDelete()) {
+                      <button class="btn btn-sm btn-outline-danger" (click)="removerItem(item)" title="Remover item">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox me-2"></i>Nenhum item
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Modal Editar Pedido -->
+<div class="modal fade" #editModalEl tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fw-semibold">Editar Pedido</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="editForm">
+          <div class="mb-3">
+            <label class="form-label fw-medium">Descrição <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="descricao"
+              [class.is-invalid]="ef('descricao').invalid && ef('descricao').touched" />
+            <div class="invalid-feedback">Descrição obrigatória.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-medium">Destinado a</label>
+            <select class="form-select" formControlName="destinadoA">
+              <option [value]="null">Nenhum</option>
+              @for (u of usuarios(); track u.id) {
+                <option [value]="u.id">{{ u.nome }}</option>
+              }
+            </select>
+          </div>
+          <div class="mb-1">
+            <label class="form-label fw-medium">Observação</label>
+            <textarea class="form-control" formControlName="observacao" rows="2"></textarea>
+          </div>
+          @if (saveError()) {
+            <div class="alert alert-danger py-2 small mt-3">
+              <i class="bi bi-exclamation-triangle me-1"></i>{{ saveError() }}
+            </div>
+          }
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="salvarEdicao()" [disabled]="saving()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Adicionar Item -->
+<div class="modal fade" #addItemModalEl tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fw-semibold">Adicionar Item ao Pedido</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="addItemForm">
+          <div class="mb-3">
+            <label class="form-label fw-medium">Produto <span class="text-danger">*</span></label>
+            <select class="form-select" formControlName="produtoId"
+              [class.is-invalid]="af('produtoId').invalid && af('produtoId').touched">
+              <option [value]="null">Selecione...</option>
+              @for (p of produtos(); track p.id) {
+                @if (p.ativo) { <option [value]="p.id">{{ p.nome }} — {{ p.sku }}</option> }
+              }
+            </select>
+            <div class="invalid-feedback">Selecione um produto.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-medium">Quantidade Solicitada <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" formControlName="quantidadeSolicitada" min="1"
+              [class.is-invalid]="af('quantidadeSolicitada').invalid && af('quantidadeSolicitada').touched" />
+            <div class="invalid-feedback">Mínimo: 1.</div>
+          </div>
+          <div class="mb-1">
+            <label class="form-label fw-medium">Observação</label>
+            <input type="text" class="form-control" formControlName="observacao" placeholder="Opcional" />
+          </div>
+          @if (saveError()) {
+            <div class="alert alert-danger py-2 small mt-3">
+              <i class="bi bi-exclamation-triangle me-1"></i>{{ saveError() }}
+            </div>
+          }
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="salvarItem()" [disabled]="saving()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+          Adicionar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
