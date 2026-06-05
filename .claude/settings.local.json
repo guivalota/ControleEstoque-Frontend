@@ -21,7 +21,17 @@
       "Bash(npm start *)",
       "Bash(cat)",
       "Bash(Select-String -Pattern *)",
-      "Bash(Select-Object *)"
+      "Bash(Select-Object *)",
+      "Bash(python -c \"import json,sys; data=json.load\\(sys.stdin\\); auth_paths={k:v for k,v in data['paths'].items\\(\\) if 'auth' in k.lower\\(\\)}; print\\(json.dumps\\(auth_paths, indent=2\\)\\)\")",
+      "Bash(python -c \"import json,sys; data=json.load\\(sys.stdin\\); schemas=data['components']['schemas']; targets=['ForgotPasswordRequest','ResetPasswordRequest']; result={k:v for k,v in schemas.items\\(\\) if k in targets}; print\\(json.dumps\\(result, indent=2\\)\\)\")",
+      "Bash(git commit *)",
+      "Bash(gh repo *)",
+      "Bash(gh api *)",
+      "Bash(gh workflow *)",
+      "Bash(python -c \"import sys,base64; print\\(base64.b64decode\\(sys.stdin.read\\(\\)\\).decode\\(\\)\\)\")",
+      "Bash(python -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(json.dumps\\([{'login':c['login'],'role':c['role_name']} for c in data], indent=2\\)\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(cmd *)"
     ]
   }
 }

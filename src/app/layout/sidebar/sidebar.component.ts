@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { PermissaoService } from '../../core/services/permissao.service';
+import { VersionService } from '../../core/services/version.service';
 import { Offcanvas } from 'bootstrap';
 import { filter, Subscription } from 'rxjs';
 
@@ -13,10 +14,12 @@ import { filter, Subscription } from 'rxjs';
 })
 export class SidebarComponent implements OnInit, OnDestroy {
   permissao = inject(PermissaoService);
+  version = inject(VersionService);
   private router = inject(Router);
   private routerSub?: Subscription;
 
   ngOnInit() {
+    this.version.carregar();
     this.routerSub = this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe(() => {

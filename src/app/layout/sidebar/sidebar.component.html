@@ -62,6 +62,25 @@
         <i class="bi bi-person-lines-fill me-2"></i>Clientes
       </a>
     </li>
+    <li class="nav-item">
+      <a class="nav-link sidebar-link" routerLink="/pedidos-compra" routerLinkActive="active">
+        <i class="bi bi-cart me-2"></i>Pedidos de Compra
+      </a>
+    </li>
+
+    @if (permissao.canManageUsers()) {
+      <li class="mt-2 px-2"><small class="text-uppercase fw-semibold" style="color:#475569;font-size:.7rem;letter-spacing:.05em">Admin</small></li>
+      <li class="nav-item">
+        <a class="nav-link sidebar-link" routerLink="/admin/audit-logs" routerLinkActive="active">
+          <i class="bi bi-shield-check me-2"></i>Audit Logs
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link sidebar-link" routerLink="/admin/impressoes" routerLinkActive="active">
+          <i class="bi bi-printer me-2"></i>Impressões
+        </a>
+      </li>
+    }
 
     <li class="mt-2 px-2"><small class="text-uppercase fw-semibold" style="color:#475569;font-size:.7rem;letter-spacing:.05em">Fiscal</small></li>
 
@@ -76,4 +95,10 @@
       </a>
     </li>
   </ul>
+
+  <div class="mt-auto pt-3 px-2" style="border-top: 1px solid rgba(255,255,255,0.08)">
+    @if (version.versao()) {
+      <small style="color:#475569; font-size:.7rem;">{{ version.versao() }}</small>
+    }
+  </div>
 </nav>

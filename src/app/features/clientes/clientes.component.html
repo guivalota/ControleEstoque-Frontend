@@ -8,6 +8,46 @@
     }
   </div>
 
+  <!-- Filtros -->
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label form-label-sm fw-medium mb-1">Busca</label>
+          <input type="text" class="form-control form-control-sm" placeholder="Nome ou CPF/CNPJ"
+            [(ngModel)]="filterBusca" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label form-label-sm fw-medium mb-1">UF</label>
+          <input type="text" class="form-control form-control-sm text-uppercase" maxlength="2"
+            placeholder="SP" [(ngModel)]="filterUf" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label form-label-sm fw-medium mb-1">Status</label>
+          <select class="form-select form-select-sm" [(ngModel)]="filterAtivo">
+            <option value="">Todos</option>
+            <option value="true">Ativo</option>
+            <option value="false">Inativo</option>
+          </select>
+        </div>
+        <div class="col-auto d-flex gap-2">
+          <button class="btn btn-primary btn-sm" (click)="buscar(1)" [disabled]="loading()">
+            <i class="bi bi-funnel me-1"></i>Filtrar
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" (click)="limparFiltros()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+          @if (permissao.canCreate()) {
+            <button class="btn btn-outline-secondary btn-sm" (click)="imprimir()" [disabled]="imprimindo()" title="Imprimir lista">
+              @if (imprimindo()) { <span class="spinner-border spinner-border-sm"></span> }
+              @else { <i class="bi bi-printer"></i> }
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
       @if (loading()) {
@@ -63,6 +103,19 @@
               }
             </tbody>
           </table>
+        </div>
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+          <span class="text-muted small">Página {{ page() }} — {{ clientes().length }} de {{ total() }}</span>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary"
+              [disabled]="page() === 1 || loading()" (click)="buscar(page() - 1)">
+              <i class="bi bi-chevron-left"></i> Anterior
+            </button>
+            <button class="btn btn-sm btn-outline-secondary"
+              [disabled]="!hasNextPage() || loading()" (click)="buscar(page() + 1)">
+              Próxima <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
         </div>
       }
     </div>

@@ -1,0 +1,133 @@
+<div>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-bold mb-0">Histórico de Impressões</h5>
+    <span class="text-muted small">{{ total() }} registro(s)</span>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label form-label-sm fw-medium mb-1">Tipo</label>
+          <select class="form-select form-select-sm" [(ngModel)]="filterTipo">
+            <option value="">Todos</option>
+            <option value="pedido_compra">Pedido de Compra</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label form-label-sm fw-medium mb-1">Usuário</label>
+          <select class="form-select form-select-sm" [(ngModel)]="filterUsuarioId">
+            <option value="">Todos</option>
+            @for (u of usuarios(); track u.id) {
+              <option [value]="u.id">{{ u.nome }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label form-label-sm fw-medium mb-1">Data início</label>
+          <input type="date" class="form-control form-control-sm" [(ngModel)]="filterDataInicio" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label form-label-sm fw-medium mb-1">Data fim</label>
+          <input type="date" class="form-control form-control-sm" [(ngModel)]="filterDataFim" />
+        </div>
+        <div class="col-auto d-flex gap-2">
+          <button class="btn btn-primary btn-sm" (click)="carregar(1)" [disabled]="loading()">
+            <i class="bi bi-funnel me-1"></i>Filtrar
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" (click)="limpar()" [disabled]="loading()">
+            Limpar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+        </div>
+      } @else if (erro()) {
+        <div class="p-3">
+          <div class="alert alert-danger mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ erro() }}
+          </div>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 small">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3" style="min-width:140px">Data/Hora</th>
+                <th>Tipo</th>
+                <th>Documento</th>
+                <th>Impresso por</th>
+                <th class="text-end pe-3">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of historico(); track item.id) {
+                <tr>
+                  <td class="ps-3 text-muted font-monospace" style="font-size:.75rem;">
+                    {{ item.criadoEm | date:'dd/MM/yyyy HH:mm:ss' }}
+                  </td>
+                  <td>{{ tipoLabel(item.tipoDocumento) }}</td>
+                  <td>
+                    @if (rotaDocumento(item)) {
+                      <a [routerLink]="rotaDocumento(item)" class="text-decoration-none">
+                        #{{ item.documentoId }}
+                      </a>
+                    } @else {
+                      #{{ item.documentoId }}
+                    }
+                  </td>
+                  <td class="text-muted">{{ item.usuarioNome }}</td>
+                  <td class="text-end pe-3">
+                    <button class="btn btn-sm btn-outline-secondary"
+                      (click)="reimprimir(item)"
+                      [disabled]="reimprimindo() === item.id"
+                      title="Reimprimir">
+                      @if (reimprimindo() === item.id) {
+                        <span class="spinner-border spinner-border-sm"></span>
+                      } @else {
+                        <i class="bi bi-printer"></i>
+                      }
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox me-2"></i>Nenhuma impressão encontrada
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+          <span class="text-muted small">
+            Página {{ page() }} — {{ historico().length }} de {{ total() }} registro(s)
+          </span>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary"
+              [disabled]="page() === 1 || loading()"
+              (click)="carregar(page() - 1)">
+              <i class="bi bi-chevron-left"></i> Anterior
+            </button>
+            <button class="btn btn-sm btn-outline-secondary"
+              [disabled]="!hasNextPage() || loading()"
+              (click)="carregar(page() + 1)">
+              Próxima <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

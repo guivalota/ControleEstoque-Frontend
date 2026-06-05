@@ -19,9 +19,65 @@
     </div>
   </div>
 
+  <!-- Filtros -->
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label form-label-sm fw-medium mb-1">Data início</label>
+          <input type="date" class="form-control form-control-sm" [(ngModel)]="filterDataInicio" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label form-label-sm fw-medium mb-1">Data fim</label>
+          <input type="date" class="form-control form-control-sm" [(ngModel)]="filterDataFim" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label form-label-sm fw-medium mb-1">Fornecedor</label>
+          <select class="form-select form-select-sm" [(ngModel)]="filterFornecedorId">
+            <option value="">Todos</option>
+            @for (f of fornecedores(); track f.id) {
+              @if (f.ativo) { <option [value]="f.id">{{ f.razaoSocial }}</option> }
+            }
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label form-label-sm fw-medium mb-1">Tipo</label>
+          <select class="form-select form-select-sm" [(ngModel)]="filterTipo">
+            <option value="">Todos</option>
+            <option value="entrada">Entrada</option>
+            <option value="saida">Saída</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label form-label-sm fw-medium mb-1">Status</label>
+          <select class="form-select form-select-sm" [(ngModel)]="filterStatus">
+            <option value="">Todos</option>
+            <option value="pendente">Pendente</option>
+            <option value="processada">Processada</option>
+            <option value="cancelada">Cancelada</option>
+          </select>
+        </div>
+        <div class="col-auto d-flex gap-2">
+          <button class="btn btn-primary btn-sm" (click)="buscarNotas(1)" [disabled]="loadingLista()">
+            <i class="bi bi-funnel me-1"></i>Filtrar
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" (click)="limparFiltros()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+          @if (permissao.canCreate()) {
+            <button class="btn btn-outline-secondary btn-sm" (click)="imprimirLista()" [disabled]="imprimindo()" title="Imprimir lista">
+              @if (imprimindo()) { <span class="spinner-border spinner-border-sm"></span> }
+              @else { <i class="bi bi-printer"></i> }
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
-      @if (loading()) {
+      @if (loadingLista()) {
         <div class="text-center py-5 text-muted">
           <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
         </div>
@@ -53,9 +109,16 @@
                   <td class="fw-medium">R$ {{ nf.valorTotal | number:'1.2-2' }}</td>
                   <td><span class="badge" [class]="statusBadge(nf.status)">{{ nf.status | titlecase }}</span></td>
                   <td class="text-end pe-3">
-                    <button class="btn btn-sm btn-outline-secondary" (click)="verDetalhes(nf)" title="Ver itens">
+                    <button class="btn btn-sm btn-outline-secondary me-1" (click)="verDetalhes(nf)" title="Ver itens">
                       <i class="bi bi-eye"></i>
                     </button>
+                    @if (permissao.canCreate()) {
+                      <button class="btn btn-sm btn-outline-secondary" (click)="imprimirNf(nf)"
+                        [disabled]="imprimindoNf() === nf.id" title="Imprimir NF">
+                        @if (imprimindoNf() === nf.id) { <span class="spinner-border spinner-border-sm"></span> }
+                        @else { <i class="bi bi-printer"></i> }
+                      </button>
+                    }
                   </td>
                 </tr>
               } @empty {
@@ -67,6 +130,20 @@
               }
             </tbody>
           </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+          <span class="text-muted small">Página {{ page() }} — {{ notas().length }} de {{ total() }}</span>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary"
+              [disabled]="page() === 1 || loadingLista()" (click)="buscarNotas(page() - 1)">
+              <i class="bi bi-chevron-left"></i> Anterior
+            </button>
+            <button class="btn btn-sm btn-outline-secondary"
+              [disabled]="!hasNextPage() || loadingLista()" (click)="buscarNotas(page() + 1)">
+              Próxima <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
         </div>
       }
     </div>
@@ -290,7 +367,7 @@
                         </div>
 
                         @if (resolucaoAcao(i) === 'mapear') {
-                          <div class="col-md-7">
+                          <div class="col-md-5">
                             <label class="form-label form-label-sm fw-medium mb-1">
                               Produto <span class="text-danger">*</span>
                             </label>
@@ -303,6 +380,17 @@
                               }
                             </select>
                           </div>
+                          @if (pedidoItensParaProduto(rCtrl(i,'produtoId').value).length > 0) {
+                            <div class="col-md-4">
+                              <label class="form-label form-label-sm fw-medium mb-1">Vincular a pedido</label>
+                              <select class="form-select form-select-sm" formControlName="pedidoCompraItemId">
+                                <option [value]="null">Não vincular</option>
+                                @for (pi of pedidoItensParaProduto(rCtrl(i,'produtoId').value); track pi.id) {
+                                  <option [value]="pi.id">{{ pi.label }}</option>
+                                }
+                              </select>
+                            </div>
+                          }
                         }
 
                         @if (resolucaoAcao(i) === 'criar') {

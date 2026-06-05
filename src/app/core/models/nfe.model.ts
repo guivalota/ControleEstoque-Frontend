@@ -29,6 +29,7 @@ export interface ResolucaoItem {
   itemIndex: number;
   acao: 'mapear' | 'criar';
   produtoId?: number;
+  pedidoCompraItemId?: number;
   categoriaId?: number;
   nome?: string;
   sku?: string;

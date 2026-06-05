@@ -1,0 +1,224 @@
+<div>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-bold mb-0">Pedidos de Compra</h5>
+    @if (permissao.canCreate()) {
+      <button class="btn btn-primary btn-sm" (click)="abrirNovo()">
+        <i class="bi bi-plus-lg me-1"></i>Novo Pedido
+      </button>
+    }
+  </div>
+
+  <!-- Filtros -->
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label form-label-sm fw-medium mb-1">Status</label>
+          <select class="form-select form-select-sm"
+            [value]="filterStatus()"
+            (change)="filterStatus.set($any($event.target).value)">
+            <option value="">Todos</option>
+            <option value="aberto">Aberto</option>
+            <option value="atendido">Atendido</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label form-label-sm fw-medium mb-1">Criado por</label>
+          <select class="form-select form-select-sm"
+            [value]="filterCriadoPor()"
+            (change)="filterCriadoPor.set($any($event.target).value)">
+            <option value="">Todos</option>
+            @for (u of usuarios(); track u.id) {
+              <option [value]="u.id">{{ u.nome }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label form-label-sm fw-medium mb-1">Destinado a</label>
+          <select class="form-select form-select-sm"
+            [value]="filterDestinadoA()"
+            (change)="filterDestinadoA.set($any($event.target).value)">
+            <option value="">Todos</option>
+            @for (u of usuarios(); track u.id) {
+              <option [value]="u.id">{{ u.nome }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-auto d-flex gap-2">
+          <button class="btn btn-primary btn-sm" (click)="carregar(1)" [disabled]="loading()">
+            <i class="bi bi-funnel me-1"></i>Filtrar
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" (click)="limparFiltros()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">#</th>
+                <th>Descrição</th>
+                <th>Status</th>
+                <th>Criado por</th>
+                <th>Destinado a</th>
+                <th class="text-center">Itens</th>
+                <th>Data</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of pedidos(); track p.id) {
+                <tr style="cursor:pointer" (click)="abrirDetalhe(p.id)"
+                  [class.text-muted]="p.status === 'cancelado'">
+                  <td class="ps-3 fw-medium">{{ p.id }}</td>
+                  <td>{{ p.descricao }}</td>
+                  <td>
+                    <span class="badge" [class]="statusBadge(p.status)">{{ statusLabel(p.status) }}</span>
+                  </td>
+                  <td class="text-muted small">{{ p.criadoPorNome }}</td>
+                  <td class="text-muted small">{{ p.destinadoANome ?? '—' }}</td>
+                  <td class="text-center small">
+                    <span [class]="p.status === 'atendido' ? 'text-success fw-semibold' : ''">
+                      {{ resumoItens(p) }}
+                    </span>
+                  </td>
+                  <td class="text-muted small">{{ p.criadoEm | date:'dd/MM/yyyy' }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox me-2"></i>Nenhum pedido encontrado
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+          <span class="text-muted small">Página {{ page() }} — {{ pedidos().length }} de {{ total() }}</span>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary"
+              [disabled]="page() === 1 || loading()" (click)="carregar(page() - 1)">
+              <i class="bi bi-chevron-left"></i> Anterior
+            </button>
+            <button class="btn btn-sm btn-outline-secondary"
+              [disabled]="!hasNextPage() || loading()" (click)="carregar(page() + 1)">
+              Próxima <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Modal Novo Pedido -->
+<div class="modal fade" #modalEl tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fw-semibold">Novo Pedido de Compra</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="form">
+          <div class="row g-3 mb-3">
+            <div class="col-md-8">
+              <label class="form-label fw-medium">Descrição <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="descricao"
+                placeholder="Ex: Suprimentos de TI — Junho"
+                [class.is-invalid]="f('descricao').invalid && f('descricao').touched" />
+              <div class="invalid-feedback">Descrição obrigatória.</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-medium">Destinado a</label>
+              <select class="form-select" formControlName="destinadoA">
+                <option [value]="null">Nenhum</option>
+                @for (u of usuarios(); track u.id) {
+                  <option [value]="u.id">{{ u.nome }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-medium">Observação</label>
+              <textarea class="form-control" formControlName="observacao" rows="2"></textarea>
+            </div>
+          </div>
+
+          <!-- Itens -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0 fw-semibold">Itens <span class="text-danger">*</span></h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" (click)="addItem()">
+              <i class="bi bi-plus-lg me-1"></i>Adicionar item
+            </button>
+          </div>
+          <div class="border rounded">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="min-width:200px">Produto <span class="text-danger">*</span></th>
+                  <th style="width:120px">Qtd. <span class="text-danger">*</span></th>
+                  <th>Observação</th>
+                  <th style="width:48px"></th>
+                </tr>
+              </thead>
+              <tbody formArrayName="itens">
+                @for (item of itens.controls; track $index; let i = $index) {
+                  <tr [formGroupName]="i">
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="produtoId"
+                        [class.is-invalid]="iCtrl(i,'produtoId').invalid && iCtrl(i,'produtoId').touched">
+                        <option [value]="null">Selecione...</option>
+                        @for (p of produtos(); track p.id) {
+                          @if (p.ativo) { <option [value]="p.id">{{ p.nome }}</option> }
+                        }
+                      </select>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="quantidadeSolicitada" min="1"
+                        [class.is-invalid]="iCtrl(i,'quantidadeSolicitada').invalid && iCtrl(i,'quantidadeSolicitada').touched" />
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="observacao" placeholder="Opcional" />
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn btn-sm btn-outline-danger p-1" (click)="removeItem(i)" [disabled]="itens.length === 1">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (saveError()) {
+            <div class="alert alert-danger py-2 small mt-3">
+              <i class="bi bi-exclamation-triangle me-1"></i>{{ saveError() }}
+            </div>
+          }
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+          Criar Pedido
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

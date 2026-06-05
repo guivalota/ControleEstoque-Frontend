@@ -11,7 +11,7 @@ export interface NotaFiscal {
   valorTotal: number;
   status: string;
   observacao?: string;
-  usuarioId: number;
+  usuarioId: string;
   criadoEm: string;
 }
 

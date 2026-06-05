@@ -23,7 +23,7 @@ export class UsersComponent implements OnInit, OnDestroy {
   users = this.userService.users;
   loading = this.userService.loading;
 
-  editingId = signal<number | null>(null);
+  editingId = signal<string | null>(null);
   saving = signal(false);
   saveError = signal('');
 

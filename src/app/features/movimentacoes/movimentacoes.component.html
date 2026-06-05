@@ -53,6 +53,12 @@
           <button class="btn btn-outline-secondary btn-sm" (click)="limparFiltros()">
             <i class="bi bi-x-lg"></i>
           </button>
+          @if (permissao.canCreate()) {
+            <button class="btn btn-outline-secondary btn-sm" (click)="imprimir()" [disabled]="imprimindo()">
+              @if (imprimindo()) { <span class="spinner-border spinner-border-sm"></span> }
+              @else { <i class="bi bi-printer"></i> }
+            </button>
+          }
         </div>
       </div>
     </div>
@@ -234,10 +240,24 @@
           </div>
 
           <!-- Observação -->
-          <div class="mb-1">
+          <div class="mb-3">
             <label class="form-label fw-medium">Observação</label>
             <textarea class="form-control" formControlName="observacao" rows="2"></textarea>
           </div>
+
+          <!-- Vincular a pedido de compra (só em nova entrada) -->
+          @if (!editingId() && isEntrada() && pedidoItensDisponiveis().length > 0) {
+            <div class="mb-1">
+              <label class="form-label fw-medium">Vincular a Pedido de Compra</label>
+              <select class="form-select" formControlName="pedidoCompraItemId">
+                <option [value]="null">Não vincular</option>
+                @for (item of pedidoItensDisponiveis(); track item.id) {
+                  <option [value]="item.id">{{ item.label }}</option>
+                }
+              </select>
+              <div class="form-text">Atualiza automaticamente o progresso do pedido.</div>
+            </div>
+          }
 
           @if (saveError()) {
             <div class="alert alert-danger py-2 small mt-3">

@@ -6,6 +6,14 @@ import { Fornecedor, CreateFornecedorRequest, UpdateFornecedorRequest } from '..
 
 interface PagedResult<T> { items: T[]; total: number; }
 
+export interface FornecedorFiltros {
+  busca?: string;
+  uf?: string;
+  ativo?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class FornecedorService {
   private http = inject(HttpClient);
@@ -24,6 +32,16 @@ export class FornecedorService {
         this.loading.set(false);
       })
     );
+  }
+
+  buscar(filtros: FornecedorFiltros) {
+    let params = new HttpParams();
+    if (filtros.busca)         params = params.set('busca', filtros.busca);
+    if (filtros.uf)            params = params.set('uf', filtros.uf);
+    if (filtros.ativo != null) params = params.set('ativo', String(filtros.ativo));
+    if (filtros.page)          params = params.set('page', filtros.page);
+    if (filtros.pageSize)      params = params.set('pageSize', filtros.pageSize);
+    return this.http.get<PagedResult<Fornecedor>>(this.url, { params });
   }
 
   getById(id: number) {

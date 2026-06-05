@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { DecimalPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { ConferenciaService } from '../../core/services/conferencia.service';
+import { ImpressaoService } from '../../core/services/impressao.service';
 import { ProdutoService } from '../../core/services/produto.service';
 import { CategoriaService } from '../../core/services/categoria.service';
 import { MovimentacaoService } from '../../core/services/movimentacao.service';
@@ -15,6 +16,8 @@ import { Movimentacao } from '../../core/models/movimentacao.model';
 })
 export class ConferenciaComponent implements OnInit {
   private conferenciaService = inject(ConferenciaService);
+  private impressaoService = inject(ImpressaoService);
+  imprimindo = signal(false);
   private produtoService = inject(ProdutoService);
   private categoriaService = inject(CategoriaService);
   private movimentacaoService = inject(MovimentacaoService);
@@ -117,6 +120,20 @@ export class ConferenciaComponent implements OnInit {
         this.loadingMovimentos.set(false);
       },
       error: () => this.loadingMovimentos.set(false)
+    });
+  }
+
+  imprimirConferencia() {
+    this.imprimindo.set(true);
+    this.impressaoService.gerarPdf('/v1/impressoes/conferencia-estoque', {
+      DataFim: this.filterGeralDataFim() || undefined,
+      CategoriaId: this.filterGeralCategoriaId() ?? undefined,
+      ApenasComSaldo: this.filterGeralApenasComSaldo() || undefined,
+      AbaixoDoMinimo: this.filterGeralAbaixoDoMinimo() || undefined,
+      IncluirConsumoInterno: this.filterGeralIncluirConsumoInterno() || undefined
+    }).subscribe({
+      next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindo.set(false); },
+      error: () => { alert('Erro ao gerar relatório.'); this.imprimindo.set(false); }
     });
   }
 

@@ -57,8 +57,29 @@ export const routes: Routes = [
       {
         path: 'conferencia',
         loadComponent: () => import('./features/conferencia/conferencia.component').then(m => m.ConferenciaComponent)
+      },
+      {
+        path: 'pedidos-compra',
+        loadComponent: () => import('./features/pedidos-compra/pedidos-compra.component').then(m => m.PedidosCompraComponent)
+      },
+      {
+        path: 'pedidos-compra/:id',
+        loadComponent: () => import('./features/pedidos-compra/detalhe/pedido-detalhe.component').then(m => m.PedidoDetalheComponent)
+      },
+      {
+        path: 'admin/audit-logs',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/audit-logs/audit-logs.component').then(m => m.AuditLogsComponent)
+      },
+      {
+        path: 'admin/impressoes',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/impressoes/impressoes.component').then(m => m.ImpressoesComponent)
       }
     ]
   },
-  { path: '**', redirectTo: 'dashboard' }
+  {
+    path: '**',
+    loadComponent: () => import('./features/not-found/not-found.component').then(m => m.NotFoundComponent)
+  }
 ];

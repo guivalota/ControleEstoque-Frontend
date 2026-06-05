@@ -1,0 +1,128 @@
+<div>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-bold mb-0">Logs de Auditoria</h5>
+    <span class="text-muted small">{{ total() }} registro(s)</span>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label form-label-sm fw-medium mb-1">Usuário</label>
+          <select class="form-select form-select-sm" [(ngModel)]="filterUsuarioId">
+            <option value="">Todos</option>
+            @for (u of usuarios(); track u.id) {
+              <option [value]="u.id">{{ u.nome }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label form-label-sm fw-medium mb-1">Método</label>
+          <select class="form-select form-select-sm" [(ngModel)]="filterMethod">
+            <option value="">Todos</option>
+            @for (m of methods; track m) {
+              <option [value]="m">{{ m }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label form-label-sm fw-medium mb-1">Endpoint</label>
+          <input type="text" class="form-control form-control-sm" placeholder="/v1/produtos"
+            [(ngModel)]="filterEndpoint" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label form-label-sm fw-medium mb-1">Data início</label>
+          <input type="date" class="form-control form-control-sm" [(ngModel)]="filterDataInicio" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label form-label-sm fw-medium mb-1">Data fim</label>
+          <input type="date" class="form-control form-control-sm" [(ngModel)]="filterDataFim" />
+        </div>
+        <div class="col-12 d-flex gap-2">
+          <button class="btn btn-primary btn-sm" (click)="carregar(1)" [disabled]="loading()">
+            <i class="bi bi-funnel me-1"></i>Filtrar
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" (click)="limpar()" [disabled]="loading()">
+            Limpar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+        </div>
+      } @else if (erro()) {
+        <div class="p-3">
+          <div class="alert alert-danger mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ erro() }}
+          </div>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 small">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3" style="min-width:140px">Data/Hora</th>
+                <th style="min-width:120px">Usuário</th>
+                <th style="width:90px">Método</th>
+                <th>Endpoint</th>
+                <th style="width:80px">Recurso</th>
+                <th style="width:130px">IP</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (log of logs(); track log.id) {
+                <tr>
+                  <td class="ps-3 text-muted font-monospace" style="font-size:.75rem;">
+                    {{ log.criadoEm | date:'dd/MM/yyyy HH:mm:ss' }}
+                  </td>
+                  <td>
+                    <span [title]="log.usuarioId">{{ log.usuarioNome }}</span>
+                  </td>
+                  <td>
+                    <span class="badge" [class]="methodBadge(log.method)">{{ log.method }}</span>
+                  </td>
+                  <td class="font-monospace text-muted" style="font-size:.78rem;">{{ log.endpoint }}</td>
+                  <td class="text-muted text-center">{{ log.recursoId ?? '—' }}</td>
+                  <td class="font-monospace text-muted" style="font-size:.75rem;">{{ log.ip }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox me-2"></i>Nenhum log encontrado
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Paginação -->
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+          <span class="text-muted small">
+            Página {{ page() }} — {{ logs().length }} de {{ total() }} registro(s)
+          </span>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary"
+              [disabled]="page() === 1 || loading()"
+              (click)="carregar(page() - 1)">
+              <i class="bi bi-chevron-left"></i> Anterior
+            </button>
+            <button class="btn btn-sm btn-outline-secondary"
+              [disabled]="!hasNextPage() || loading()"
+              (click)="carregar(page() + 1)">
+              Próxima <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

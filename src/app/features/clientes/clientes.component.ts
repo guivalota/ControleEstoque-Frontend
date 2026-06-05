@@ -1,8 +1,9 @@
 import { Component, inject, OnInit, signal, ViewChild, ElementRef, OnDestroy } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { Modal } from 'bootstrap';
 import { ClienteService } from '../../core/services/cliente.service';
+import { ImpressaoService } from '../../core/services/impressao.service';
 import { PermissaoService } from '../../core/services/permissao.service';
 import { CepService } from '../../core/services/cep.service';
 import { Cliente, CreateClienteRequest, UpdateClienteRequest } from '../../core/models/cliente.model';
@@ -10,20 +11,29 @@ import { Cliente, CreateClienteRequest, UpdateClienteRequest } from '../../core/
 @Component({
   selector: 'app-clientes',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, FormsModule, DatePipe],
   templateUrl: './clientes.component.html'
 })
 export class ClientesComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private cepService = inject(CepService);
-  clienteService = inject(ClienteService);
+  private clienteService = inject(ClienteService);
+  private impressaoService = inject(ImpressaoService);
   permissao = inject(PermissaoService);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
   private modal!: Modal;
 
-  clientes = this.clienteService.clientes;
-  loading = this.clienteService.loading;
+  clientes = signal<Cliente[]>([]);
+  total = signal(0);
+  page = signal(1);
+  readonly pageSize = 50;
+  loading = signal(false);
+  imprimindo = signal(false);
+
+  filterBusca = '';
+  filterUf = '';
+  filterAtivo = '';
 
   editingId = signal<number | null>(null);
   saving = signal(false);
@@ -43,8 +53,48 @@ export class ClientesComponent implements OnInit, OnDestroy {
     ativo: [true]
   });
 
-  ngOnInit() { this.clienteService.getAll().subscribe(); }
+  ngOnInit() { this.buscar(1); }
   ngOnDestroy() { this.modal?.dispose(); }
+
+  buscar(page = 1) {
+    this.loading.set(true);
+    this.clienteService.buscar({
+      busca: this.filterBusca || undefined,
+      uf: this.filterUf || undefined,
+      ativo: this.filterAtivo !== '' ? this.filterAtivo === 'true' : undefined,
+      page,
+      pageSize: this.pageSize
+    }).subscribe({
+      next: res => {
+        this.clientes.set(res.items);
+        this.total.set(res.total);
+        this.page.set(page);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
+    });
+  }
+
+  limparFiltros() {
+    this.filterBusca = '';
+    this.filterUf = '';
+    this.filterAtivo = '';
+    this.buscar(1);
+  }
+
+  hasNextPage() { return this.page() * this.pageSize < this.total(); }
+
+  imprimir() {
+    this.imprimindo.set(true);
+    this.impressaoService.gerarPdf('/v1/impressoes/clientes', {
+      busca: this.filterBusca || undefined,
+      uf: this.filterUf || undefined,
+      ativo: this.filterAtivo !== '' ? this.filterAtivo : undefined
+    }).subscribe({
+      next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindo.set(false); },
+      error: () => { alert('Erro ao gerar PDF.'); this.imprimindo.set(false); }
+    });
+  }
 
   private getModal(): Modal {
     if (!this.modal) this.modal = new Modal(this.modalEl.nativeElement);
@@ -113,7 +163,7 @@ export class ClientesComponent implements OnInit, OnDestroy {
       : this.clienteService.create(val as CreateClienteRequest);
 
     op.subscribe({
-      next: () => { this.saving.set(false); this.getModal().hide(); },
+      next: () => { this.saving.set(false); this.getModal().hide(); this.buscar(this.page()); },
       error: (err) => {
         this.saveError.set(err.error?.message ?? 'Erro ao salvar cliente.');
         this.saving.set(false);
@@ -123,7 +173,9 @@ export class ClientesComponent implements OnInit, OnDestroy {
 
   delete(c: Cliente) {
     if (!confirm(`Excluir o cliente "${c.nome}"?`)) return;
-    this.clienteService.delete(c.id).subscribe();
+    this.clienteService.delete(c.id).subscribe({
+      next: () => this.buscar(this.page())
+    });
   }
 
   formatCpfCnpj(valor: string): string {

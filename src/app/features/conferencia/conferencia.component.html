@@ -268,6 +268,10 @@
             <button class="btn btn-primary btn-sm" (click)="carregarVisaoGeral(1)" [disabled]="loadingGeral()">
               <i class="bi bi-funnel me-1"></i>Filtrar
             </button>
+            <button class="btn btn-outline-secondary btn-sm" (click)="imprimirConferencia()" [disabled]="imprimindo()">
+              @if (imprimindo()) { <span class="spinner-border spinner-border-sm"></span> }
+              @else { <i class="bi bi-printer"></i> }
+            </button>
           </div>
         </div>
       </div>
