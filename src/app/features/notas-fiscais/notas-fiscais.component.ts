@@ -1,8 +1,9 @@
 import { Component, inject, OnInit, signal, computed, ViewChild, ElementRef, OnDestroy } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DecimalPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { Modal } from 'bootstrap';
 import { NotaFiscalService } from '../../core/services/nota-fiscal.service';
+import { ImpressaoService } from '../../core/services/impressao.service';
 import { ProdutoService } from '../../core/services/produto.service';
 import { FornecedorService } from '../../core/services/fornecedor.service';
 import { CategoriaService } from '../../core/services/categoria.service';
@@ -16,7 +17,7 @@ import { AnaliseNfeItem, AnaliseNfeResponse, ResolucaoItem } from '../../core/mo
 @Component({
   selector: 'app-notas-fiscais',
   standalone: true,
-  imports: [ReactiveFormsModule, DecimalPipe, DatePipe, TitleCasePipe],
+  imports: [ReactiveFormsModule, FormsModule, DecimalPipe, DatePipe, TitleCasePipe],
   templateUrl: './notas-fiscais.component.html'
 })
 export class NotasFiscaisComponent implements OnInit, OnDestroy {
@@ -27,6 +28,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
   private categoriaService = inject(CategoriaService);
   private nfeService = inject(NfeService);
   private pedidoService = inject(PedidoCompraService);
+  private impressaoService = inject(ImpressaoService);
   permissao = inject(PermissaoService);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
@@ -36,7 +38,21 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
   private detalhesModal!: Modal;
   private resolucaoModal!: Modal;
 
-  notas = this.nfService.notasFiscais;
+  notas = signal<NotaFiscal[]>([]);
+  total = signal(0);
+  page = signal(1);
+  readonly pageSize = 50;
+  loadingLista = signal(false);
+  imprimindo = signal(false);
+  imprimindoNf = signal<number | null>(null);
+
+  // filtros da lista
+  filterDataInicio = '';
+  filterDataFim = '';
+  filterFornecedorId = '';
+  filterTipo = '';
+  filterStatus = '';
+
   produtos = this.produtoService.produtos;
   fornecedores = this.fornecedorService.fornecedores;
   categorias = this.categoriaService.categorias;
@@ -80,10 +96,64 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
   get resolucaoItens(): FormArray { return this.resolucaoForm.get('itens') as FormArray; }
 
   ngOnInit() {
-    this.nfService.getAll().subscribe();
+    this.buscarNotas(1);
     this.produtoService.getAll().subscribe();
     this.fornecedorService.getAll().subscribe();
     this.categoriaService.getAll().subscribe();
+  }
+
+  buscarNotas(page = 1) {
+    this.loadingLista.set(true);
+    this.nfService.buscar({
+      dataInicio: this.filterDataInicio || undefined,
+      dataFim: this.filterDataFim || undefined,
+      fornecedorId: this.filterFornecedorId ? +this.filterFornecedorId : undefined,
+      tipo: this.filterTipo || undefined,
+      status: this.filterStatus || undefined,
+      page,
+      pageSize: this.pageSize
+    }).subscribe({
+      next: res => {
+        this.notas.set(res.items);
+        this.total.set(res.total);
+        this.page.set(page);
+        this.loadingLista.set(false);
+      },
+      error: () => this.loadingLista.set(false)
+    });
+  }
+
+  limparFiltros() {
+    this.filterDataInicio = '';
+    this.filterDataFim = '';
+    this.filterFornecedorId = '';
+    this.filterTipo = '';
+    this.filterStatus = '';
+    this.buscarNotas(1);
+  }
+
+  hasNextPage() { return this.page() * this.pageSize < this.total(); }
+
+  imprimirLista() {
+    this.imprimindo.set(true);
+    this.impressaoService.gerarPdf('/v1/impressoes/notas-fiscais', {
+      dataInicio: this.filterDataInicio || undefined,
+      dataFim: this.filterDataFim || undefined,
+      fornecedorId: this.filterFornecedorId || undefined,
+      tipo: this.filterTipo || undefined,
+      status: this.filterStatus || undefined
+    }).subscribe({
+      next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindo.set(false); },
+      error: () => { alert('Erro ao gerar PDF.'); this.imprimindo.set(false); }
+    });
+  }
+
+  imprimirNf(nf: NotaFiscal) {
+    this.imprimindoNf.set(nf.id);
+    this.impressaoService.gerarPdf(`/v1/impressoes/nota-fiscal/${nf.id}`).subscribe({
+      next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindoNf.set(null); },
+      error: () => { alert('Erro ao gerar PDF.'); this.imprimindoNf.set(null); }
+    });
   }
 
   selecionarFornecedor(id: number | null) {
@@ -203,7 +273,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
         this.getResolucaoModal().hide();
         this.analiseResult.set(null);
         this.importMsg.set(`NF-e ${res.numero}/${res.serie} importada! ${res.produtosNovos} produto(s) novo(s) criado(s).`);
-        this.nfService.getAll().subscribe();
+        this.buscarNotas(1);
         this.produtoService.getAll().subscribe();
       },
       error: (err) => {
@@ -280,7 +350,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
     const req = { ...val, valorTotal: this.valorTotalComputado(), itens: val.itens } as any;
 
     this.nfService.create(req).subscribe({
-      next: () => { this.saving.set(false); this.getModal().hide(); },
+      next: () => { this.saving.set(false); this.getModal().hide(); this.buscarNotas(1); },
       error: (err) => {
         this.saveError.set(err.error?.message ?? 'Erro ao salvar nota fiscal.');
         this.saving.set(false);

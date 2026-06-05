@@ -12,8 +12,18 @@ export class ImpressaoService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/v1/impressoes`;
 
+  gerarPdf(path: string, params?: Record<string, any>) {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        if (v != null && v !== '') httpParams = httpParams.set(k, String(v));
+      });
+    }
+    return this.http.get(`${environment.apiUrl}${path}`, { responseType: 'blob', params: httpParams });
+  }
+
   imprimirPedido(id: number) {
-    return this.http.get(`${this.base}/pedido-compra/${id}`, { responseType: 'blob' });
+    return this.gerarPdf(`/v1/impressoes/pedido-compra/${id}`);
   }
 
   abrirPdf(blob: Blob): void {

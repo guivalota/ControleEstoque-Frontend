@@ -9,6 +9,7 @@ import { ProdutoService } from '../../core/services/produto.service';
 import { CategoriaService } from '../../core/services/categoria.service';
 import { PermissaoService } from '../../core/services/permissao.service';
 import { PedidoCompraService } from '../../core/services/pedido-compra.service';
+import { ImpressaoService } from '../../core/services/impressao.service';
 import { Movimentacao, CreateMovimentacaoRequest, UpdateMovimentacaoRequest, TipoMovimentacao, MotivoAjuste } from '../../core/models/movimentacao.model';
 import { PedidoCompra } from '../../core/models/pedido-compra.model';
 
@@ -25,6 +26,8 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
   categoriaService = inject(CategoriaService);
   permissao = inject(PermissaoService);
   private pedidoService = inject(PedidoCompraService);
+  private impressaoService = inject(ImpressaoService);
+  imprimindo = signal(false);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
   private modal!: Modal;
@@ -132,6 +135,19 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
   }
 
   aplicarFiltros() { this.carregarPagina(1); }
+
+  imprimir() {
+    this.imprimindo.set(true);
+    this.impressaoService.gerarPdf('/v1/impressoes/movimentacoes', {
+      DataInicio: this.filterDataInicio() || undefined,
+      DataFim: this.filterDataFim() || undefined,
+      CategoriaId: this.filterCategoriaId() ?? undefined,
+      ProdutoId: this.filterProdutoId() ?? undefined
+    }).subscribe({
+      next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindo.set(false); },
+      error: () => { alert('Erro ao gerar relatório.'); this.imprimindo.set(false); }
+    });
+  }
 
   limparFiltros() {
     this.filterDataInicio.set('');

@@ -1,8 +1,9 @@
 import { Component, inject, OnInit, signal, ViewChild, ElementRef, OnDestroy } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { Modal } from 'bootstrap';
 import { FornecedorService } from '../../core/services/fornecedor.service';
+import { ImpressaoService } from '../../core/services/impressao.service';
 import { PermissaoService } from '../../core/services/permissao.service';
 import { CepService } from '../../core/services/cep.service';
 import { Fornecedor, CreateFornecedorRequest, UpdateFornecedorRequest } from '../../core/models/fornecedor.model';
@@ -10,20 +11,29 @@ import { Fornecedor, CreateFornecedorRequest, UpdateFornecedorRequest } from '..
 @Component({
   selector: 'app-fornecedores',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, FormsModule, DatePipe],
   templateUrl: './fornecedores.component.html'
 })
 export class FornecedoresComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private cepService = inject(CepService);
-  fornecedorService = inject(FornecedorService);
+  private fornecedorService = inject(FornecedorService);
+  private impressaoService = inject(ImpressaoService);
   permissao = inject(PermissaoService);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
   private modal!: Modal;
 
-  fornecedores = this.fornecedorService.fornecedores;
-  loading = this.fornecedorService.loading;
+  fornecedores = signal<Fornecedor[]>([]);
+  total = signal(0);
+  page = signal(1);
+  readonly pageSize = 50;
+  loading = signal(false);
+  imprimindo = signal(false);
+
+  filterBusca = '';
+  filterUf = '';
+  filterAtivo = '';
 
   editingId = signal<number | null>(null);
   saving = signal(false);
@@ -46,8 +56,48 @@ export class FornecedoresComponent implements OnInit, OnDestroy {
     ativo: [true]
   });
 
-  ngOnInit() { this.fornecedorService.getAll().subscribe(); }
+  ngOnInit() { this.buscar(1); }
   ngOnDestroy() { this.modal?.dispose(); }
+
+  buscar(page = 1) {
+    this.loading.set(true);
+    this.fornecedorService.buscar({
+      busca: this.filterBusca || undefined,
+      uf: this.filterUf || undefined,
+      ativo: this.filterAtivo !== '' ? this.filterAtivo === 'true' : undefined,
+      page,
+      pageSize: this.pageSize
+    }).subscribe({
+      next: res => {
+        this.fornecedores.set(res.items);
+        this.total.set(res.total);
+        this.page.set(page);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
+    });
+  }
+
+  limparFiltros() {
+    this.filterBusca = '';
+    this.filterUf = '';
+    this.filterAtivo = '';
+    this.buscar(1);
+  }
+
+  hasNextPage() { return this.page() * this.pageSize < this.total(); }
+
+  imprimir() {
+    this.imprimindo.set(true);
+    this.impressaoService.gerarPdf('/v1/impressoes/fornecedores', {
+      busca: this.filterBusca || undefined,
+      uf: this.filterUf || undefined,
+      ativo: this.filterAtivo !== '' ? this.filterAtivo : undefined
+    }).subscribe({
+      next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindo.set(false); },
+      error: () => { alert('Erro ao gerar PDF.'); this.imprimindo.set(false); }
+    });
+  }
 
   private getModal(): Modal {
     if (!this.modal) this.modal = new Modal(this.modalEl.nativeElement);
@@ -136,7 +186,7 @@ export class FornecedoresComponent implements OnInit, OnDestroy {
       : this.fornecedorService.create(val as CreateFornecedorRequest);
 
     op.subscribe({
-      next: () => { this.saving.set(false); this.getModal().hide(); },
+      next: () => { this.saving.set(false); this.getModal().hide(); this.buscar(this.page()); },
       error: (err) => {
         this.saveError.set(err.error?.message ?? 'Erro ao salvar fornecedor.');
         this.saving.set(false);
@@ -146,7 +196,9 @@ export class FornecedoresComponent implements OnInit, OnDestroy {
 
   delete(f: Fornecedor) {
     if (!confirm(`Excluir o fornecedor "${f.razaoSocial}"?`)) return;
-    this.fornecedorService.delete(f.id).subscribe();
+    this.fornecedorService.delete(f.id).subscribe({
+      next: () => this.buscar(this.page())
+    });
   }
 
   f(name: string) { return this.form.get(name)!; }

@@ -53,6 +53,12 @@
           <button class="btn btn-outline-secondary btn-sm" (click)="limparFiltros()">
             <i class="bi bi-x-lg"></i>
           </button>
+          @if (permissao.canCreate()) {
+            <button class="btn btn-outline-secondary btn-sm" (click)="imprimir()" [disabled]="imprimindo()">
+              @if (imprimindo()) { <span class="spinner-border spinner-border-sm"></span> }
+              @else { <i class="bi bi-printer"></i> }
+            </button>
+          }
         </div>
       </div>
     </div>
