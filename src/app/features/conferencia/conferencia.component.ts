@@ -1,26 +1,35 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { DecimalPipe, DatePipe, TitleCasePipe } from '@angular/common';
+import { BaseChartDirective, provideCharts, withDefaultRegisterables } from 'ng2-charts';
+import { ChartConfiguration } from 'chart.js';
 import { ConferenciaService } from '../../core/services/conferencia.service';
 import { ImpressaoService } from '../../core/services/impressao.service';
 import { ProdutoService } from '../../core/services/produto.service';
 import { CategoriaService } from '../../core/services/categoria.service';
 import { MovimentacaoService } from '../../core/services/movimentacao.service';
+import { AlertaService } from '../../core/services/alerta.service';
+import { PermissaoService } from '../../core/services/permissao.service';
 import { ConferenciaResult } from '../../core/models/conferencia.model';
-import { Movimentacao } from '../../core/models/movimentacao.model';
+import { Movimentacao, PrecoMedioMensal } from '../../core/models/movimentacao.model';
 
 @Component({
   selector: 'app-conferencia',
   standalone: true,
-  imports: [DecimalPipe, DatePipe, TitleCasePipe],
+  imports: [DecimalPipe, DatePipe, TitleCasePipe, BaseChartDirective],
+  providers: [provideCharts(withDefaultRegisterables())],
   templateUrl: './conferencia.component.html'
 })
 export class ConferenciaComponent implements OnInit {
   private conferenciaService = inject(ConferenciaService);
   private impressaoService = inject(ImpressaoService);
   imprimindo = signal(false);
+  exportando = signal(false);
   private produtoService = inject(ProdutoService);
   private categoriaService = inject(CategoriaService);
   private movimentacaoService = inject(MovimentacaoService);
+  private alertaService = inject(AlertaService);
+  permissaoService = inject(PermissaoService);
+  enviandoAlerta = signal(false);
 
   produtos = this.produtoService.produtos;
   categorias = this.categoriaService.categorias;
@@ -36,6 +45,31 @@ export class ConferenciaComponent implements OnInit {
   movimentacoesProduto = signal<Movimentacao[]>([]);
   loadingMovimentos = signal(false);
 
+  historicoPreco = signal<PrecoMedioMensal[]>([]);
+  loadingHistorico = signal(false);
+
+  lineChartType = 'line' as const;
+  lineChartOptions: ChartConfiguration<'line'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: { y: { beginAtZero: false, ticks: { callback: v => `R$ ${v}` } } },
+    plugins: { legend: { display: false } }
+  };
+  lineChartData = computed<ChartConfiguration<'line'>['data']>(() => {
+    const historico = [...this.historicoPreco()].reverse();
+    return {
+      labels: historico.map(h => this.mesLabel(h.mes)),
+      datasets: [{
+        label: 'Preço Médio',
+        data: historico.map(h => h.precoMedio),
+        borderColor: '#0d6efd',
+        backgroundColor: 'rgba(13, 110, 253, 0.15)',
+        tension: 0.3,
+        fill: true
+      }]
+    };
+  });
+
   // Modo geral
   modoGeral = signal(false);
   visaoGeral = signal<ConferenciaResult[]>([]);
@@ -45,6 +79,7 @@ export class ConferenciaComponent implements OnInit {
   filterGeralCategoriaId = signal<number | null>(null);
   filterGeralApenasComSaldo = signal(false);
   filterGeralAbaixoDoMinimo = signal(false);
+  filterGeralAbaixoDoPontoReposicao = signal(false);
   filterGeralIncluirConsumoInterno = signal(false);
   readonly geralPageSize = 50;
   geralPage = signal(1);
@@ -71,6 +106,7 @@ export class ConferenciaComponent implements OnInit {
       CategoriaId: this.filterGeralCategoriaId() ?? undefined,
       ApenasComSaldo: this.filterGeralApenasComSaldo() || undefined,
       AbaixoDoMinimo: this.filterGeralAbaixoDoMinimo() || undefined,
+      AbaixoDoPontoReposicao: this.filterGeralAbaixoDoPontoReposicao() || undefined,
       IncluirConsumoInterno: this.filterGeralIncluirConsumoInterno() || undefined,
       Page: page,
       PageSize: this.geralPageSize
@@ -97,6 +133,8 @@ export class ConferenciaComponent implements OnInit {
     this.resultado.set(null);
     this.movimentacoesProduto.set([]);
     this.loadingMovimentos.set(true);
+    this.historicoPreco.set([]);
+    this.loadingHistorico.set(true);
 
     this.conferenciaService.conferir(id, {
       DataInicio: this.filterDataInicio() || undefined,
@@ -121,6 +159,14 @@ export class ConferenciaComponent implements OnInit {
       },
       error: () => this.loadingMovimentos.set(false)
     });
+
+    this.movimentacaoService.getHistoricoPreco(id).subscribe({
+      next: historico => {
+        this.historicoPreco.set(historico);
+        this.loadingHistorico.set(false);
+      },
+      error: () => this.loadingHistorico.set(false)
+    });
   }
 
   imprimirConferencia() {
@@ -130,11 +176,52 @@ export class ConferenciaComponent implements OnInit {
       CategoriaId: this.filterGeralCategoriaId() ?? undefined,
       ApenasComSaldo: this.filterGeralApenasComSaldo() || undefined,
       AbaixoDoMinimo: this.filterGeralAbaixoDoMinimo() || undefined,
+      AbaixoDoPontoReposicao: this.filterGeralAbaixoDoPontoReposicao() || undefined,
       IncluirConsumoInterno: this.filterGeralIncluirConsumoInterno() || undefined
     }).subscribe({
       next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindo.set(false); },
       error: () => { alert('Erro ao gerar relatório.'); this.imprimindo.set(false); }
     });
+  }
+
+  enviarAlertaEstoqueBaixo() {
+    if (!confirm('Enviar alerta de estoque baixo por e-mail?')) return;
+    this.enviandoAlerta.set(true);
+    this.alertaService.enviarAlertaEstoqueBaixo().subscribe({
+      next: res => {
+        this.enviandoAlerta.set(false);
+        if (res.emailEnviado) {
+          alert(`Alerta enviado — ${res.totalAbaixoDoMinimo} produto(s) abaixo do mínimo`);
+        } else {
+          alert('Nenhum produto abaixo do mínimo. E-mail não enviado.');
+        }
+      },
+      error: () => {
+        this.enviandoAlerta.set(false);
+        alert('Erro ao enviar alerta de estoque baixo.');
+      }
+    });
+  }
+
+  exportarCsv() {
+    this.exportando.set(true);
+    this.conferenciaService.exportarCsv({
+      DataFim: this.filterGeralDataFim() || undefined,
+      CategoriaId: this.filterGeralCategoriaId() ?? undefined,
+      ApenasComSaldo: this.filterGeralApenasComSaldo() || undefined,
+      AbaixoDoMinimo: this.filterGeralAbaixoDoMinimo() || undefined,
+      AbaixoDoPontoReposicao: this.filterGeralAbaixoDoPontoReposicao() || undefined,
+      IncluirConsumoInterno: this.filterGeralIncluirConsumoInterno() || undefined
+    }).subscribe({
+      next: blob => { this.impressaoService.baixarArquivo(blob, 'conferencia.csv'); this.exportando.set(false); },
+      error: () => { alert('Erro ao exportar CSV.'); this.exportando.set(false); }
+    });
+  }
+
+  mesLabel(mes: string): string {
+    const [ano, mesNum] = mes.split('-');
+    const data = new Date(+ano, +mesNum - 1, 1);
+    return data.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
   }
 
   saldoClass(saldo: number): string {

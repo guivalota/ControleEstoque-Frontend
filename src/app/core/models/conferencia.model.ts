@@ -4,6 +4,7 @@ export interface ConferenciaResult {
   nome: string;
   categoria: string;
   saldoAtual: number;
+  pontoReposicao: number;
   totalEntradas: number;
   totalSaidas: number;
   precoMedio: number;

@@ -42,3 +42,10 @@ export interface SaldoEstoque {
   produtoId: number;
   saldo: number;
 }
+
+export interface PrecoMedioMensal {
+  mes: string;
+  precoMedio: number;
+  totalEntradas: number;
+  valorTotal: number;
+}

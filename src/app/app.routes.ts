@@ -59,6 +59,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/conferencia/conferencia.component').then(m => m.ConferenciaComponent)
       },
       {
+        path: 'conferencia/sugestoes',
+        loadComponent: () => import('./features/conferencia/sugestoes-reposicao/sugestoes-reposicao.component').then(m => m.SugestoesReposicaoComponent)
+      },
+      {
         path: 'pedidos-compra',
         loadComponent: () => import('./features/pedidos-compra/pedidos-compra.component').then(m => m.PedidosCompraComponent)
       },

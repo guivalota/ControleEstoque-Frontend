@@ -15,6 +15,7 @@ export interface ConferenciaGeralFiltros {
   CategoriaId?: number;
   ApenasComSaldo?: boolean;
   AbaixoDoMinimo?: boolean;
+  AbaixoDoPontoReposicao?: boolean;
   IncluirConsumoInterno?: boolean;
   Page?: number;
   PageSize?: number;
@@ -51,12 +52,34 @@ export class ConferenciaService {
     if (filtros?.CategoriaId) params = params.set('CategoriaId', filtros.CategoriaId);
     if (filtros?.ApenasComSaldo != null) params = params.set('ApenasComSaldo', String(filtros.ApenasComSaldo));
     if (filtros?.AbaixoDoMinimo != null) params = params.set('AbaixoDoMinimo', String(filtros.AbaixoDoMinimo));
+    if (filtros?.AbaixoDoPontoReposicao != null) params = params.set('AbaixoDoPontoReposicao', String(filtros.AbaixoDoPontoReposicao));
     if (filtros?.IncluirConsumoInterno) params = params.set('IncluirConsumoInterno', 'true');
     if (filtros?.Page != null) params = params.set('Page', filtros.Page);
     if (filtros?.PageSize != null) params = params.set('PageSize', filtros.PageSize);
 
     return this.http.get<PagedResult<ConferenciaResult>>(this.baseUrl, { params }).pipe(
       map(data => ({ items: data.items, total: data.total } as ConferenciaPage))
+    );
+  }
+
+  exportarCsv(filtros?: ConferenciaGeralFiltros) {
+    let params = new HttpParams().set('formato', 'csv');
+    if (filtros?.DataFim) params = params.set('DataFim', filtros.DataFim);
+    if (filtros?.CategoriaId) params = params.set('CategoriaId', filtros.CategoriaId);
+    if (filtros?.ApenasComSaldo != null) params = params.set('ApenasComSaldo', String(filtros.ApenasComSaldo));
+    if (filtros?.AbaixoDoMinimo != null) params = params.set('AbaixoDoMinimo', String(filtros.AbaixoDoMinimo));
+    if (filtros?.AbaixoDoPontoReposicao != null) params = params.set('AbaixoDoPontoReposicao', String(filtros.AbaixoDoPontoReposicao));
+    if (filtros?.IncluirConsumoInterno) params = params.set('IncluirConsumoInterno', 'true');
+
+    return this.http.get(this.baseUrl, { params, responseType: 'blob' });
+  }
+
+  getSugestoesReposicao(categoriaId?: number) {
+    let params = new HttpParams();
+    if (categoriaId != null) params = params.set('categoriaId', categoriaId);
+
+    return this.http.get<PagedResult<ConferenciaResult>>(`${this.baseUrl}/sugestoes-reposicao`, { params }).pipe(
+      map(data => data.items)
     );
   }
 }
