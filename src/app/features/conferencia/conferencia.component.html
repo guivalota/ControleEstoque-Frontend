@@ -211,6 +211,55 @@
           }
         </div>
       </div>
+
+      <!-- Histórico de preço médio -->
+      <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header border-bottom py-3">
+          <h6 class="mb-0 fw-semibold">Histórico de Preço Médio — últimos 12 meses</h6>
+        </div>
+        <div class="card-body">
+          @if (loadingHistorico()) {
+            <div class="text-center py-4 text-muted">
+              <div class="spinner-border spinner-border-sm me-2"></div>Carregando histórico...
+            </div>
+          } @else if (!historicoPreco().length) {
+            <div class="text-center text-muted py-4">
+              <i class="bi bi-graph-up me-2"></i>Sem dados de entradas no período para exibir o histórico
+            </div>
+          } @else {
+            <div style="height: 280px;">
+              <canvas baseChart
+                [type]="lineChartType"
+                [data]="lineChartData()"
+                [options]="lineChartOptions">
+              </canvas>
+            </div>
+
+            <div class="table-responsive mt-4">
+              <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th class="ps-3">Mês</th>
+                    <th class="text-end">Preço Médio</th>
+                    <th class="text-end">Entradas</th>
+                    <th class="text-end">Valor Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (h of historicoPreco(); track h.mes) {
+                    <tr>
+                      <td class="ps-3 text-muted small">{{ mesLabel(h.mes) }}</td>
+                      <td class="text-end fw-medium">R$ {{ h.precoMedio | number:'1.2-2' }}</td>
+                      <td class="text-end text-muted small">{{ h.totalEntradas }} un.</td>
+                      <td class="text-end text-muted small">R$ {{ h.valorTotal | number:'1.2-2' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </div>
     }
 
     @if (!resultado() && !loading() && !erro()) {
@@ -258,6 +307,12 @@
               <label class="form-check-label small" for="abaixoDoMinimo">Abaixo do mínimo</label>
             </div>
             <div class="form-check form-check-sm mb-0">
+              <input class="form-check-input" type="checkbox" id="abaixoDoPontoReposicao"
+                [checked]="filterGeralAbaixoDoPontoReposicao()"
+                (change)="filterGeralAbaixoDoPontoReposicao.set($any($event.target).checked)" />
+              <label class="form-check-label small" for="abaixoDoPontoReposicao">Reposição pendente</label>
+            </div>
+            <div class="form-check form-check-sm mb-0">
               <input class="form-check-input" type="checkbox" id="incluirConsumoGeral"
                 [checked]="filterGeralIncluirConsumoInterno()"
                 (change)="filterGeralIncluirConsumoInterno.set($any($event.target).checked)" />
@@ -268,9 +323,21 @@
             <button class="btn btn-primary btn-sm" (click)="carregarVisaoGeral(1)" [disabled]="loadingGeral()">
               <i class="bi bi-funnel me-1"></i>Filtrar
             </button>
+            @if (permissaoService.canCreate()) {
+              <button class="btn btn-outline-warning btn-sm" (click)="enviarAlertaEstoqueBaixo()" [disabled]="enviandoAlerta()">
+                @if (enviandoAlerta()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                @else { <i class="bi bi-bell me-1"></i> }
+                Enviar alerta de estoque baixo
+              </button>
+            }
             <button class="btn btn-outline-secondary btn-sm" (click)="imprimirConferencia()" [disabled]="imprimindo()">
               @if (imprimindo()) { <span class="spinner-border spinner-border-sm"></span> }
               @else { <i class="bi bi-printer"></i> }
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" (click)="exportarCsv()" [disabled]="exportando()">
+              @if (exportando()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              @else { <i class="bi bi-download me-1"></i> }
+              CSV
             </button>
           </div>
         </div>
@@ -306,6 +373,7 @@
                   <th class="text-end">Entradas</th>
                   <th class="text-end">Saídas</th>
                   <th class="text-center">Saldo</th>
+                  <th class="text-center">Ponto Reposição</th>
                   <th class="text-end">Valor Estoque</th>
                   <th class="text-center">Status</th>
                 </tr>
@@ -319,6 +387,7 @@
                     <td class="text-end text-success small">+{{ item.totalEntradas }}</td>
                     <td class="text-end text-danger small">-{{ item.totalSaidas }}</td>
                     <td class="text-center fw-bold" [class]="saldoClass(item.saldoAtual)">{{ item.saldoAtual }}</td>
+                    <td class="text-center text-muted small">{{ item.pontoReposicao }}</td>
                     <td class="text-end text-muted small">R$ {{ item.valorTotalEstoque | number:'1.2-2' }}</td>
                     <td class="text-center">
                       <span class="badge" [class]="saldoBadgeClass(item.saldoAtual)">
@@ -330,7 +399,7 @@
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="8" class="text-center text-muted py-4">
+                    <td colspan="9" class="text-center text-muted py-4">
                       <i class="bi bi-inbox me-2"></i>Nenhum produto encontrado
                     </td>
                   </tr>

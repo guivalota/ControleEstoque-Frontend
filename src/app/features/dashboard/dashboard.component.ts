@@ -1,11 +1,13 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
+import { Component, inject, OnInit, computed, signal, DestroyRef } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { ProdutoService } from '../../core/services/produto.service';
-import { CategoriaService } from '../../core/services/categoria.service';
+import { RouterLink, Router } from '@angular/router';
+import { interval } from 'rxjs';
+import { finalize } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DashboardService } from '../../core/services/dashboard.service';
 import { MovimentacaoService } from '../../core/services/movimentacao.service';
-import { FornecedorService } from '../../core/services/fornecedor.service';
-import { NotaFiscalService } from '../../core/services/nota-fiscal.service';
+import { ProdutoService } from '../../core/services/produto.service';
+import { DashboardResponse } from '../../core/models/dashboard.model';
 import { TipoMovimentacao } from '../../core/models/movimentacao.model';
 
 @Component({
@@ -15,28 +17,17 @@ import { TipoMovimentacao } from '../../core/models/movimentacao.model';
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {
-  private produtoService = inject(ProdutoService);
-  private categoriaService = inject(CategoriaService);
+  private dashboardService = inject(DashboardService);
   private movimentacaoService = inject(MovimentacaoService);
-  private fornecedorService = inject(FornecedorService);
-  private notaFiscalService = inject(NotaFiscalService);
+  private produtoService = inject(ProdutoService);
+  private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
-  produtos = this.produtoService.produtos;
-  categorias = this.categoriaService.categorias;
-  movimentacoes = this.movimentacaoService.movimentacoes;
-  fornecedores = this.fornecedorService.fornecedores;
-  notasFiscais = this.notaFiscalService.notasFiscais;
+  dashboard = signal<DashboardResponse | null>(null);
+  loading = signal(false);
 
-  produtosAtivos = computed(() => this.produtos().filter(p => p.ativo).length);
-  categoriasAtivas = computed(() => this.categorias().filter(c => c.ativo).length);
-  totalMovimentacoes = computed(() => this.movimentacoes().length);
-  valorCatalogo = computed(() =>
-    this.produtos()
-      .filter(p => p.ativo)
-      .reduce((sum, p) => sum + p.precoUnitario, 0)
-  );
-  fornecedoresAtivos = computed(() => this.fornecedores().filter(f => f.ativo).length);
-  totalNotasFiscais = computed(() => this.notasFiscais().length);
+  private produtos = this.produtoService.produtos;
+  private movimentacoes = this.movimentacaoService.movimentacoes;
 
   ultimasMovimentacoes = computed(() => {
     const prodMap = new Map(this.produtos().map(p => [p.id, p.nome]));
@@ -47,11 +38,28 @@ export class DashboardComponent implements OnInit {
   });
 
   ngOnInit() {
-    this.produtoService.getAll().subscribe();
-    this.categoriaService.getAll().subscribe();
+    this.carregarDashboard();
     this.movimentacaoService.getAll().subscribe();
-    this.fornecedorService.getAll().subscribe();
-    this.notaFiscalService.getAll().subscribe();
+    this.produtoService.getAll().subscribe();
+
+    interval(60000)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.carregarDashboard());
+  }
+
+  carregarDashboard() {
+    this.loading.set(true);
+    this.dashboardService.get()
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe(data => this.dashboard.set(data));
+  }
+
+  irParaAbaixoDoMinimo() {
+    this.router.navigate(['/conferencia'], { queryParams: { abaixoDoMinimo: true } });
+  }
+
+  irParaReposicao() {
+    this.router.navigate(['/conferencia/sugestoes']);
   }
 
   tipoBadge(tipo: TipoMovimentacao): string {

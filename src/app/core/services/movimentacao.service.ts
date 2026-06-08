@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { Movimentacao, CreateMovimentacaoRequest, UpdateMovimentacaoRequest, SaldoEstoque } from '../models/movimentacao.model';
+import { Movimentacao, CreateMovimentacaoRequest, UpdateMovimentacaoRequest, SaldoEstoque, PrecoMedioMensal } from '../models/movimentacao.model';
 
 export interface MovimentacaoFiltros {
   DataInicio?: string;
@@ -52,8 +52,23 @@ export class MovimentacaoService {
     );
   }
 
+  exportarCsv(filtros?: MovimentacaoFiltros) {
+    let params = new HttpParams().set('formato', 'csv');
+    if (filtros?.DataInicio) params = params.set('DataInicio', filtros.DataInicio);
+    if (filtros?.DataFim) params = params.set('DataFim', filtros.DataFim);
+    if (filtros?.CategoriaId) params = params.set('CategoriaId', filtros.CategoriaId);
+    if (filtros?.ProdutoId) params = params.set('ProdutoId', filtros.ProdutoId);
+
+    return this.http.get(this.url, { params, responseType: 'blob' });
+  }
+
   getById(id: number) {
     return this.http.get<Movimentacao>(`${this.url}/${id}`);
+  }
+
+  getHistoricoPreco(produtoId: number, meses = 12) {
+    const params = new HttpParams().set('meses', meses);
+    return this.http.get<PrecoMedioMensal[]>(`${this.url}/historico-preco/${produtoId}`, { params });
   }
 
   getByProduto(produtoId: number) {

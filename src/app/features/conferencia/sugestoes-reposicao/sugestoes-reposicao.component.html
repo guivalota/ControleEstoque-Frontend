@@ -1,0 +1,87 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h4 class="mb-0 fw-semibold">Sugestões de Reposição</h4>
+    <small class="text-muted">Produtos com saldo igual ou abaixo do ponto de reposição</small>
+  </div>
+  <a routerLink="/conferencia" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>Voltar para Conferência
+  </a>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body py-3">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label form-label-sm fw-medium mb-1">Categoria</label>
+        <select class="form-select form-select-sm"
+          [value]="filterCategoriaId()"
+          (change)="filterCategoriaId.set($any($event.target).value ? +$any($event.target).value : null)">
+          <option [value]="null">Todas as categorias</option>
+          @for (c of categorias(); track c.id) {
+            <option [value]="c.id">{{ c.nome }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-primary btn-sm" (click)="carregar()" [disabled]="loading()">
+          <i class="bi bi-funnel me-1"></i>Filtrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-header border-bottom d-flex justify-content-between align-items-center py-3">
+    <h6 class="mb-0 fw-semibold">Produtos para Repor</h6>
+    <button class="btn btn-sm btn-outline-primary" (click)="carregar()" [disabled]="loading()">
+      @if (loading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+      @else { <i class="bi bi-arrow-clockwise me-1"></i> }
+      Atualizar
+    </button>
+  </div>
+  <div class="card-body p-0">
+    @if (loading()) {
+      <div class="text-center py-5 text-muted">
+        <div class="spinner-border spinner-border-sm me-2"></div>Carregando sugestões...
+      </div>
+    } @else if (erro()) {
+      <div class="p-3">
+        <div class="alert alert-danger mb-0"><i class="bi bi-exclamation-triangle me-2"></i>{{ erro() }}</div>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">SKU</th>
+              <th>Produto</th>
+              <th>Categoria</th>
+              <th class="text-center">Saldo Atual</th>
+              <th class="text-center">Ponto de Reposição</th>
+              <th class="text-end">Preço Médio</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of sugestoes(); track item.produtoId) {
+              <tr [class]="linhaClass(item.saldoAtual)">
+                <td class="ps-3 font-monospace text-muted small">{{ item.sku }}</td>
+                <td class="fw-medium">{{ item.nome }}</td>
+                <td class="text-muted small">{{ item.categoria }}</td>
+                <td class="text-center fw-bold">{{ item.saldoAtual }}</td>
+                <td class="text-center">{{ item.pontoReposicao }}</td>
+                <td class="text-end text-muted small">R$ {{ item.precoMedio | number:'1.2-2' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                  <i class="bi bi-check-circle me-2"></i>Nenhum produto precisa de reposição no momento
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

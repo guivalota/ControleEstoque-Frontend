@@ -28,6 +28,7 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
   private pedidoService = inject(PedidoCompraService);
   private impressaoService = inject(ImpressaoService);
   imprimindo = signal(false);
+  exportando = signal(false);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
   private modal!: Modal;
@@ -146,6 +147,19 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindo.set(false); },
       error: () => { alert('Erro ao gerar relatório.'); this.imprimindo.set(false); }
+    });
+  }
+
+  exportarCsv() {
+    this.exportando.set(true);
+    this.movimentacaoService.exportarCsv({
+      DataInicio: this.filterDataInicio() || undefined,
+      DataFim: this.filterDataFim() || undefined,
+      CategoriaId: this.filterCategoriaId() ?? undefined,
+      ProdutoId: this.filterProdutoId() ?? undefined
+    }).subscribe({
+      next: blob => { this.impressaoService.baixarArquivo(blob, 'movimentacoes.csv'); this.exportando.set(false); },
+      error: () => { alert('Erro ao exportar CSV.'); this.exportando.set(false); }
     });
   }
 

@@ -59,6 +59,11 @@
               @else { <i class="bi bi-printer"></i> }
             </button>
           }
+          <button class="btn btn-outline-secondary btn-sm" (click)="exportarCsv()" [disabled]="exportando()">
+            @if (exportando()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            @else { <i class="bi bi-download me-1"></i> }
+            CSV
+          </button>
         </div>
       </div>
     </div>
