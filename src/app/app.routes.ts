@@ -63,6 +63,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/conferencia/sugestoes-reposicao/sugestoes-reposicao.component').then(m => m.SugestoesReposicaoComponent)
       },
       {
+        path: 'conferencia/giro-estoque',
+        loadComponent: () => import('./features/conferencia/giro-estoque/giro-estoque.component').then(m => m.GiroEstoqueComponent)
+      },
+      {
+        path: 'conferencia/curva-abc',
+        loadComponent: () => import('./features/conferencia/curva-abc/curva-abc.component').then(m => m.CurvaAbcComponent)
+      },
+      {
         path: 'pedidos-compra',
         loadComponent: () => import('./features/pedidos-compra/pedidos-compra.component').then(m => m.PedidosCompraComponent)
       },

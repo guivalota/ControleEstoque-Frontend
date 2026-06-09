@@ -1,4 +1,28 @@
 <div>
+  <!-- Sub-nav -->
+  <ul class="nav nav-pills mb-4 border-bottom pb-3 gap-1 flex-wrap">
+    <li class="nav-item">
+      <a class="nav-link py-1 px-3" routerLink="/conferencia" [routerLinkActiveOptions]="{exact:true}" routerLinkActive="active">
+        <i class="bi bi-table me-1"></i>Posição
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link py-1 px-3" routerLink="/conferencia/sugestoes" routerLinkActive="active">
+        <i class="bi bi-cart-x me-1"></i>Reposição
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link py-1 px-3" routerLink="/conferencia/giro-estoque" routerLinkActive="active">
+        <i class="bi bi-arrow-repeat me-1"></i>Giro de Estoque
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link py-1 px-3" routerLink="/conferencia/curva-abc" routerLinkActive="active">
+        <i class="bi bi-bar-chart-steps me-1"></i>Curva ABC
+      </a>
+    </li>
+  </ul>
+
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-bold mb-0">Conferência de Estoque</h5>
     <div class="btn-group" role="group">
@@ -373,6 +397,7 @@
                   <th class="text-end">Entradas</th>
                   <th class="text-end">Saídas</th>
                   <th class="text-center">Saldo</th>
+                  <th class="text-center">Est. Mínimo</th>
                   <th class="text-center">Ponto Reposição</th>
                   <th class="text-end">Valor Estoque</th>
                   <th class="text-center">Status</th>
@@ -387,6 +412,7 @@
                     <td class="text-end text-success small">+{{ item.totalEntradas }}</td>
                     <td class="text-end text-danger small">-{{ item.totalSaidas }}</td>
                     <td class="text-center fw-bold" [class]="saldoClass(item.saldoAtual)">{{ item.saldoAtual }}</td>
+                    <td class="text-center text-muted small">{{ item.estoqueMinimo }}</td>
                     <td class="text-center text-muted small">{{ item.pontoReposicao }}</td>
                     <td class="text-end text-muted small">R$ {{ item.valorTotalEstoque | number:'1.2-2' }}</td>
                     <td class="text-center">
@@ -399,7 +425,7 @@
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="9" class="text-center text-muted py-4">
+                    <td colspan="10" class="text-center text-muted py-4">
                       <i class="bi bi-inbox me-2"></i>Nenhum produto encontrado
                     </td>
                   </tr>

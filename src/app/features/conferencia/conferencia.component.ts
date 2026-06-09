@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
-import { DecimalPipe, DatePipe, TitleCasePipe } from '@angular/common';
+import { DecimalPipe, DatePipe } from '@angular/common';
+import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
 import { BaseChartDirective, provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { ChartConfiguration } from 'chart.js';
 import { ConferenciaService } from '../../core/services/conferencia.service';
@@ -15,7 +16,7 @@ import { Movimentacao, PrecoMedioMensal } from '../../core/models/movimentacao.m
 @Component({
   selector: 'app-conferencia',
   standalone: true,
-  imports: [DecimalPipe, DatePipe, TitleCasePipe, BaseChartDirective],
+  imports: [DecimalPipe, DatePipe, BaseChartDirective, RouterLink, RouterLinkActive],
   providers: [provideCharts(withDefaultRegisterables())],
   templateUrl: './conferencia.component.html'
 })
@@ -28,6 +29,7 @@ export class ConferenciaComponent implements OnInit {
   private categoriaService = inject(CategoriaService);
   private movimentacaoService = inject(MovimentacaoService);
   private alertaService = inject(AlertaService);
+  private route = inject(ActivatedRoute);
   permissaoService = inject(PermissaoService);
   enviandoAlerta = signal(false);
 
@@ -89,6 +91,17 @@ export class ConferenciaComponent implements OnInit {
   ngOnInit() {
     this.produtoService.getAll().subscribe();
     this.categoriaService.getAll().subscribe();
+
+    const params = this.route.snapshot.queryParamMap;
+    if (params.get('abaixoDoMinimo') === 'true') {
+      this.filterGeralAbaixoDoMinimo.set(true);
+      this.modoGeral.set(true);
+      this.carregarVisaoGeral();
+    } else if (params.get('abaixoDoPontoReposicao') === 'true') {
+      this.filterGeralAbaixoDoPontoReposicao.set(true);
+      this.modoGeral.set(true);
+      this.carregarVisaoGeral();
+    }
   }
 
   alternarModo(geral: boolean) {
