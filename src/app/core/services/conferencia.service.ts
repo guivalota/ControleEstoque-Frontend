@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { ConferenciaResult } from '../models/conferencia.model';
+import { ConferenciaResult, GiroEstoqueFiltro, GiroEstoqueResponse, CurvaAbcFiltro, CurvaAbcResponse } from '../models/conferencia.model';
 
 export interface ConferenciaFiltros {
   DataInicio?: string;
@@ -72,6 +72,46 @@ export class ConferenciaService {
     if (filtros?.IncluirConsumoInterno) params = params.set('IncluirConsumoInterno', 'true');
 
     return this.http.get(this.baseUrl, { params, responseType: 'blob' });
+  }
+
+  getGiroEstoque(filtro: GiroEstoqueFiltro = {}) {
+    let params = new HttpParams();
+    if (filtro.dataInicio) params = params.set('dataInicio', filtro.dataInicio);
+    if (filtro.dataFim) params = params.set('dataFim', filtro.dataFim);
+    if (filtro.categoriaId != null) params = params.set('categoriaId', filtro.categoriaId);
+    if (filtro.ordenacao) params = params.set('ordenacao', filtro.ordenacao);
+    if (filtro.page != null) params = params.set('page', filtro.page);
+    if (filtro.pageSize != null) params = params.set('pageSize', filtro.pageSize);
+    return this.http.get<PagedResult<GiroEstoqueResponse>>(`${this.baseUrl}/giro-estoque`, { params });
+  }
+
+  exportarCsvGiro(filtro: GiroEstoqueFiltro = {}) {
+    let params = new HttpParams().set('formato', 'csv');
+    if (filtro.dataInicio) params = params.set('dataInicio', filtro.dataInicio);
+    if (filtro.dataFim) params = params.set('dataFim', filtro.dataFim);
+    if (filtro.categoriaId != null) params = params.set('categoriaId', filtro.categoriaId);
+    if (filtro.ordenacao) params = params.set('ordenacao', filtro.ordenacao);
+    return this.http.get(`${this.baseUrl}/giro-estoque`, { params, responseType: 'blob' });
+  }
+
+  getCurvaAbc(filtro: CurvaAbcFiltro = {}) {
+    let params = new HttpParams();
+    if (filtro.dataInicio) params = params.set('dataInicio', filtro.dataInicio);
+    if (filtro.dataFim) params = params.set('dataFim', filtro.dataFim);
+    if (filtro.categoriaId != null) params = params.set('categoriaId', filtro.categoriaId);
+    if (filtro.classe) params = params.set('classe', filtro.classe);
+    if (filtro.page != null) params = params.set('page', filtro.page);
+    if (filtro.pageSize != null) params = params.set('pageSize', filtro.pageSize);
+    return this.http.get<PagedResult<CurvaAbcResponse>>(`${this.baseUrl}/curva-abc`, { params });
+  }
+
+  exportarCsvAbc(filtro: CurvaAbcFiltro = {}) {
+    let params = new HttpParams().set('formato', 'csv');
+    if (filtro.dataInicio) params = params.set('dataInicio', filtro.dataInicio);
+    if (filtro.dataFim) params = params.set('dataFim', filtro.dataFim);
+    if (filtro.categoriaId != null) params = params.set('categoriaId', filtro.categoriaId);
+    if (filtro.classe) params = params.set('classe', filtro.classe);
+    return this.http.get(`${this.baseUrl}/curva-abc`, { params, responseType: 'blob' });
   }
 
   getSugestoesReposicao(categoriaId?: number) {

@@ -1,11 +1,30 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <div>
-    <h4 class="mb-0 fw-semibold">Sugestões de Reposição</h4>
-    <small class="text-muted">Produtos com saldo igual ou abaixo do ponto de reposição</small>
-  </div>
-  <a routerLink="/conferencia" class="btn btn-outline-secondary btn-sm">
-    <i class="bi bi-arrow-left me-1"></i>Voltar para Conferência
-  </a>
+<!-- Sub-nav -->
+<ul class="nav nav-pills mb-4 border-bottom pb-3 gap-1 flex-wrap">
+  <li class="nav-item">
+    <a class="nav-link py-1 px-3" routerLink="/conferencia" [routerLinkActiveOptions]="{exact:true}" routerLinkActive="active">
+      <i class="bi bi-table me-1"></i>Posição
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link py-1 px-3" routerLink="/conferencia/sugestoes" routerLinkActive="active">
+      <i class="bi bi-cart-x me-1"></i>Reposição
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link py-1 px-3" routerLink="/conferencia/giro-estoque" routerLinkActive="active">
+      <i class="bi bi-arrow-repeat me-1"></i>Giro de Estoque
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link py-1 px-3" routerLink="/conferencia/curva-abc" routerLinkActive="active">
+      <i class="bi bi-bar-chart-steps me-1"></i>Curva ABC
+    </a>
+  </li>
+</ul>
+
+<div class="mb-3">
+  <h5 class="fw-bold mb-0">Sugestões de Reposição</h5>
+  <small class="text-muted">Produtos com saldo igual ou abaixo do ponto de reposição</small>
 </div>
 
 <div class="card border-0 shadow-sm mb-3">
@@ -58,6 +77,7 @@
               <th>Produto</th>
               <th>Categoria</th>
               <th class="text-center">Saldo Atual</th>
+              <th class="text-center">Est. Mínimo</th>
               <th class="text-center">Ponto de Reposição</th>
               <th class="text-end">Preço Médio</th>
             </tr>
@@ -69,12 +89,13 @@
                 <td class="fw-medium">{{ item.nome }}</td>
                 <td class="text-muted small">{{ item.categoria }}</td>
                 <td class="text-center fw-bold">{{ item.saldoAtual }}</td>
+                <td class="text-center text-muted small">{{ item.estoqueMinimo }}</td>
                 <td class="text-center">{{ item.pontoReposicao }}</td>
                 <td class="text-end text-muted small">R$ {{ item.precoMedio | number:'1.2-2' }}</td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="6" class="text-center text-muted py-4">
+                <td colspan="7" class="text-center text-muted py-4">
                   <i class="bi bi-check-circle me-2"></i>Nenhum produto precisa de reposição no momento
                 </td>
               </tr>
