@@ -168,6 +168,18 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
     const file = input.files?.[0];
     if (!file) return;
 
+    const tipoValido = file.type === '' || file.type === 'text/xml' || file.type === 'application/xml';
+    if (!file.name.toLowerCase().endsWith('.xml') || !tipoValido) {
+      this.importMsg.set('Selecione um arquivo XML válido.');
+      input.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      this.importMsg.set('Arquivo muito grande (máximo 5 MB).');
+      input.value = '';
+      return;
+    }
+
     this.importando.set(true);
     this.importMsg.set('');
     this.importacaoErro.set('');
