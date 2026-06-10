@@ -96,7 +96,15 @@
     </li>
   </ul>
 
-  <div class="mt-auto pt-3 px-2" style="border-top: 1px solid rgba(255,255,255,0.08)">
+  <ul class="nav nav-pills flex-column gap-1 mt-auto">
+    <li class="nav-item">
+      <a class="nav-link sidebar-link" routerLink="/manual" routerLinkActive="active">
+        <i class="bi bi-book me-2"></i>Manual
+      </a>
+    </li>
+  </ul>
+
+  <div class="pt-3 px-2" style="border-top: 1px solid rgba(255,255,255,0.08)">
     @if (version.versao()) {
       <small style="color:#475569; font-size:.7rem;">{{ version.versao() }}</small>
     }
