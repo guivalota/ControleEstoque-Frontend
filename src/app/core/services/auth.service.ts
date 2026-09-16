@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { tap } from 'rxjs';
+import { Observable, finalize, shareReplay, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoginRequest, TokenResponse, JwtPayload, ForgotPasswordRequest, ResetPasswordRequest } from '../models/auth.model';
 
@@ -44,16 +44,28 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
+  private refreshInProgress$: Observable<TokenResponse> | null = null;
+
   refreshToken() {
     const refreshToken = localStorage.getItem(this.REFRESH_KEY);
     if (!refreshToken) return null;
-    return this.http.post<TokenResponse>(`${environment.apiUrl}/v1/auth/refresh`, { refreshToken }).pipe(
-      tap(res => {
-        localStorage.setItem(this.TOKEN_KEY, res.accessToken);
-        localStorage.setItem(this.REFRESH_KEY, res.refreshToken);
-        this._currentUser.set(this.decodeToken(res.accessToken));
-      })
-    );
+
+    // Compartilha o refresh em andamento entre requisições concorrentes: se várias
+    // chamadas recebem 401 ao mesmo tempo, todas reusam a mesma chamada a /v1/auth/refresh
+    // em vez de cada uma consumir o refresh token e derrubar a sessão das demais.
+    if (!this.refreshInProgress$) {
+      this.refreshInProgress$ = this.http.post<TokenResponse>(`${environment.apiUrl}/v1/auth/refresh`, { refreshToken }).pipe(
+        tap(res => {
+          localStorage.setItem(this.TOKEN_KEY, res.accessToken);
+          localStorage.setItem(this.REFRESH_KEY, res.refreshToken);
+          this._currentUser.set(this.decodeToken(res.accessToken));
+        }),
+        finalize(() => this.refreshInProgress$ = null),
+        shareReplay(1)
+      );
+    }
+
+    return this.refreshInProgress$;
   }
 
   getToken(): string | null {
