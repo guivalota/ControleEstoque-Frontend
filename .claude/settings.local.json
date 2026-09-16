@@ -31,7 +31,21 @@
       "Bash(python -c \"import sys,base64; print\\(base64.b64decode\\(sys.stdin.read\\(\\)\\).decode\\(\\)\\)\")",
       "Bash(python -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(json.dumps\\([{'login':c['login'],'role':c['role_name']} for c in data], indent=2\\)\\)\")",
       "Bash(python -c ' *)",
-      "Bash(cmd *)"
+      "Bash(cmd *)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('status:', d.get\\('status'\\)\\); print\\('conclusion:', d.get\\('conclusion'\\)\\); print\\('message:', d.get\\('message',''\\)\\); print\\('head_sha:', d.get\\('head_sha'\\)\\); print\\('event:', d.get\\('event'\\)\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(w['id'], w['name'], w['state'], w['path']\\) for w in d.get\\('workflows',[]\\)]\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('conclusion:', d.get\\('conclusion'\\)\\); print\\('name:', d.get\\('name'\\)\\); print\\('display_title:', d.get\\('display_title'\\)\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(r['id'], r['conclusion'], r['created_at'], r['head_commit']['message'][:60]\\) for r in d.get\\('workflow_runs',[]\\)]\")",
+      "Bash(python *)",
+      "Bash(grep -q \"Application bundle generation complete\\\\|Compiled successfully\\\\|listening\" /tmp/ng-serve.log)",
+      "Read(//tmp/**)",
+      "Bash(ls node_modules/ng2-charts)",
+      "Bash(ls node_modules/chart.js)",
+      "Bash(ls node_modules/@angular/cdk)",
+      "Bash(findstr /i \"markdown\\\\|marked\\\\|showdown\\\\|ngx-md\")"
     ]
   }
 }
