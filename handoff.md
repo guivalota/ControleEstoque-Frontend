@@ -7,6 +7,64 @@
 
 ---
 
+## Sessão 2026-09-16 — Backend saiu do Railway, frontend precisou de 2 ajustes + 1 fix de CORS
+
+### Contexto
+A conta Railway (teste) usada em produção pela API .NET foi encerrada. A hospedagem passou a ser
+Docker Compose local + túnel **ngrok** (na máquina do Guilherme), com o banco voltando a ser o
+Supabase de sempre (dados preservados). Detalhes completos da migração do lado do backend estão em
+`HANDOFF.md` do repo `dotnet/ControleEstoque` (v1.9.8/v1.9.9). Aqui documento só o que mudou **neste
+repo** e por quê.
+
+### 1. Nova URL do backend em dois arquivos
+A API não tem mais uma URL fixa (Railway) — agora é a URL pública do túnel ngrok, que **muda toda
+vez que o túnel é reiniciado** (plano free). Dois lugares precisam ser atualizados juntos sempre
+que isso acontecer:
+
+- `src/environments/environment.prod.ts` → campo `apiUrl`
+- `src/index.html` → meta tag `Content-Security-Policy`, diretiva `connect-src` (sem isso o
+  navegador bloqueia todo `fetch`/`XHR` pro domínio novo — CSP é aplicada mesmo pra chamadas
+  cross-origin, não é só CORS)
+
+Commit de referência: `6b42236` (fix: aponta backend para o novo túnel ngrok).
+
+### 2. Bug de CORS causado pela página de aviso do ngrok (free tier)
+**Sintoma:** todas as chamadas autenticadas (`GET /v1/users`, `/v1/clientes`, etc.) falhavam no
+navegador com `Access to XMLHttpRequest ... has been blocked by CORS policy: No
+'Access-Control-Allow-Origin' header is present`, mesmo a API respondendo `200 OK` — confirmado via
+`curl` direto no túnel que a API estava saudável e mandando os headers de CORS certinho.
+
+**Causa raiz:** o plano free do ngrok intercepta requisições e serve uma página HTML de aviso
+(`Ngrok-Error-Code: ERR_NGROK_6024`, "Visit Site") em vez de repassar pro backend, quando falta o
+header `ngrok-skip-browser-warning` — e essa página de aviso não tem nenhum header de CORS. O
+navegador do usuário provavelmente tinha "acionado" esse modo em algum teste anterior (ex.: abrir a
+URL do ngrok direto no navegador), e a partir daí toda chamada cross-origin pra esse domínio passou
+a cair na página de aviso.
+
+**Fix (commit `c8e56ee`):** `auth.interceptor.ts` agora injeta `ngrok-skip-browser-warning: true`
+em **toda** requisição, junto com o `Authorization` quando há token:
+
+```ts
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const token = inject(AuthService).getToken();
+  const headers: Record<string, string> = { 'ngrok-skip-browser-warning': 'true' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return next(req.clone({ setHeaders: headers }));
+};
+```
+
+Esse header só é necessário enquanto o backend estiver atrás de um túnel ngrok free — se um dia a
+hospedagem mudar pra algo com domínio próprio, dá pra remover.
+
+### Checklist pra quando a URL do ngrok mudar de novo
+1. Pegar a nova URL (`ngrok http 5062` no lado do backend, ou `http://127.0.0.1:4040/api/tunnels`)
+2. Atualizar `environment.prod.ts` (`apiUrl`) e `index.html` (`connect-src` da CSP)
+3. `npm run build` pra conferir que não quebrou nada, commit, push em `master` (dispara o deploy)
+4. O header `ngrok-skip-browser-warning` do interceptor já cobre a página de aviso — não precisa
+   mexer nele de novo
+
+---
+
 ## Stack
 
 | Tecnologia | Versão |
