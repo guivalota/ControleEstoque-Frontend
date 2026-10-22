@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
+import { empresaAtivaGuard, imobilizadoGuard } from './core/guards/empresa-ativa.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -82,6 +83,19 @@ export const routes: Routes = [
         path: 'admin/audit-logs',
         canActivate: [adminGuard],
         loadComponent: () => import('./features/audit-logs/audit-logs.component').then(m => m.AuditLogsComponent)
+      },
+      {
+        path: 'imobilizado',
+        canActivate: [imobilizadoGuard],
+        canActivateChild: [empresaAtivaGuard],
+        loadComponent: () => import('./features/imobilizado/shell/imobilizado-shell.component').then(m => m.ImobilizadoShellComponent),
+        children: [
+          {
+            path: '',
+            data: { dispensaEmpresa: true },
+            loadComponent: () => import('./features/imobilizado/inicio/imobilizado-inicio.component').then(m => m.ImobilizadoInicioComponent)
+          }
+        ]
       },
       {
         path: 'manual',
