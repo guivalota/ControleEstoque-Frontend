@@ -44,6 +44,14 @@ describe('ImobBemService', () => {
     expect(req.request.urlWithParams).toContain('plaqueta=NB/0001%20A');
   });
 
+  it('histórico pede a página e o tamanho da trilha do bem', () => {
+    service.historico(42, 3, 20).subscribe();
+    const req = ctrl.expectOne(r => r.url === `${BASE}/42/historico`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('page')).toBe('3');
+    expect(req.request.params.get('pageSize')).toBe('20');
+  });
+
   it('CRUD usa os verbos e caminhos da API', () => {
     service.obter(5).subscribe();
     expect(ctrl.expectOne(`${BASE}/5`).request.method).toBe('GET');

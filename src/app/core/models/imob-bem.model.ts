@@ -54,3 +54,15 @@ export interface ImobBemFiltro {
   busca?: string; localId?: number; incluirSublocais?: boolean; categoriaId?: number;
   responsavelId?: number; status?: ImobBemStatus; page?: number; pageSize?: number;
 }
+
+export interface ImobBemHistorico {
+  id: number;
+  campo: string;
+  valorAnterior?: string | null;
+  valorNovo?: string | null;
+  valorAnteriorDescricao?: string | null;
+  valorNovoDescricao?: string | null;
+  usuarioId: string;
+  usuarioNome?: string | null;
+  criadoEm: string;
+}

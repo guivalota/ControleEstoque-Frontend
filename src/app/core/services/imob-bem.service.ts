@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Observable, from, map, switchMap, throwError, catchError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ImobBem, ImobBemFiltro, SalvarImobBem } from '../models/imob-bem.model';
+import { ImobBem, ImobBemFiltro, ImobBemHistorico, SalvarImobBem } from '../models/imob-bem.model';
 import { PagedResult } from '../models/paged-result.model';
 import { montarParams } from '../utils/http-params';
 
@@ -49,6 +49,12 @@ export class ImobBemService {
 
   porPlaqueta(plaqueta: string) {
     return this.http.get<ImobBem>(`${this.url}/por-plaqueta`, { params: new HttpParams().set('plaqueta', plaqueta) });
+  }
+
+  /** Trilha de alterações, do mais recente para o mais antigo. */
+  historico(id: number, page: number, pageSize: number) {
+    const params = new HttpParams().set('page', page).set('pageSize', pageSize);
+    return this.http.get<PagedResult<ImobBemHistorico>>(`${this.url}/${id}/historico`, { params });
   }
 
   criar(req: SalvarImobBem) {
