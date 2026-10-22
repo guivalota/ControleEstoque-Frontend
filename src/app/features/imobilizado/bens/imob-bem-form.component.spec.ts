@@ -19,7 +19,7 @@ const CATEGORIAS = [categoria(3, 'Informática', 60, 10), categoria(4, 'Móveis'
 const bem = (extra: Partial<ImobBem> = {}): ImobBem => ({
   id: 42, plaqueta: 'NB-0001', descricao: 'Notebook Dell', categoriaId: 3, categoriaNome: 'Informática',
   localId: 7, localNome: 'Sala 101', responsavelId: 12, responsavelNome: 'Ana Souza',
-  dataAquisicao: '2024-03-10', valorAquisicao: 4500, valorResidual: 450, vidaUtilMeses: 60, status: 'ativo',
+  dataAquisicao: '2024-03-10', valorAquisicao: 4500, valorResidual: 450, vidaUtilMeses: 60, dadosCompletos: true, status: 'ativo',
   fornecedorNome: 'Dell', numeroDocumentoAquisicao: 'NF-1', numeroSerie: 'SN-1', observacao: 'Garantia',
   criadoEm: '2026-10-22T14:03:11Z', atualizadoEm: '2026-10-22T14:03:11Z', ...extra
 });
@@ -73,9 +73,27 @@ describe('ImobBemFormComponent', () => {
     it('não envia vazio e mostra os obrigatórios', () => {
       comp.save();
       ctrl.expectNone(r => r.method === 'POST');
-      for (const c of ['plaqueta', 'descricao', 'categoriaId', 'localId', 'dataAquisicao', 'valorAquisicao'] as const) {
+      for (const c of ['plaqueta', 'descricao', 'categoriaId', 'localId'] as const) {
         expect(comp.erroCampo(c)).toBe('Campo obrigatório.');
       }
+      expect(comp.form.controls.dataAquisicao.valid).toBeTrue();
+      expect(comp.form.controls.valorAquisicao.valid).toBeTrue();
+    });
+
+    it('data e valor de aquisição são opcionais: sem eles vão como null e o residual é omitido', () => {
+      comp.form.patchValue({ plaqueta: 'NB-9', descricao: 'Sem histórico', categoriaId: 3, localId: 7 });
+      comp.save();
+      const post = ctrl.expectOne(r => r.method === 'POST' && r.url === BENS);
+      expect(post.request.body.dataAquisicao).toBeNull();
+      expect(post.request.body.valorAquisicao).toBeNull();
+      expect(post.request.body.valorResidual).toBeUndefined();
+      post.flush(bem({ id: 78, dadosCompletos: false }), { status: 201, statusText: 'Created' });
+    });
+
+    it('residual informado sem valor de aquisição é rejeitado no cliente', () => {
+      comp.form.controls.valorResidual.setValue(100);
+      comp.form.controls.valorResidual.markAsTouched();
+      expect(comp.erroCampo('valorResidual')).toBe('Informe o valor de aquisição para definir o residual.');
     });
 
     it('só lista categorias ativas', () => {

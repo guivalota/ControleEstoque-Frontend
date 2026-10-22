@@ -12,7 +12,7 @@ const URL_BEM = '/api/v1/imobilizado/bens/42';
 const bem = (extra: Partial<ImobBem> = {}): ImobBem => ({
   id: 42, plaqueta: 'NB-0001', descricao: 'Notebook Dell Latitude', categoriaId: 3, categoriaNome: 'Informática',
   localId: 7, localNome: 'Sala 101', responsavelId: 12, responsavelNome: 'Ana Souza',
-  dataAquisicao: '2024-03-10', valorAquisicao: 4500, valorResidual: 450, vidaUtilMeses: 60, status: 'ativo',
+  dataAquisicao: '2024-03-10', valorAquisicao: 4500, valorResidual: 450, vidaUtilMeses: 60, dadosCompletos: true, status: 'ativo',
   fornecedorNome: 'Dell Brasil', numeroDocumentoAquisicao: 'NF-12345', numeroSerie: null, observacao: null,
   criadoEm: '2026-10-22T14:03:11Z', atualizadoEm: '2026-10-22T14:03:11Z', ...extra
 });
@@ -66,6 +66,19 @@ describe('ImobBemDetalheComponent', () => {
     carregar(bem({ responsavelId: null, responsavelNome: null }));
     expect(el().querySelectorAll('dd')[2].textContent).toBe('—');
     expect(texto()).toContain('Número de série—');
+  });
+
+  it('bem com dados incompletos mostra o selo e "—" nos campos pendentes', () => {
+    montar();
+    carregar(bem({ dadosCompletos: false, dataAquisicao: null, valorAquisicao: null, valorResidual: null }));
+    expect(texto()).toContain('Dados incompletos');
+    expect(texto()).toContain('Data de aquisição—');
+  });
+
+  it('bem completo não mostra o selo', () => {
+    montar();
+    carregar();
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Dados incompletos');
   });
 
   it('bem inexistente mostra "não encontrado"', () => {

@@ -7,6 +7,7 @@
       <h6 class="fw-bold mb-0">{{ bem() ? 'Bem ' + bem()!.plaqueta : 'Bem' }}</h6>
       @if (bem(); as b) {
         <span class="badge" [class]="classeStatus[b.status]">{{ rotuloStatus[b.status] }}</span>
+        @if (!b.dadosCompletos) { <span class="badge bg-warning-subtle text-warning-emphasis">Dados incompletos</span> }
       }
     </div>
     @if (bem(); as b) {

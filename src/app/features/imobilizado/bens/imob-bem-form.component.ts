@@ -29,8 +29,9 @@ const arredondar = (n: number) => Math.round(n * 100) / 100;
 function residualNaoMaior(c: AbstractControl): ValidationErrors | null {
   const aquisicao = c.parent?.get('valorAquisicao')?.value;
   const residual = c.value;
-  return typeof aquisicao === 'number' && typeof residual === 'number' && residual > aquisicao
-    ? { residualMaior: true } : null;
+  if (typeof residual !== 'number') return null;
+  if (typeof aquisicao !== 'number') return { residualSemValor: true };
+  return residual > aquisicao ? { residualMaior: true } : null;
 }
 
 @Component({
@@ -72,8 +73,8 @@ export class ImobBemFormComponent implements OnInit {
     categoriaId: [null as number | null, [Validators.required]],
     localId: [null as number | null, [Validators.required]],
     responsavelId: [null as number | null],
-    dataAquisicao: ['', [Validators.required, dataAquisicaoValida]],
-    valorAquisicao: [null as number | null, [Validators.required, Validators.min(0), duasCasas]],
+    dataAquisicao: ['', [dataAquisicaoValida]],
+    valorAquisicao: [null as number | null, [Validators.min(0), duasCasas]],
     valorResidual: [null as number | null, [Validators.min(0), duasCasas, residualNaoMaior]],
     vidaUtilMeses: [null as number | null, [Validators.min(1), Validators.max(1200), inteiro]],
     fornecedorNome: ['', [Validators.maxLength(255)]],
@@ -101,6 +102,10 @@ export class ImobBemFormComponent implements OnInit {
     this.form.controls.categoriaId.valueChanges.subscribe(() => this.aplicarSugestoes());
     this.form.controls.valorAquisicao.valueChanges.subscribe(() => {
       this.recalcularResidual();
+      // sem valor de aquisição não há residual (o servidor também o limpa)
+      if (typeof this.form.controls.valorAquisicao.value !== 'number') {
+        this.form.controls.valorResidual.setValue(null, { emitEvent: false });
+      }
       this.form.controls.valorResidual.updateValueAndValidity({ emitEvent: false });
     });
   }
@@ -180,10 +185,12 @@ export class ImobBemFormComponent implements OnInit {
       categoriaId: v.categoriaId!,
       localId: v.localId!,
       responsavelId: v.responsavelId,
-      dataAquisicao: v.dataAquisicao!,
-      valorAquisicao: v.valorAquisicao!,
-      // no cadastro, campos intocados são omitidos para o servidor aplicar os valores da categoria
-      valorResidual: !this.edicao && !this.residualTocado ? undefined : v.valorResidual ?? undefined,
+      // data e valor são opcionais: vazios vão como null (limpam o campo na edição)
+      dataAquisicao: v.dataAquisicao || null,
+      valorAquisicao: v.valorAquisicao ?? null,
+      // no cadastro, campos intocados são omitidos para o servidor aplicar os valores da categoria;
+      // sem valor de aquisição não há residual
+      valorResidual: v.valorAquisicao === null || (!this.edicao && !this.residualTocado) ? undefined : v.valorResidual ?? undefined,
       vidaUtilMeses: !this.edicao && !this.vidaTocada ? undefined : v.vidaUtilMeses ?? undefined,
       fornecedorNome: texto(v.fornecedorNome),
       numeroDocumentoAquisicao: texto(v.numeroDocumentoAquisicao),
@@ -225,6 +232,7 @@ export class ImobBemFormComponent implements OnInit {
     if (e['dataFutura']) return 'A data não pode ser futura.';
     if (e['casas']) return 'Use no máximo 2 casas decimais.';
     if (e['inteiro']) return 'Informe um número inteiro.';
+    if (e['residualSemValor']) return 'Informe o valor de aquisição para definir o residual.';
     if (e['residualMaior']) return 'O valor residual não pode ser maior que o valor de aquisição.';
     if (e['min'] || e['max']) return nome === 'vidaUtilMeses' ? 'Informe de 1 a 1200 meses.' : 'Informe um valor maior ou igual a zero.';
     return '';

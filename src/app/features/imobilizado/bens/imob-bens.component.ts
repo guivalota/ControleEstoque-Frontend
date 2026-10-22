@@ -79,7 +79,8 @@ export class ImobBensComponent implements OnInit {
     incluirSublocais: [true],
     categoriaId: [null as number | null],
     responsavelId: [null as number | null],
-    status: ['' as ImobBemStatus | '']
+    status: ['' as ImobBemStatus | ''],
+    pendentes: [false]
   });
 
   /** Filtro efetivamente aplicado (vem da URL). */
@@ -91,7 +92,7 @@ export class ImobBensComponent implements OnInit {
     // selects e seletores aplicam na hora; a busca por texto só ao enviar o formulário
     const c = this.filtros.controls;
     merge(c.localId.valueChanges, c.incluirSublocais.valueChanges, c.categoriaId.valueChanges,
-      c.responsavelId.valueChanges, c.status.valueChanges)
+      c.responsavelId.valueChanges, c.status.valueChanges, c.pendentes.valueChanges)
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.aplicar(1));
   }
@@ -118,7 +119,8 @@ export class ImobBensComponent implements OnInit {
       incluirSublocais: localId !== null && params.get('incluirSublocais') === 'false' ? false : undefined,
       categoriaId: idDaQuery(params, 'categoriaId') ?? undefined,
       responsavelId: idDaQuery(params, 'responsavelId') ?? undefined,
-      status: status && STATUS_BEM.includes(status) ? status : undefined
+      status: status && STATUS_BEM.includes(status) ? status : undefined,
+      dadosCompletos: params.get('dadosCompletos') === 'false' ? false : undefined
     };
     this.filtroAtivo = filtro;
     this.filtros.reset({
@@ -127,7 +129,8 @@ export class ImobBensComponent implements OnInit {
       incluirSublocais: filtro.incluirSublocais !== false,
       categoriaId: filtro.categoriaId ?? null,
       responsavelId: filtro.responsavelId ?? null,
-      status: filtro.status ?? ''
+      status: filtro.status ?? '',
+      pendentes: filtro.dadosCompletos === false
     }, { emitEvent: false });
     this.carregar(Math.max(1, idDaQuery(params, 'page') ?? 1));
   }
@@ -141,6 +144,7 @@ export class ImobBensComponent implements OnInit {
       categoriaId: v.categoriaId,
       responsavelId: v.responsavelId,
       status: v.status || null,
+      dadosCompletos: v.pendentes ? 'false' : null,
       page: page > 1 ? page : null
     };
   }
@@ -162,7 +166,7 @@ export class ImobBensComponent implements OnInit {
   }
 
   limparFiltros() {
-    this.filtros.reset({ busca: '', localId: null, incluirSublocais: true, categoriaId: null, responsavelId: null, status: '' },
+    this.filtros.reset({ busca: '', localId: null, incluirSublocais: true, categoriaId: null, responsavelId: null, status: '', pendentes: false },
       { emitEvent: false });
     this.aplicar(1);
   }

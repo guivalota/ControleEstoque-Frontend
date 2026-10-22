@@ -16,7 +16,7 @@ const ARVORE = '/api/v1/imobilizado/locais/arvore';
 const bem = (id: number, extra: Partial<ImobBem> = {}): ImobBem => ({
   id, plaqueta: `NB-000${id}`, descricao: `Notebook ${id}`, categoriaId: 3, categoriaNome: 'Informática',
   localId: 7, localNome: 'Sala 101', responsavelId: 12, responsavelNome: 'Ana Souza',
-  dataAquisicao: '2024-03-10', valorAquisicao: 4500, valorResidual: 450, vidaUtilMeses: 60, status: 'ativo',
+  dataAquisicao: '2024-03-10', valorAquisicao: 4500, valorResidual: 450, vidaUtilMeses: 60, dadosCompletos: true, status: 'ativo',
   criadoEm: '2026-10-22T14:03:11Z', atualizadoEm: '2026-10-22T14:03:11Z', ...extra
 });
 
@@ -88,6 +88,14 @@ describe('ImobBensComponent', () => {
       expect(el().textContent).toContain('—');
     });
 
+    it('bem com dados incompletos mostra o selo e "—" no valor', async () => {
+      await montar('admin', {}, [bem(1), bem(2, { dadosCompletos: false, dataAquisicao: null, valorAquisicao: null, valorResidual: null })]);
+      const linhas = el().querySelectorAll('tbody tr');
+      expect(linhas[0].textContent).not.toContain('Dados incompletos');
+      expect(linhas[1].textContent).toContain('Dados incompletos');
+      expect(linhas[1].textContent).toContain('—');
+    });
+
     it('estados: vazio sem filtro, vazio com filtro e erro com nova tentativa', async () => {
       await montar('admin', {}, []);
       expect(el().textContent).toContain('Nenhum bem cadastrado');
@@ -134,6 +142,22 @@ describe('ImobBensComponent', () => {
       expect(p.get('page')).toBe('2');
       expect(comp.filtros.value.localId).toBe(7);
       expect(comp.filtros.value.incluirSublocais).toBeFalse();
+    });
+
+    it('"Pendentes de completar" usa dadosCompletos=false na URL e na API', async () => {
+      const req = await montar('admin', { dadosCompletos: 'false' });
+      expect(req.request.params.get('dadosCompletos')).toBe('false');
+      expect(comp.filtros.value.pendentes).toBeTrue();
+      expect(comp.temFiltro()).toBeTrue();
+    });
+
+    it('marcar o filtro atualiza a URL e recarrega', async () => {
+      await montar('admin');
+      await navegando(() => comp.filtros.controls.pendentes.setValue(true));
+      expect(router.url).toContain('dadosCompletos=false');
+      const req = listagem();
+      expect(req.request.params.get('dadosCompletos')).toBe('false');
+      responder([], req);
     });
 
     it('valores inválidos na URL são ignorados', async () => {

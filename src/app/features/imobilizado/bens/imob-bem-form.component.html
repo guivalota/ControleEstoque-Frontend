@@ -79,13 +79,13 @@
         <h6 class="text-muted text-uppercase small fw-semibold mb-3">Aquisição e depreciação</h6>
         <div class="row g-3 mb-4">
           <div class="col-6 col-md-3">
-            <label for="bemData" class="form-label">Data de aquisição *</label>
+            <label for="bemData" class="form-label">Data de aquisição</label>
             <input id="bemData" type="date" class="form-control" formControlName="dataAquisicao"
                    min="1900-01-01" [max]="hoje" [class.is-invalid]="erroCampo('dataAquisicao')">
             <div class="invalid-feedback">{{ erroCampo('dataAquisicao') }}</div>
           </div>
           <div class="col-6 col-md-3">
-            <label for="bemValor" class="form-label">Valor de aquisição (R$) *</label>
+            <label for="bemValor" class="form-label">Valor de aquisição (R$)</label>
             <input id="bemValor" type="number" min="0" step="0.01" class="form-control" formControlName="valorAquisicao"
                    [class.is-invalid]="erroCampo('valorAquisicao')">
             <div class="invalid-feedback">{{ erroCampo('valorAquisicao') }}</div>

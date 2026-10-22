@@ -54,6 +54,12 @@
           @for (s of statusLista; track s) { <option [value]="s">{{ rotuloStatus[s] }}</option> }
         </select>
       </div>
+      <div class="col-12 col-md-3">
+        <div class="form-check mt-md-4">
+          <input id="bemPendentes" class="form-check-input" type="checkbox" formControlName="pendentes">
+          <label for="bemPendentes" class="form-check-label small">Pendentes de completar</label>
+        </div>
+      </div>
       <div class="col-6 col-md-4">
         <label for="bemCategoria" class="form-label small mb-1">Categoria</label>
         <select id="bemCategoria" class="form-select form-select-sm" formControlName="categoriaId">
@@ -116,7 +122,9 @@
               @for (b of bens(); track b.id) {
                 <tr>
                   <td class="ps-3 text-nowrap"><a [routerLink]="['/imobilizado/bens', b.id]" class="fw-medium">{{ b.plaqueta }}</a></td>
-                  <td>{{ b.descricao }}</td>
+                  <td>{{ b.descricao }}
+                    @if (!b.dadosCompletos) { <span class="badge bg-warning-subtle text-warning-emphasis ms-1">Dados incompletos</span> }
+                  </td>
                   <td>{{ b.localNome }}</td>
                   <td>{{ b.responsavelNome || '—' }}</td>
                   <td class="text-end text-nowrap">{{ formatarMoeda(b.valorAquisicao) }}</td>

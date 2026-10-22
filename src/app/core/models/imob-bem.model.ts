@@ -30,10 +30,12 @@ export interface ImobBem {
   categoriaId: number; categoriaNome: string;
   localId: number; localNome: string;
   responsavelId?: number | null; responsavelNome?: string | null;
-  dataAquisicao: string;
-  valorAquisicao: number;
-  valorResidual: number;
+  dataAquisicao?: string | null;
+  valorAquisicao?: number | null;
+  valorResidual?: number | null;
   vidaUtilMeses: number;
+  /** `false` = falta data ou valor de aquisição (fora da depreciação até completar). */
+  dadosCompletos: boolean;
   status: ImobBemStatus;
   fornecedorNome?: string | null;
   numeroDocumentoAquisicao?: string | null;
@@ -45,14 +47,14 @@ export interface ImobBem {
 export interface SalvarImobBem {
   plaqueta: string; descricao: string;
   categoriaId: number; localId: number; responsavelId?: number | null;
-  dataAquisicao: string; valorAquisicao: number;
+  dataAquisicao?: string | null; valorAquisicao?: number | null;
   valorResidual?: number; vidaUtilMeses?: number;
   fornecedorNome?: string; numeroDocumentoAquisicao?: string; numeroSerie?: string; observacao?: string;
 }
 
 export interface ImobBemFiltro {
   busca?: string; localId?: number; incluirSublocais?: boolean; categoriaId?: number;
-  responsavelId?: number; status?: ImobBemStatus; page?: number; pageSize?: number;
+  responsavelId?: number; status?: ImobBemStatus; dadosCompletos?: boolean; page?: number; pageSize?: number;
 }
 
 export interface ImobBemHistorico {
