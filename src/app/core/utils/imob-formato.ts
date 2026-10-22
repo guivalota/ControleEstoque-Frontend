@@ -21,3 +21,24 @@ export function formatarPercentual(valor: number | null | undefined): string {
   if (valor === null || valor === undefined || !Number.isFinite(valor)) return '';
   return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(valor) + '%';
 }
+
+const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+/** R$ 4.500,00 */
+export function formatarMoeda(valor: number | null | undefined): string {
+  if (valor === null || valor === undefined || !Number.isFinite(valor)) return '—';
+  return BRL.format(valor);
+}
+
+/** yyyy-MM-dd (ou ISO completo) → dd/MM/yyyy, sem passar por Date (evita deslocamento de fuso). */
+export function formatarData(iso: string | null | undefined): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? '');
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : '—';
+}
+
+/** Instante ISO (UTC) → dd/MM/yyyy HH:mm no fuso do navegador. */
+export function formatarDataHora(iso: string | null | undefined): string {
+  const d = iso ? new Date(iso) : null;
+  if (!d || Number.isNaN(d.getTime())) return '—';
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(d).replace(',', '');
+}

@@ -14,6 +14,10 @@ export class ImobResponsavelService {
     return this.http.get<PagedResult<ImobResponsavel>>(this.url, { params: montarParams(filtro) });
   }
 
+  obter(id: number) {
+    return this.http.get<ImobResponsavel>(`${this.url}/${id}`);
+  }
+
   criar(req: CriarImobResponsavel) {
     return this.http.post<ImobResponsavel>(this.url, req);
   }
