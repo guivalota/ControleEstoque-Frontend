@@ -1,0 +1,177 @@
+<div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="fw-bold mb-0">Locais</h6>
+    @if (permissao.canCreate()) {
+      <button type="button" class="btn btn-primary btn-sm" (click)="openCreate()">
+        <i class="bi bi-plus-lg me-1"></i>Novo local
+      </button>
+    }
+  </div>
+
+  <div class="row g-2 align-items-end mb-3">
+    <div class="col-12 col-md-5">
+      <label for="locBusca" class="form-label small mb-1">Buscar</label>
+      <input id="locBusca" class="form-control form-control-sm" placeholder="Nome ou código"
+             [ngModel]="busca()" (ngModelChange)="busca.set($event)">
+    </div>
+    <div class="col-auto">
+      <div class="form-check form-switch mb-1">
+        <input id="locInativos" class="form-check-input" type="checkbox" role="switch"
+               [ngModel]="mostrarInativos()" (ngModelChange)="mostrarInativos.set($event)">
+        <label for="locInativos" class="form-check-label small">Mostrar inativos</label>
+      </div>
+    </div>
+    <div class="col-auto ms-md-auto">
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-outline-secondary" (click)="expandirTodos(true)">Expandir tudo</button>
+        <button type="button" class="btn btn-outline-secondary" (click)="expandirTodos(false)">Recolher tudo</button>
+      </div>
+    </div>
+  </div>
+
+  @if (feedback()) {
+    <div class="alert alert-success alert-dismissible py-2" role="status">
+      {{ feedback() }}
+      <button type="button" class="btn-close" aria-label="Fechar" (click)="feedback.set('')"></button>
+    </div>
+  }
+  @if (erro()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
+      <span>{{ erro() }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="carregar()">Tentar novamente</button>
+    </div>
+  }
+  @if (bloqueio(); as b) {
+    <app-bloqueio-exclusao
+      [mensagem]="b.mensagem"
+      [permiteDesativar]="b.no.ativo"
+      [filtroBens]="bloqueioTemBens() ? { localId: b.no.id } : null"
+      [desativando]="agindo() === b.no.id"
+      (desativar)="desativar()"
+      (fechar)="bloqueio.set(null)" />
+  }
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+        </div>
+      } @else if (linhas().length === 0) {
+        <div class="text-center text-muted py-4">
+          <i class="bi bi-inbox me-2"></i>
+          {{ arvore().length === 0 ? 'Nenhum local cadastrado' : 'Nenhum local encontrado com os filtros atuais' }}
+        </div>
+      } @else {
+        <div role="tree" aria-label="Locais">
+          @for (l of linhas(); track l.no.id) {
+            <div role="treeitem" aria-selected="false" class="d-flex align-items-center gap-2 py-2 pe-3 border-bottom imob-treeitem"
+                 [class.text-muted]="!l.no.ativo"
+                 [style.padding-left.rem]="1 + l.nivel * 1.5"
+                 [attr.data-local-id]="l.no.id"
+                 [attr.aria-level]="l.nivel + 1"
+                 [attr.aria-expanded]="l.temFilhos ? l.expandido : null"
+                 [attr.tabindex]="focoEfetivo() === l.no.id ? 0 : -1"
+                 (focus)="focoId.set(l.no.id)"
+                 (keydown)="aoTeclar($event, l)">
+              @if (l.temFilhos) {
+                <button type="button" class="btn btn-sm btn-link p-0 text-body" tabindex="-1"
+                        [attr.aria-label]="(l.expandido ? 'Recolher ' : 'Expandir ') + l.no.nome"
+                        [disabled]="!!busca().trim()" (click)="alternar(l.no.id)">
+                  <i class="bi" [class.bi-chevron-down]="l.expandido" [class.bi-chevron-right]="!l.expandido"></i>
+                </button>
+              } @else {
+                <span class="d-inline-block" style="width: 1.25rem"></span>
+              }
+              <span class="flex-grow-1">
+                {{ l.no.nome }}
+                @if (l.no.codigo) { <small class="text-muted">({{ l.no.codigo }})</small> }
+                @if (!l.no.ativo) { <span class="badge bg-secondary-subtle text-secondary ms-1">Inativo</span> }
+              </span>
+              <span class="text-nowrap">
+                @if (permissao.canCreate()) {
+                  <button type="button" class="btn btn-sm btn-outline-primary me-1"
+                          (click)="openCreate(l.no)" title="Adicionar sublocal"
+                          [attr.aria-label]="'Adicionar sublocal em ' + l.no.nome">
+                    <i class="bi bi-node-plus"></i>
+                  </button>
+                }
+                @if (permissao.canEdit()) {
+                  <button type="button" class="btn btn-sm btn-outline-secondary me-1"
+                          (click)="openEdit(l.no)" title="Editar" [attr.aria-label]="'Editar ' + l.no.nome">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                }
+                @if (permissao.canDelete()) {
+                  <button type="button" class="btn btn-sm btn-outline-danger"
+                          [disabled]="agindo() === l.no.id" (click)="excluir(l.no)" title="Excluir"
+                          [attr.aria-label]="'Excluir ' + l.no.nome">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                }
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+  <p class="small text-muted mt-2 mb-0">
+    Use as setas do teclado para navegar na árvore: ↑ ↓ movem, → expande, ← recolhe.
+  </p>
+</div>
+
+<div class="modal fade" #modalEl tabindex="-1" aria-labelledby="localModalTitulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <div class="modal-header">
+        <h5 class="modal-title" id="localModalTitulo">{{ editingId() !== null ? 'Editar local' : 'Novo local' }}</h5>
+        <button type="button" class="btn-close" aria-label="Fechar" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        @if (saveError()) {
+          <div class="alert alert-danger py-2" role="alert">{{ saveError() }}</div>
+        }
+
+        <div class="mb-3">
+          <label for="locNome" class="form-label">Nome *</label>
+          <input id="locNome" class="form-control" formControlName="nome" maxlength="255"
+                 [class.is-invalid]="erroCampo('nome')">
+          <div class="invalid-feedback">{{ erroCampo('nome') }}</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="locCodigo" class="form-label">Código</label>
+          <input id="locCodigo" class="form-control" formControlName="codigo" maxlength="50"
+                 [class.is-invalid]="erroCampo('codigo')">
+          <div class="invalid-feedback">{{ erroCampo('codigo') }}</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="locPai" class="form-label">Local pai</label>
+          <app-seletor-local inputId="locPai" formControlName="localPaiId"
+                             [arvore]="arvore()" [excluirId]="editingId()" placeholder="(Raiz — sem local pai)" />
+          @if (editingId() !== null) {
+            <div class="form-text">Para mover o local, escolha outro pai. O próprio local e seus sublocais não aparecem na lista.</div>
+          }
+        </div>
+
+        @if (editingId() !== null) {
+          <div class="form-check form-switch">
+            <input id="locAtivo" class="form-check-input" type="checkbox" role="switch" formControlName="ativo">
+            <label for="locAtivo" class="form-check-label">Local ativo</label>
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<app-confirm-dialog />
