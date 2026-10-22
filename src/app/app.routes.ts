@@ -94,6 +94,18 @@ export const routes: Routes = [
             path: '',
             data: { dispensaEmpresa: true },
             loadComponent: () => import('./features/imobilizado/inicio/imobilizado-inicio.component').then(m => m.ImobilizadoInicioComponent)
+          },
+          {
+            path: 'empresas',
+            canActivate: [adminGuard],
+            data: { dispensaEmpresa: true, administracao: true },
+            loadComponent: () => import('./features/imobilizado/empresas/imob-empresas.component').then(m => m.ImobEmpresasComponent)
+          },
+          {
+            path: 'empresas/:id/usuarios',
+            canActivate: [adminGuard],
+            data: { dispensaEmpresa: true, administracao: true },
+            loadComponent: () => import('./features/imobilizado/empresas/imob-empresa-usuarios.component').then(m => m.ImobEmpresaUsuariosComponent)
           }
         ]
       },

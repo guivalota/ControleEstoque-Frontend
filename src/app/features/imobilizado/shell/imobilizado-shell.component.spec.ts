@@ -1,8 +1,10 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { ImobilizadoShellComponent } from './imobilizado-shell.component';
+import { AuthService } from '../../../core/services/auth.service';
 import { EmpresaAtivaService } from '../../../core/services/empresa-ativa.service';
 import { ImobEmpresa } from '../../../core/models/imob-empresa.model';
 
@@ -60,5 +62,61 @@ describe('ImobilizadoShellComponent', () => {
     fixture.detectChanges();
     expect(texto()).toContain('Não foi possível carregar suas empresas');
     expect(texto()).toContain('Tentar novamente');
+  });
+});
+
+describe('ImobilizadoShellComponent — papéis e administração', () => {
+  function criar(role: string) {
+    TestBed.configureTestingModule({
+      imports: [ImobilizadoShellComponent],
+      providers: [
+        provideRouter([]), provideHttpClient(), provideHttpClientTesting(),
+        { provide: AuthService, useValue: { currentUser: signal({ role }) } }
+      ]
+    });
+    const fixture = TestBed.createComponent(ImobilizadoShellComponent);
+    const svc = TestBed.inject(EmpresaAtivaService);
+    return { fixture, svc, texto: () => (fixture.nativeElement as HTMLElement).textContent ?? '' };
+  }
+
+  it('admin vê o link Empresas', () => {
+    const { fixture, svc, texto } = criar('admin');
+    svc.empresas.set([empresa(1)]);
+    svc.id.set(1);
+    svc.carregado.set(true);
+    fixture.detectChanges();
+    expect(texto()).toContain('Empresas');
+  });
+
+  for (const role of ['operador', 'leitura']) {
+    it(`${role} não vê o link Empresas nem o atalho de administração`, () => {
+      const { fixture, svc, texto } = criar(role);
+      svc.carregado.set(true);
+      fixture.detectChanges();
+      expect(texto()).toContain('Você ainda não tem acesso');
+      expect(texto()).not.toContain('Administrar empresas');
+      expect(texto()).not.toContain('Empresas');
+    });
+  }
+
+  it('admin sem empresas vê o atalho para administrar empresas', () => {
+    const { fixture, svc, texto } = criar('admin');
+    svc.carregado.set(true);
+    fixture.detectChanges();
+    expect(texto()).toContain('Administrar empresas');
+  });
+
+  it('em tela de administração não mostra "sem acesso" e não abre o seletor obrigatório', () => {
+    const { fixture, svc, texto } = criar('admin');
+    svc.empresas.set([empresa(1), empresa(2)]);
+    svc.carregado.set(true);
+    expect(svc.seletorAberto()).toBeTrue();
+    svc.emAdministracao.set(true);
+    fixture.detectChanges();
+    expect(svc.seletorAberto()).toBeFalse();
+
+    svc.empresas.set([]);
+    fixture.detectChanges();
+    expect(texto()).not.toContain('Você ainda não tem acesso');
   });
 });
