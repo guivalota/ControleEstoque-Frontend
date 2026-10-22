@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
+import { escritaGuard } from './core/guards/escrita.guard';
 import { empresaAtivaGuard, imobilizadoGuard } from './core/guards/empresa-ativa.guard';
 
 export const routes: Routes = [
@@ -94,6 +95,24 @@ export const routes: Routes = [
             path: '',
             data: { dispensaEmpresa: true },
             loadComponent: () => import('./features/imobilizado/inicio/imobilizado-inicio.component').then(m => m.ImobilizadoInicioComponent)
+          },
+          {
+            path: 'bens',
+            loadComponent: () => import('./features/imobilizado/bens/imob-bens.component').then(m => m.ImobBensComponent)
+          },
+          {
+            path: 'bens/novo',
+            canActivate: [escritaGuard],
+            loadComponent: () => import('./features/imobilizado/bens/imob-bem-form.component').then(m => m.ImobBemFormComponent)
+          },
+          {
+            path: 'bens/:id/editar',
+            canActivate: [escritaGuard],
+            loadComponent: () => import('./features/imobilizado/bens/imob-bem-form.component').then(m => m.ImobBemFormComponent)
+          },
+          {
+            path: 'bens/:id',
+            loadComponent: () => import('./features/imobilizado/bens/imob-bem-detalhe.component').then(m => m.ImobBemDetalheComponent)
           },
           {
             path: 'locais',

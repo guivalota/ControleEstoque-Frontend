@@ -1,29 +1,18 @@
 import { Component, ElementRef, OnDestroy, OnInit, inject, signal, viewChild } from '@angular/core';
-import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Modal } from 'bootstrap';
 import { ImobCategoriaService } from '../../../core/services/imob-categoria.service';
 import { PermissaoService } from '../../../core/services/permissao.service';
 import { ImobCategoria } from '../../../core/models/imob-categoria.model';
 import { aplicarErroNoForm, lerErroApi } from '../../../core/utils/erros-api';
+import { duasCasas, inteiro } from '../../../core/utils/validadores';
 import { formatarPercentual, formatarVidaUtil } from '../../../core/utils/imob-formato';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 import { PaginacaoComponent } from '../shared/paginacao.component';
 import { BloqueioExclusaoComponent } from '../shared/bloqueio-exclusao.component';
 
 const PAGE_SIZE = 50;
-
-/** Aceita no máximo 2 casas decimais. */
-function duasCasas(c: AbstractControl): ValidationErrors | null {
-  const v = c.value;
-  if (v === null || v === '' || typeof v !== 'number') return null;
-  return Math.abs(Math.round(v * 100) - v * 100) < 1e-6 ? null : { casas: true };
-}
-
-function inteiro(c: AbstractControl): ValidationErrors | null {
-  const v = c.value;
-  return v === null || v === '' || Number.isInteger(v) ? null : { inteiro: true };
-}
 
 interface Bloqueio {
   categoria: ImobCategoria;

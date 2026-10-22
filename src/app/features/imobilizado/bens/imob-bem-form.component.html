@@ -1,0 +1,147 @@
+<div>
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <a routerLink="/imobilizado/bens" class="btn btn-sm btn-outline-secondary" aria-label="Voltar para a lista de bens">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h6 class="fw-bold mb-0">{{ edicao ? 'Editar bem' + (bem() ? ' ' + bem()!.plaqueta : '') : 'Novo bem' }}</h6>
+  </div>
+
+  @if (naoEncontrado()) {
+    <div class="alert alert-warning" role="alert">Bem não encontrado nesta empresa.</div>
+  } @else if (loading()) {
+    <div class="text-center py-5 text-muted">
+      <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+    </div>
+  } @else {
+    @if (erroCarga()) {
+      <div class="alert alert-danger py-2" role="alert">{{ erroCarga() }}</div>
+    }
+    @if (bloqueado()) {
+      <div class="alert alert-warning" role="alert">
+        <i class="bi bi-lock me-2"></i>Bens baixados ou vendidos não podem ser editados.
+      </div>
+    }
+    @if (saveError()) {
+      <div class="alert alert-danger py-2" role="alert">{{ saveError() }}</div>
+    }
+
+    <form class="card border-0 shadow-sm" [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <div class="card-body">
+        <h6 class="text-muted text-uppercase small fw-semibold mb-3">Identificação</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-md-4">
+            <label for="bemPlaquetaForm" class="form-label">Plaqueta *</label>
+            <input id="bemPlaquetaForm" class="form-control" formControlName="plaqueta" maxlength="50"
+                   [class.is-invalid]="erroCampo('plaqueta')">
+            <div class="invalid-feedback">{{ erroCampo('plaqueta') }}</div>
+          </div>
+          <div class="col-12 col-md-8">
+            <label for="bemDescricao" class="form-label">Descrição *</label>
+            <input id="bemDescricao" class="form-control" formControlName="descricao" maxlength="500"
+                   [class.is-invalid]="erroCampo('descricao')">
+            <div class="invalid-feedback">{{ erroCampo('descricao') }}</div>
+          </div>
+          <div class="col-12 col-md-6">
+            <label for="bemSerie" class="form-label">Número de série</label>
+            <input id="bemSerie" class="form-control" formControlName="numeroSerie" maxlength="100"
+                   [class.is-invalid]="erroCampo('numeroSerie')">
+            <div class="invalid-feedback">{{ erroCampo('numeroSerie') }}</div>
+          </div>
+        </div>
+
+        <h6 class="text-muted text-uppercase small fw-semibold mb-3">Classificação</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-md-4">
+            <label for="bemCategoriaForm" class="form-label">Categoria *</label>
+            <select id="bemCategoriaForm" class="form-select" formControlName="categoriaId"
+                    [class.is-invalid]="erroCampo('categoriaId')">
+              <option [ngValue]="null">Selecione...</option>
+              @for (c of categoriasOpcoes(); track c.id) {
+                <option [ngValue]="c.id">{{ c.nome }}{{ c.ativo ? '' : ' (inativa)' }}</option>
+              }
+            </select>
+            <div class="invalid-feedback">{{ erroCampo('categoriaId') }}</div>
+          </div>
+          <div class="col-12 col-md-4">
+            <label for="bemLocalForm" class="form-label">Local *</label>
+            <app-seletor-local inputId="bemLocalForm" formControlName="localId" [arvore]="arvore()"
+                               [somenteAtivos]="true" placeholder="Selecione..." [invalido]="!!erroCampo('localId')" />
+            @if (erroCampo('localId')) { <div class="invalid-feedback d-block">{{ erroCampo('localId') }}</div> }
+          </div>
+          <div class="col-12 col-md-4">
+            <label for="bemResponsavelForm" class="form-label">Responsável</label>
+            <app-autocomplete-responsavel inputId="bemResponsavelForm" formControlName="responsavelId"
+                                          [invalido]="!!erroCampo('responsavelId')" />
+            @if (erroCampo('responsavelId')) { <div class="invalid-feedback d-block">{{ erroCampo('responsavelId') }}</div> }
+          </div>
+        </div>
+
+        <h6 class="text-muted text-uppercase small fw-semibold mb-3">Aquisição e depreciação</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-md-3">
+            <label for="bemData" class="form-label">Data de aquisição *</label>
+            <input id="bemData" type="date" class="form-control" formControlName="dataAquisicao"
+                   min="1900-01-01" [max]="hoje" [class.is-invalid]="erroCampo('dataAquisicao')">
+            <div class="invalid-feedback">{{ erroCampo('dataAquisicao') }}</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <label for="bemValor" class="form-label">Valor de aquisição (R$) *</label>
+            <input id="bemValor" type="number" min="0" step="0.01" class="form-control" formControlName="valorAquisicao"
+                   [class.is-invalid]="erroCampo('valorAquisicao')">
+            <div class="invalid-feedback">{{ erroCampo('valorAquisicao') }}</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <label for="bemResidual" class="form-label">Valor residual (R$)</label>
+            <input id="bemResidual" type="number" min="0" step="0.01" class="form-control" formControlName="valorResidual"
+                   (input)="marcarResidualTocado()" [class.is-invalid]="erroCampo('valorResidual')">
+            <div class="invalid-feedback">{{ erroCampo('valorResidual') }}</div>
+            @if (mostrarSugestao('residual') && !erroCampo('valorResidual')) {
+              <div class="form-text">Sugerido pela categoria ({{ formatarPercentual(categoriaSelecionada()!.valorResidualPercentual) }} da aquisição). Você pode editar.</div>
+            }
+          </div>
+          <div class="col-6 col-md-3">
+            <label for="bemVida" class="form-label">Vida útil (meses)</label>
+            <input id="bemVida" type="number" min="1" max="1200" step="1" class="form-control" formControlName="vidaUtilMeses"
+                   (input)="marcarVidaTocada()" [class.is-invalid]="erroCampo('vidaUtilMeses')">
+            <div class="invalid-feedback">{{ erroCampo('vidaUtilMeses') }}</div>
+            @if (mostrarSugestao('vida') && !erroCampo('vidaUtilMeses')) {
+              <div class="form-text">Sugerida pela categoria ({{ formatarVidaUtil(categoriaSelecionada()!.vidaUtilMeses) }}). Você pode editar.</div>
+            }
+          </div>
+          <div class="col-12 col-md-6">
+            <label for="bemFornecedor" class="form-label">Fornecedor</label>
+            <input id="bemFornecedor" class="form-control" formControlName="fornecedorNome" maxlength="255"
+                   [class.is-invalid]="erroCampo('fornecedorNome')">
+            <div class="invalid-feedback">{{ erroCampo('fornecedorNome') }}</div>
+          </div>
+          <div class="col-12 col-md-6">
+            <label for="bemDocumento" class="form-label">Documento de aquisição</label>
+            <input id="bemDocumento" class="form-control" formControlName="numeroDocumentoAquisicao" maxlength="100"
+                   placeholder="Ex.: número da nota fiscal" [class.is-invalid]="erroCampo('numeroDocumentoAquisicao')">
+            <div class="invalid-feedback">{{ erroCampo('numeroDocumentoAquisicao') }}</div>
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <label for="bemObs" class="form-label">Observação</label>
+          <textarea id="bemObs" class="form-control" rows="3" formControlName="observacao" maxlength="2000"
+                    [class.is-invalid]="erroCampo('observacao')"></textarea>
+          <div class="invalid-feedback">{{ erroCampo('observacao') }}</div>
+        </div>
+        @if (edicao) {
+          <div class="form-text">
+            O status do bem não é editável aqui; ele muda pelos fluxos de manutenção, baixa e inventário.
+            Trocar local ou responsável é uma correção cadastral e fica registrada no histórico.
+          </div>
+        }
+      </div>
+      <div class="card-footer bg-transparent d-flex justify-content-end gap-2">
+        <a routerLink="/imobilizado/bens" class="btn btn-outline-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary" [disabled]="saving() || bloqueado()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Salvar
+        </button>
+      </div>
+    </form>
+  }
+</div>

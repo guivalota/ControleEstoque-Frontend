@@ -1,0 +1,67 @@
+<div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <a routerLink="/imobilizado/bens" class="btn btn-sm btn-outline-secondary" aria-label="Voltar para a lista de bens">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <h6 class="fw-bold mb-0">{{ bem() ? 'Bem ' + bem()!.plaqueta : 'Bem' }}</h6>
+      @if (bem(); as b) {
+        <span class="badge" [class]="classeStatus[b.status]">{{ rotuloStatus[b.status] }}</span>
+      }
+    </div>
+    @if (bem(); as b) {
+      <div class="d-flex gap-2">
+        @if (permissao.canEdit() && bemEditavel(b.status)) {
+          <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/imobilizado/bens', b.id, 'editar']">
+            <i class="bi bi-pencil me-1"></i>Editar
+          </a>
+        }
+        @if (permissao.canDelete()) {
+          <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="excluindo()" (click)="excluir()">
+            @if (excluindo()) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-trash me-1"></i> }
+            Excluir
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (erro()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
+      <span>{{ erro() }}</span>
+      @if (!bem()) { <button type="button" class="btn btn-sm btn-outline-danger" (click)="carregar()">Tentar novamente</button> }
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="text-center py-5 text-muted">
+      <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+    </div>
+  } @else if (naoEncontrado()) {
+    <div class="alert alert-warning" role="alert">Bem não encontrado nesta empresa.</div>
+  } @else if (bem()) {
+    @let b = bem()!;
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <p class="fs-5 mb-4">{{ b.descricao }}</p>
+        <dl class="row mb-0">
+          <dt class="col-sm-3">Categoria</dt><dd class="col-sm-9">{{ b.categoriaNome }}</dd>
+          <dt class="col-sm-3">Local</dt><dd class="col-sm-9">{{ b.localNome }}</dd>
+          <dt class="col-sm-3">Responsável</dt><dd class="col-sm-9">{{ b.responsavelNome || '—' }}</dd>
+          <dt class="col-sm-3">Data de aquisição</dt><dd class="col-sm-9">{{ formatarData(b.dataAquisicao) }}</dd>
+          <dt class="col-sm-3">Valor de aquisição</dt><dd class="col-sm-9">{{ formatarMoeda(b.valorAquisicao) }}</dd>
+          <dt class="col-sm-3">Valor residual</dt><dd class="col-sm-9">{{ formatarMoeda(b.valorResidual) }}</dd>
+          <dt class="col-sm-3">Vida útil</dt><dd class="col-sm-9">{{ formatarVidaUtil(b.vidaUtilMeses) }}</dd>
+          <dt class="col-sm-3">Fornecedor</dt><dd class="col-sm-9">{{ b.fornecedorNome || '—' }}</dd>
+          <dt class="col-sm-3">Documento de aquisição</dt><dd class="col-sm-9">{{ b.numeroDocumentoAquisicao || '—' }}</dd>
+          <dt class="col-sm-3">Número de série</dt><dd class="col-sm-9">{{ b.numeroSerie || '—' }}</dd>
+          <dt class="col-sm-3">Observação</dt><dd class="col-sm-9 text-break" style="white-space: pre-line">{{ b.observacao || '—' }}</dd>
+          <dt class="col-sm-3">Criado em</dt><dd class="col-sm-9">{{ formatarDataHora(b.criadoEm) }}</dd>
+          <dt class="col-sm-3">Atualizado em</dt><dd class="col-sm-9">{{ formatarDataHora(b.atualizadoEm) }}</dd>
+        </dl>
+      </div>
+    </div>
+  }
+</div>
+
+<app-confirm-dialog />
