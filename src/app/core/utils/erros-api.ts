@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { AbstractControl } from '@angular/forms';
 
 export interface ErroApi {
   /** Mensagem geral (regra de negócio ou falha). Vazia quando só há erros de campo. */
@@ -27,4 +28,32 @@ export function lerErroApi(err: unknown, fallback: string): ErroApi {
     }
   }
   return { mensagem: fallback, campos: {} };
+}
+
+/**
+ * Aplica um erro da API a um formulário: erros por campo viram `servidor` no controle e,
+ * para `{ error }`, o campo cujo termo aparece na mensagem recebe o erro (o primeiro da lista
+ * vence). Devolve a mensagem geral que ainda precisa ser exibida ('' quando coube num campo).
+ */
+export function aplicarErroNoForm(
+  form: AbstractControl,
+  erro: ErroApi,
+  palavrasPorCampo: Record<string, string[]> = {}
+): string {
+  for (const [campo, msg] of Object.entries(erro.campos)) {
+    form.get(campo)?.setErrors({ servidor: msg });
+  }
+  if (!erro.mensagem) return '';
+  const texto = erro.mensagem.toLowerCase();
+  for (const [campo, palavras] of Object.entries(palavrasPorCampo)) {
+    if (palavras.some(p => texto.includes(p))) {
+      const controle = form.get(campo);
+      if (controle) {
+        controle.setErrors({ servidor: erro.mensagem });
+        controle.markAsTouched();
+        return '';
+      }
+    }
+  }
+  return erro.mensagem;
 }
