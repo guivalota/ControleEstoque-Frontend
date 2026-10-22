@@ -15,6 +15,19 @@
   </div>
 </div>
 
+@if (empresa.ativa()) {
+  <nav class="mb-3" aria-label="Cadastros do Imobilizado">
+    <ul class="nav nav-pills gap-1">
+      <li class="nav-item">
+        <a class="nav-link py-1" routerLink="/imobilizado" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Início</a>
+      </li>
+      <li class="nav-item"><a class="nav-link py-1" routerLink="/imobilizado/locais" routerLinkActive="active">Locais</a></li>
+      <li class="nav-item"><a class="nav-link py-1" routerLink="/imobilizado/categorias" routerLinkActive="active">Categorias</a></li>
+      <li class="nav-item"><a class="nav-link py-1" routerLink="/imobilizado/responsaveis" routerLinkActive="active">Responsáveis</a></li>
+    </ul>
+  </nav>
+}
+
 @if (empresa.aviso()) {
   <div class="alert alert-warning" role="alert">
     <i class="bi bi-exclamation-triangle me-2"></i>{{ empresa.aviso() }}

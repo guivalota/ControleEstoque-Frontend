@@ -1,6 +1,6 @@
 import { Component, OnDestroy, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLink, RouterOutlet, ActivatedRouteSnapshot } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet, ActivatedRouteSnapshot } from '@angular/router';
 import { filter } from 'rxjs';
 import { EmpresaAtivaService } from '../../../core/services/empresa-ativa.service';
 import { PermissaoService } from '../../../core/services/permissao.service';
@@ -10,7 +10,7 @@ import { SeletorEmpresaComponent } from './seletor-empresa.component';
 @Component({
   selector: 'app-imobilizado-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, SeletorEmpresaComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, SeletorEmpresaComponent],
   templateUrl: './imobilizado-shell.component.html'
 })
 export class ImobilizadoShellComponent implements OnDestroy {

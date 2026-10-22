@@ -1,0 +1,190 @@
+<div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="fw-bold mb-0">Responsáveis</h6>
+    @if (permissao.canCreate()) {
+      <button type="button" class="btn btn-primary btn-sm" (click)="openCreate()">
+        <i class="bi bi-plus-lg me-1"></i>Novo responsável
+      </button>
+    }
+  </div>
+
+  <form class="row g-2 align-items-end mb-3" (ngSubmit)="carregar(1)">
+    <div class="col-12 col-md-4">
+      <label for="resBusca" class="form-label small mb-1">Buscar</label>
+      <input id="resBusca" name="busca" class="form-control form-control-sm" placeholder="Nome, matrícula ou e-mail"
+             [(ngModel)]="busca">
+    </div>
+    <div class="col-6 col-md-3">
+      <label for="resSetor" class="form-label small mb-1">Setor</label>
+      <select id="resSetor" name="setor" class="form-select form-select-sm" [(ngModel)]="setorFiltro" (ngModelChange)="carregar(1)">
+        <option value="">Todos</option>
+        @for (s of setores(); track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <label for="resAtivo" class="form-label small mb-1">Situação</label>
+      <select id="resAtivo" name="ativo" class="form-select form-select-sm" [(ngModel)]="ativoFiltro" (ngModelChange)="carregar(1)">
+        <option value="">Todos</option>
+        <option value="true">Somente ativos</option>
+        <option value="false">Somente inativos</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-sm btn-outline-primary me-1">Buscar</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="limparFiltros()">Limpar</button>
+    </div>
+  </form>
+
+  @if (feedback()) {
+    <div class="alert alert-success alert-dismissible py-2" role="status">
+      {{ feedback() }}
+      <button type="button" class="btn-close" aria-label="Fechar" (click)="feedback.set('')"></button>
+    </div>
+  }
+  @if (erro()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
+      <span>{{ erro() }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="carregar()">Tentar novamente</button>
+    </div>
+  }
+  @if (bloqueio(); as b) {
+    <app-bloqueio-exclusao
+      [mensagem]="b.mensagem"
+      [permiteDesativar]="b.responsavel.ativo"
+      [filtroBens]="bloqueioTemBens() ? { responsavelId: b.responsavel.id } : null"
+      [desativando]="agindo() === b.responsavel.id"
+      (desativar)="desativar()"
+      (fechar)="bloqueio.set(null)" />
+  }
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Nome</th>
+                <th>Matrícula</th>
+                <th>E-mail</th>
+                <th>Setor</th>
+                <th>Situação</th>
+                <th class="text-end pe-3">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of responsaveis(); track r.id) {
+                <tr [class.text-muted]="!r.ativo">
+                  <td class="ps-3">{{ r.nome }}</td>
+                  <td>{{ r.matricula || '—' }}</td>
+                  <td>{{ r.email || '—' }}</td>
+                  <td>{{ r.setor || '—' }}</td>
+                  <td>
+                    @if (r.ativo) {
+                      <span class="badge bg-success-subtle text-success">Ativo</span>
+                    } @else {
+                      <span class="badge bg-secondary-subtle text-secondary">Inativo</span>
+                    }
+                  </td>
+                  <td class="text-end pe-3 text-nowrap">
+                    @if (permissao.canEdit()) {
+                      <button type="button" class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(r)"
+                              title="Editar" [attr.aria-label]="'Editar ' + rotulo(r)">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                    }
+                    @if (permissao.canDelete()) {
+                      <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="agindo() === r.id"
+                              (click)="excluir(r)" title="Excluir" [attr.aria-label]="'Excluir ' + rotulo(r)">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox me-2"></i>Nenhum responsável encontrado
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacao [page]="page()" [pageSize]="pageSize" [total]="total()" [disabled]="loading()"
+                       (mudar)="carregar($event)" />
+      }
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" #modalEl tabindex="-1" aria-labelledby="resModalTitulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <div class="modal-header">
+        <h5 class="modal-title" id="resModalTitulo">{{ editingId() !== null ? 'Editar responsável' : 'Novo responsável' }}</h5>
+        <button type="button" class="btn-close" aria-label="Fechar" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        @if (saveError()) {
+          <div class="alert alert-danger py-2" role="alert">{{ saveError() }}</div>
+        }
+
+        <div class="mb-3">
+          <label for="resNome" class="form-label">Nome *</label>
+          <input id="resNome" class="form-control" formControlName="nome" maxlength="255"
+                 [class.is-invalid]="erroCampo('nome')">
+          <div class="invalid-feedback">{{ erroCampo('nome') }}</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="resMatricula" class="form-label">Matrícula</label>
+          <input id="resMatricula" class="form-control" formControlName="matricula" maxlength="50"
+                 [class.is-invalid]="erroCampo('matricula')">
+          <div class="invalid-feedback">{{ erroCampo('matricula') }}</div>
+          <div class="form-text">Única na empresa; distingue pessoas com o mesmo nome.</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="resEmail" class="form-label">E-mail</label>
+          <input id="resEmail" class="form-control" type="email" formControlName="email" maxlength="255"
+                 [class.is-invalid]="erroCampo('email')">
+          <div class="invalid-feedback">{{ erroCampo('email') }}</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="resSetorForm" class="form-label">Setor</label>
+          <input id="resSetorForm" class="form-control" formControlName="setor" maxlength="100"
+                 list="resSetoresLista" [class.is-invalid]="erroCampo('setor')">
+          <datalist id="resSetoresLista">
+            @for (s of setores(); track s) { <option [value]="s"></option> }
+          </datalist>
+          <div class="invalid-feedback">{{ erroCampo('setor') }}</div>
+        </div>
+
+        @if (editingId() !== null) {
+          <div class="form-check form-switch">
+            <input id="resAtivoForm" class="form-check-input" type="checkbox" role="switch" formControlName="ativo">
+            <label for="resAtivoForm" class="form-check-label">Responsável ativo</label>
+          </div>
+          <div class="form-text">Desativar não altera os bens já atribuídos; ele só deixa de ser oferecido em novas atribuições.</div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<app-confirm-dialog />
