@@ -98,31 +98,31 @@ Migration `0012_imob_empresas.sql`.
 **Pronto quando:** um usuário vinculado a duas empresas consegue alternar entre elas, e um usuário sem vínculo recebe 403 em qualquer endpoint de dados.
 
 ### Fase 1 — Cadastros base e bens (≈ 1–2 semanas)
-Uma migration por cadastro: `0013_imob_locais` (feita), `0014_imob_categorias` (feita), `0015_imob_responsaveis`, `0016_imob_bens` (feita; inclui a tabela e a gravação do histórico — a fatia 1.5 só expõe a consulta).
+Uma migration por cadastro: `0013_imob_locais` (feita), `0014_imob_categorias` (feita), `0015_imob_responsaveis`, `0016_imob_bens` (feita; inclui a tabela e a gravação do histórico — a fatia 1.5 só expõe a consulta). Mais: `0017_imob_bens_dados_pendentes` (feita: data e valor de aquisição opcionais) e `0018_imob_importacao_bens` (1.6).
 - [x] **1.1** Locais (árvore, com proteção contra ciclo) — `v1/imobilizado/locais`
 - [x] **1.2** Categorias de bem — `v1/imobilizado/categorias`
 - [x] **1.3** Responsáveis — `v1/imobilizado/responsaveis`
 - [x] **1.4** Bens (CRUD, filtros por local/categoria/status/responsável/texto, busca por plaqueta, paginação, export CSV) — `v1/imobilizado/bens`
 - [x] **1.5** Histórico de alterações do bem — `v1/imobilizado/bens/{id}/historico`
-- [ ] **1.6** Importação em massa por **CSV** (pré-validação com relatório de erros por linha, depois confirmação) — `v1/imobilizado/bens/importacao`
-- [ ] **1.7** Spec de frontend da fatia.
+- [x] **1.6** Importação em massa por **CSV** (pré-validação com relatório de erros por linha, depois confirmação) — `v1/imobilizado/bens/importacao`
+- [x] **1.7** Spec de frontend da fatia.
 
 **Pronto quando:** importar um CSV de ~10 mil bens, filtrar e exportar com desempenho aceitável; testes nos 3 níveis.
 
 ### Fase 2 — Inventário e conciliação (≈ 2 semanas)
-Migration `0017_imob_inventario.sql`.
-- [ ] **2.1** Criar/editar inventário, definir escopo (locais) e equipe — `v1/imobilizado/inventarios`
-- [ ] **2.2** Registrar leituras: manualmente na web e por **importação CSV de leituras** (simula o futuro app). Idempotência por `client_id`.
-- [ ] **2.3** Motor de conciliação (encontrado / local divergente / não encontrado / sobra / duplicado), recalculável.
-- [ ] **2.4** Painel de acompanhamento (progresso por local/equipe) e tratamento de divergências (resolver, ajustar local do bem).
-- [ ] **2.5** Encerramento do inventário (trava resultados) + relatório PDF/CSV.
-- [ ] **2.6** Endpoints "de sincronização" **desenhados no contrato** (escopo do inventário para download e envio de leituras em lote), documentados mas sem foco em desempenho do mobile ainda.
-- [ ] **2.7** Spec de frontend.
+Migrations: `0019_imob_inventarios` (feita: cabeçalho, escopo, equipe e snapshot do esperado), `0020_imob_leituras`, `0021_imob_conciliacao` e `0022_imob_resolucoes` e `0023_imob_encerramento` (feitas); as seguintes seguem em sequência a partir de `0024`.
+- [x] **2.1** Criar/editar inventário, definir escopo (locais) e equipe — `v1/imobilizado/inventarios`
+- [x] **2.2** Registrar leituras: manualmente na web e por **importação CSV de leituras** (simula o futuro app). Idempotência por `client_id`.
+- [x] **2.3** Motor de conciliação (encontrado / local divergente / não encontrado / sobra / duplicado), recalculável.
+- [x] **2.4** Painel de acompanhamento (progresso por local/equipe) e tratamento de divergências (resolver, ajustar local do bem).
+- [x] **2.5** Encerramento do inventário (trava resultados) + relatório PDF/CSV.
+- [x] **2.6** Endpoints "de sincronização" **desenhados no contrato** (escopo do inventário para download e envio de leituras em lote), documentados mas sem foco em desempenho do mobile ainda.
+- [x] **2.7** Spec de frontend.
 
 **Pronto quando:** simular um inventário completo só pela web/CSV e obter a conciliação correta.
 
 ### Fase 3 — Ordens de serviço e aprovação (≈ 2 semanas)
-Migration `0018_imob_ordens_servico.sql`.
+Migration da Fase 3: próximo número livre após a Fase 2.
 - [ ] **3.1** Abrir OS (transferência, manutenção, sinistro, venda, baixa) com itens.
 - [ ] **3.2** Aprovar/rejeitar (somente `admin`); regras de transição de status.
 - [ ] **3.3** Efeito da aprovação **atômico** (SP com transação): atualiza local/responsável/status do bem + grava histórico.
@@ -130,7 +130,7 @@ Migration `0018_imob_ordens_servico.sql`.
 - [ ] **3.5** Spec de frontend.
 
 ### Fase 4 — Depreciação e relatórios (≈ 2–3 semanas)
-Migration `0019_imob_depreciacao.sql`.
+Migration da Fase 4: próximo número livre após a Fase 3.
 - [ ] **4.1** Cálculo **linear** calculado sob demanda por bem/competência (função pura e testada).
 - [ ] **4.2** Fechamento de período: grava `imob_depreciacao` para todos os bens (endpoint `admin`; opcionalmente `BackgroundService` mensal, no estilo do `AlertaBackgroundService`).
 - [ ] **4.3** Relatórios: razão de depreciação, valor contábil por período, bens por categoria/local/responsável, baixas.

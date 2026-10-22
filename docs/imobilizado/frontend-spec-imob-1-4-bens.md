@@ -34,6 +34,7 @@ Bem é uma unidade patrimonial única, identificada por **plaqueta**, com local,
 | `categoriaId` | `number` | Filtra por categoria |
 | `responsavelId` | `number` | Filtra por responsável |
 | `status` | `string` | Um dos status acima (qualquer outro valor → `400`) |
+| `dadosCompletos` | `bool` | `false` = só bens com data **ou** valor de aquisição pendentes; `true` = só completos; omitido = todos |
 | `page` / `pageSize` | `number` | Padrão 1 / 50; **`pageSize` máximo 100** |
 
 Ordenado por plaqueta. Resposta paginada `{ items, page, pageSize, total }`; cada item:
@@ -45,7 +46,7 @@ Ordenado por plaqueta. Resposta paginada `{ items, page, pageSize, total }`; cad
   "localId": 7, "localNome": "Sala 101",
   "responsavelId": 12, "responsavelNome": "Ana Souza",
   "dataAquisicao": "2024-03-10", "valorAquisicao": 4500.00, "valorResidual": 450.00,
-  "vidaUtilMeses": 60, "status": "ativo",
+  "vidaUtilMeses": 60, "dadosCompletos": true, "status": "ativo",
   "fornecedorNome": "Dell Brasil", "numeroDocumentoAquisicao": "NF-12345", "numeroSerie": "SN-9988",
   "observacao": null, "criadoEm": "2026-10-22T14:03:11Z", "atualizadoEm": "2026-10-22T14:03:11Z"
 }
@@ -81,15 +82,25 @@ Busca **exata**, sem diferenciar maiúsculas — para leitor de código de barra
 | `categoriaId` | Obrigatório; categoria **ativa** da empresa |
 | `localId` | Obrigatório; local **ativo** da empresa |
 | `responsavelId` | Opcional; responsável **ativo** da empresa |
-| `dataAquisicao` | Obrigatória, `yyyy-MM-dd`; entre 01/01/1900 e hoje |
-| `valorAquisicao` | ≥ 0 (2 casas) |
-| `valorResidual` | Opcional. **Omitido** → calculado como `valorAquisicao × % residual da categoria`. Deve ser ≤ `valorAquisicao` |
+| `dataAquisicao` | **Opcional** (`yyyy-MM-dd`); se informada, entre 01/01/1900 e hoje. Ver "Bens com dados incompletos" abaixo |
+| `valorAquisicao` | **Opcional**; se informado, ≥ 0 (2 casas) |
+| `valorResidual` | Opcional. **Omitido** → calculado como `valorAquisicao × % residual da categoria`. Deve ser ≤ `valorAquisicao`. **Só pode ser informado junto com `valorAquisicao`** (senão `400`); sem valor de aquisição o residual fica `null` |
 | `vidaUtilMeses` | Opcional (1–1200). **Omitido** → vida útil da categoria |
 | `fornecedorNome` (255), `numeroDocumentoAquisicao` (100), `numeroSerie` (100), `observacao` (2000) | Opcionais, texto livre |
 
 `201` + item completo (com nomes e valores efetivos de residual/vida útil). Erros `400` `{ "error": "..." }` (ou formato `errors` do ASP.NET para validação de formato): plaqueta duplicada, categoria/local/responsável inexistente, de outra empresa ou inativo, residual > aquisição, data fora do intervalo.
 
 **Dica de UX:** ao escolher a categoria, pré-preencha vida útil e % residual (já vêm no cadastro de categoria) e deixe editáveis; se o usuário não mexer, pode omitir os campos.
+
+
+### Bens com dados incompletos
+
+Data e valor de aquisição são **opcionais**: inventários reais têm bens sem histórico de compra. Um bem sem data **ou** sem valor tem `dadosCompletos: false` e fica **fora da depreciação** (Fase 4) até ser completado.
+
+- Mostre um selo "Dados incompletos" na lista e no detalhe, e ofereça o filtro `?dadosCompletos=false` (ex.: aba/atalho "Pendentes de completar").
+- Para completar, use o `PUT`. Ao informar o valor de aquisição de um bem que estava sem valor e sem residual, o servidor calcula o residual pelo % da categoria (a menos que você envie `valorResidual`).
+- Remover o `valorAquisicao` no `PUT` (enviar `null`/omitir) limpa também o residual.
+- Na exportação CSV, data/valores pendentes saem como células vazias.
 
 ## 5. Editar — `PUT /v1/imobilizado/bens/{id}`
 
@@ -165,9 +176,10 @@ export interface ImobBem {
   categoriaId: number; categoriaNome: string;
   localId: number; localNome: string;
   responsavelId?: number | null; responsavelNome?: string | null;
-  dataAquisicao: string;          // yyyy-MM-dd
-  valorAquisicao: number;
-  valorResidual: number;
+  dataAquisicao?: string | null;   // yyyy-MM-dd
+  valorAquisicao?: number | null;
+  valorResidual?: number | null;
+  dadosCompletos: boolean;        // false = falta data ou valor de aquisição
   vidaUtilMeses: number;
   status: ImobBemStatus;
   fornecedorNome?: string | null;
@@ -180,14 +192,14 @@ export interface ImobBem {
 export interface SalvarImobBem {
   plaqueta: string; descricao: string;
   categoriaId: number; localId: number; responsavelId?: number | null;
-  dataAquisicao: string; valorAquisicao: number;
+  dataAquisicao?: string | null; valorAquisicao?: number | null;
   valorResidual?: number; vidaUtilMeses?: number;
   fornecedorNome?: string; numeroDocumentoAquisicao?: string; numeroSerie?: string; observacao?: string;
 }
 
 export interface ImobBemFiltro {
   busca?: string; localId?: number; incluirSublocais?: boolean; categoriaId?: number;
-  responsavelId?: number; status?: ImobBemStatus; page?: number; pageSize?: number;
+  responsavelId?: number; status?: ImobBemStatus; dadosCompletos?: boolean; page?: number; pageSize?: number;
 }
 ```
 
