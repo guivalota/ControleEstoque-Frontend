@@ -17,11 +17,13 @@ export class EmpresaAtivaService {
   erroCarregar = signal(false);
   aviso = signal('');
   trocando = signal(false);
+  /** true nas telas de administração de empresas, que dispensam empresa ativa. */
+  emAdministracao = signal(false);
 
   ativa = computed(() => this.empresas().find(e => e.id === this.id()) ?? null);
   semAcesso = computed(() => this.carregado() && this.empresas().length === 0);
   precisaEscolher = computed(() => this.carregado() && this.empresas().length > 0 && this.id() === null);
-  seletorAberto = computed(() => this.precisaEscolher() || this.trocando());
+  seletorAberto = computed(() => (this.precisaEscolher() && !this.emAdministracao()) || this.trocando());
   podeTrocar = computed(() => this.empresas().length > 1);
 
   /** Recarrega `minhas-empresas` e decide a empresa ativa (restaura, auto-seleciona ou pede escolha). */
@@ -77,6 +79,8 @@ export class EmpresaAtivaService {
 
   private escolherInicial(lista: ImobEmpresa[]): number | null {
     if (lista.length === 1) return lista[0].id;
+    const atual = this.id();
+    if (atual !== null && lista.some(e => e.id === atual)) return atual;
     const salvo = this.lerSalvo();
     return salvo !== null && lista.some(e => e.id === salvo) ? salvo : null;
   }
