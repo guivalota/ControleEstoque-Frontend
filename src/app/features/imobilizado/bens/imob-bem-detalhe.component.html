@@ -41,6 +41,22 @@
     <div class="alert alert-warning" role="alert">Bem não encontrado nesta empresa.</div>
   } @else if (bem()) {
     @let b = bem()!;
+    <ul class="nav nav-tabs mb-3" role="tablist" aria-label="Seções do bem">
+      <li class="nav-item" role="presentation">
+        <button type="button" class="nav-link" [class.active]="aba() === 'dados'" role="tab" id="abaDados"
+                aria-controls="painelDados" [attr.aria-selected]="aba() === 'dados'"
+                [attr.tabindex]="aba() === 'dados' ? 0 : -1" (click)="selecionarAba('dados')" (keydown)="aoTeclarAba($event)">Dados</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button type="button" class="nav-link" [class.active]="aba() === 'historico'" role="tab" id="abaHistorico"
+                aria-controls="painelHistorico" [attr.aria-selected]="aba() === 'historico'"
+                [attr.tabindex]="aba() === 'historico' ? 0 : -1" (click)="selecionarAba('historico')" (keydown)="aoTeclarAba($event)">
+          <i class="bi bi-clock-history me-1"></i>Histórico
+        </button>
+      </li>
+    </ul>
+
+    <div id="painelDados" role="tabpanel" aria-labelledby="abaDados" [hidden]="aba() !== 'dados'">
     <div class="card border-0 shadow-sm">
       <div class="card-body">
         <p class="fs-5 mb-4">{{ b.descricao }}</p>
@@ -61,6 +77,13 @@
         </dl>
       </div>
     </div>
+    </div>
+
+    @if (historicoVisitado()) {
+      <div id="painelHistorico" role="tabpanel" aria-labelledby="abaHistorico" [hidden]="aba() !== 'historico'">
+        <app-imob-bem-historico [bemId]="b.id" />
+      </div>
+    }
   }
 </div>
 

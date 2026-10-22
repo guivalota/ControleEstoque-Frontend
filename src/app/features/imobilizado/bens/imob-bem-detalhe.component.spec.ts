@@ -111,6 +111,93 @@ describe('ImobBemDetalheComponent', () => {
     });
   });
 
+  describe('abas', () => {
+    const HIST = `${URL_BEM}/historico`;
+    const vazio = { items: [], page: 1, pageSize: 20, total: 0 };
+    const abaDados = () => el().querySelector<HTMLButtonElement>('#abaDados')!;
+    const abaHist = () => el().querySelector<HTMLButtonElement>('#abaHistorico')!;
+    const tecla = (b: HTMLElement, key: string) =>
+      b.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+
+    beforeEach(() => { montar(); carregar(); });
+
+    it('abre em Dados e só consulta o histórico ao abrir a aba', () => {
+      expect(abaDados().getAttribute('aria-selected')).toBe('true');
+      expect(abaHist().getAttribute('aria-selected')).toBe('false');
+      expect(el().querySelector('app-imob-bem-historico')).toBeNull();
+      ctrl.expectNone(r => r.url === HIST);
+
+      abaHist().click();
+      fixture.detectChanges();
+      expect(abaHist().getAttribute('aria-selected')).toBe('true');
+      const req = ctrl.expectOne(r => r.url === HIST);
+      expect(req.request.params.get('page')).toBe('1');
+      req.flush(vazio);
+      fixture.detectChanges();
+      expect(texto()).toContain('Nenhuma alteração registrada');
+    });
+
+    it('alternar entre as abas não busca o histórico de novo e alterna os painéis', () => {
+      abaHist().click();
+      fixture.detectChanges();
+      ctrl.expectOne(r => r.url === HIST).flush(vazio);
+
+      abaDados().click();
+      fixture.detectChanges();
+      expect(el().querySelector<HTMLElement>('#painelDados')!.hidden).toBeFalse();
+      expect(el().querySelector<HTMLElement>('#painelHistorico')!.hidden).toBeTrue();
+
+      abaHist().click();
+      fixture.detectChanges();
+      expect(el().querySelector<HTMLElement>('#painelDados')!.hidden).toBeTrue();
+      expect(el().querySelector<HTMLElement>('#painelHistorico')!.hidden).toBeFalse();
+      ctrl.expectNone(r => r.url === HIST);
+    });
+
+    it('as abas têm a semântica de tablist e só a ativa é alcançável por Tab', () => {
+      expect(el().querySelector('[role="tablist"]')).not.toBeNull();
+      expect(abaDados().getAttribute('tabindex')).toBe('0');
+      expect(abaHist().getAttribute('tabindex')).toBe('-1');
+      expect(abaHist().getAttribute('aria-controls')).toBe('painelHistorico');
+      expect(el().querySelector('#painelDados')!.getAttribute('role')).toBe('tabpanel');
+    });
+
+    it('setas, Home e End trocam de aba e movem o foco', () => {
+      tecla(abaDados(), 'ArrowRight');
+      fixture.detectChanges();
+      expect(comp.aba()).toBe('historico');
+      expect(document.activeElement).toBe(abaHist());
+      ctrl.expectOne(r => r.url === HIST).flush(vazio);
+
+      tecla(abaHist(), 'ArrowLeft');
+      fixture.detectChanges();
+      expect(comp.aba()).toBe('dados');
+      expect(document.activeElement).toBe(abaDados());
+
+      tecla(abaDados(), 'End');
+      expect(comp.aba()).toBe('historico');
+      tecla(abaHist(), 'Home');
+      expect(comp.aba()).toBe('dados');
+    });
+  });
+
+  describe('histórico para leitura', () => {
+    it('usuário leitura vê a trilha, sem nenhuma ação de escrita', () => {
+      montar('leitura');
+      carregar();
+      el().querySelector<HTMLButtonElement>('#abaHistorico')!.click();
+      fixture.detectChanges();
+      ctrl.expectOne(r => r.url === `${URL_BEM}/historico`).flush({
+        items: [{ id: 1, campo: 'criacao', valorNovo: 'NB-0001', usuarioId: 'u', usuarioNome: 'João', criadoEm: '2026-10-20T09:15:40Z' }],
+        page: 1, pageSize: 20, total: 1
+      });
+      fixture.detectChanges();
+      expect(texto()).toContain('Bem cadastrado (plaqueta NB-0001)');
+      expect(texto()).not.toContain('Editar');
+      expect(texto()).not.toContain('Excluir');
+    });
+  });
+
   describe('papéis', () => {
     const acoes = () => Array.from(el().querySelectorAll('a, button')).map(b => (b.textContent ?? '').trim()).join('|');
 

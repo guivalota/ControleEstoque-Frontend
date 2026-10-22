@@ -6,11 +6,14 @@ import { CLASSE_STATUS_BEM, ImobBem, ROTULO_STATUS_BEM, bemEditavel } from '../.
 import { lerErroApi } from '../../../core/utils/erros-api';
 import { formatarData, formatarDataHora, formatarMoeda, formatarVidaUtil } from '../../../core/utils/imob-formato';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
+import { ImobBemHistoricoComponent } from './imob-bem-historico.component';
+
+type Aba = 'dados' | 'historico';
 
 @Component({
   selector: 'app-imob-bem-detalhe',
   standalone: true,
-  imports: [RouterLink, ConfirmDialogComponent],
+  imports: [RouterLink, ConfirmDialogComponent, ImobBemHistoricoComponent],
   templateUrl: './imob-bem-detalhe.component.html'
 })
 export class ImobBemDetalheComponent implements OnInit {
@@ -36,6 +39,10 @@ export class ImobBemDetalheComponent implements OnInit {
   naoEncontrado = signal(false);
   excluindo = signal(false);
 
+  aba = signal<Aba>('dados');
+  /** O histórico só é buscado na primeira vez que a aba é aberta e depois fica montado. */
+  historicoVisitado = signal(false);
+
   ngOnInit() {
     this.carregar();
   }
@@ -52,6 +59,23 @@ export class ImobBemDetalheComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  selecionarAba(aba: Aba) {
+    this.aba.set(aba);
+    if (aba === 'historico') this.historicoVisitado.set(true);
+  }
+
+  /** Setas, Home e End alternam as abas (padrão WAI-ARIA de tabs). */
+  aoTeclarAba(ev: KeyboardEvent) {
+    const alvo: Aba | null =
+      ev.key === 'ArrowRight' || ev.key === 'End' ? 'historico'
+      : ev.key === 'ArrowLeft' || ev.key === 'Home' ? 'dados'
+      : null;
+    if (!alvo) return;
+    ev.preventDefault();
+    this.selecionarAba(alvo);
+    (ev.currentTarget as HTMLElement).closest('[role="tablist"]')?.querySelector<HTMLElement>(alvo === 'dados' ? '#abaDados' : '#abaHistorico')?.focus();
   }
 
   async excluir() {
