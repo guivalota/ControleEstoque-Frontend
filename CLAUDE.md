@@ -125,7 +125,7 @@ features/imobilizado/
 testing/auth-fake.ts   # provideAuthFake(role) for specs
 ```
 
-Routes: `/imobilizado` (shell, `imobilizadoGuard`) → children `bens`, `bens/novo`, `bens/:id/editar`, `bens/:id`, `locais`, `categorias`, `responsaveis`, `empresas`, `empresas/:id/usuarios`.
+Routes: `/imobilizado` (shell, `imobilizadoGuard`) → children `bens`, `bens/importar`, `bens/novo`, `bens/:id/editar`, `bens/:id`, `locais`, `categorias`, `responsaveis`, `empresas`, `empresas/:id/usuarios`.
 
 ### Multi-company (X-Empresa-Id)
 
@@ -141,6 +141,8 @@ Routes: `/imobilizado` (shell, `imobilizadoGuard`) → children `bens`, `bens/no
 - Errors: `lerErroApi()` handles both `{ error }` (business rule) and ASP.NET `errors` (per field); `aplicarErroNoForm()` puts them on form controls (keyword → field map for `{ error }` messages). Export errors arrive as `Blob` — `ImobBemService.exportar` rebuilds them.
 - Lists: server-paged, `pageSize` max 100 (default 50), filters sent only when defined (`montarParams`). The bens list keeps filters **in the URL** (query params are the source of truth, which is what the "Ver bens" links from base registers use: `?localId=`, `?categoriaId=`, `?responsavelId=`).
 - Deleting a local/categoria/responsável that has bens returns `400`; screens show `app-bloqueio-exclusao` offering "Desativar" (full `PUT` with `ativo: false`) and a link to the filtered bens list.
+- Bem `dataAquisicao`/`valorAquisicao`/`valorResidual` are optional; without date or value `dadosCompletos` is `false` (badge "Dados incompletos", list filter `?dadosCompletos=false` = "Pendentes de completar"). Residual can't be sent without valor.
+- CSV import (`bens/importar`, admin/operador): validate → report → confirm resending the **same `File`** + `hashArquivo` (`FormData`, no manual Content-Type); changing file or default local invalidates the report; error report CSV is built in the browser.
 - Bem `status` is read-only (comes from OS/inventory in later phases); `baixado`/`vendido` bens can't be edited (`bemEditavel()`).
 - Bem form: on create, category pre-fills vida útil and residual (value = % × aquisição) until the user edits them; untouched fields are **omitted** from the payload so the server applies the category values. On edit nothing is pre-filled and current values are sent.
 - Formatting: use `Intl` helpers in `imob-formato.ts` (BRL, `dd/MM/yyyy` without `Date` parsing, `%`). The app does **not** register the `pt-BR` locale, so don't use `DecimalPipe`/`CurrencyPipe`/`DatePipe` with `'pt-BR'`.

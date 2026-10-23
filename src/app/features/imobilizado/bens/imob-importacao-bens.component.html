@@ -1,0 +1,161 @@
+<div>
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <a routerLink="/imobilizado/bens" class="btn btn-sm btn-outline-secondary" aria-label="Voltar para a lista de bens">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h6 class="fw-bold mb-0">Importar bens (CSV)</h6>
+  </div>
+
+  @if (erro()) {
+    <div class="alert alert-danger py-2" role="alert">{{ erro() }}</div>
+  }
+
+  @if (resultado(); as res) {
+    <div class="alert alert-success" role="status">
+      <p class="mb-2 fw-semibold">{{ res.importados }} bem(ns) importado(s).
+        @if (res.ignoradas > 0) { <span class="fw-normal">{{ res.ignoradas }} linha(s) ignorada(s).</span> }
+      </p>
+      <div class="d-flex flex-wrap gap-2">
+        <a routerLink="/imobilizado/bens" class="btn btn-sm btn-success">Ver bens</a>
+        @if (res.relatorio.linhasComDadosIncompletos > 0) {
+          <a routerLink="/imobilizado/bens" [queryParams]="{ dadosCompletos: 'false' }" class="btn btn-sm btn-outline-success">
+            Ver pendentes de completar
+          </a>
+        }
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="novaImportacao()">Nova importação</button>
+      </div>
+    </div>
+  } @else {
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body">
+        <div class="mb-3">
+          <span class="fw-semibold me-2">1.</span>
+          <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="baixandoModelo()" (click)="baixarModelo()">
+            @if (baixandoModelo()) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-download me-1"></i> }
+            Baixar modelo
+          </button>
+          <span class="text-muted small ms-2">Máx. 5 MB e 20.000 linhas. Só CSV.</span>
+        </div>
+
+        <div class="row g-3 align-items-end">
+          <div class="col-12 col-md-5">
+            <label for="impArquivo" class="form-label small mb-1"><span class="fw-semibold">2.</span> Arquivo CSV</label>
+            <input #campoArquivo id="impArquivo" type="file" accept=".csv,text/csv" class="form-control form-control-sm"
+                   [class.is-invalid]="erroArquivo()" [disabled]="ocupado()" (change)="escolherArquivo($event)">
+            <div class="invalid-feedback">{{ erroArquivo() }}</div>
+          </div>
+          <div class="col-12 col-md-5">
+            <label for="impLocal" class="form-label small mb-1">Local padrão (para linhas sem local)</label>
+            <app-seletor-local inputId="impLocal" [formControl]="localPadrao" [arvore]="arvore()"
+                               [somenteAtivos]="true" placeholder="(Nenhum)" />
+          </div>
+          <div class="col-12 col-md-2">
+            <button type="button" class="btn btn-primary btn-sm w-100" [disabled]="!arquivo() || ocupado()" (click)="validar()">
+              @if (validando()) { <span class="spinner-border spinner-border-sm me-1"></span>Validando… } @else { Validar arquivo }
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    @if (relatorio(); as rel) {
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <h6 class="fw-semibold">Resultado da validação</h6>
+          <p class="mb-2">
+            <strong>{{ rel.totalLinhas }}</strong> linhas ·
+            <strong class="text-success">{{ rel.linhasValidas }}</strong> válidas ·
+            <strong [class.text-danger]="rel.linhasComErro > 0">{{ rel.linhasComErro }}</strong> com erro ·
+            <strong>{{ rel.linhasComDadosIncompletos }}</strong> com dados incompletos
+          </p>
+
+          @if (rel.linhasComDadosIncompletos > 0) {
+            <div class="alert alert-warning py-2 small">
+              {{ rel.linhasComDadosIncompletos }} bem(ns) ficarão com “dados incompletos” (sem data ou valor de aquisição)
+              e ficam fora da depreciação até serem completados.
+            </div>
+          }
+          @if (rel.colunasIgnoradas.length) {
+            <div class="alert alert-info py-2 small">Colunas ignoradas: {{ rel.colunasIgnoradas.join(', ') }}.</div>
+          }
+
+          @if (rel.categoriasNaoEncontradas.length) {
+            <div class="mb-2 small">
+              <strong>Categorias não encontradas:</strong>
+              @for (c of rel.categoriasNaoEncontradas; track c.nome) {
+                <span class="badge bg-warning-subtle text-warning-emphasis ms-1">{{ c.nome }} ({{ c.linhas }} linha{{ c.linhas === 1 ? '' : 's' }})</span>
+              }
+              <a routerLink="/imobilizado/categorias" class="ms-2">Cadastrar categoria</a>
+            </div>
+          }
+          @if (rel.locaisNaoEncontrados.length) {
+            <div class="mb-2 small">
+              <strong>Locais não encontrados:</strong>
+              @for (l of rel.locaisNaoEncontrados; track l.nome) {
+                <span class="badge bg-warning-subtle text-warning-emphasis ms-1">{{ l.nome }} ({{ l.linhas }} linha{{ l.linhas === 1 ? '' : 's' }})</span>
+              }
+              <a routerLink="/imobilizado/locais" class="ms-2">Cadastrar local</a>
+            </div>
+          }
+
+          @if (rel.totalErros > 0) {
+            <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mt-3 mb-2">
+              <div>
+                <label for="impFiltroCampo" class="form-label small mb-1">Filtrar por campo</label>
+                <select id="impFiltroCampo" class="form-select form-select-sm" [value]="filtroCampo()"
+                        (change)="filtrarCampo($any($event.target).value)">
+                  <option value="">Todos</option>
+                  @for (c of campos(); track c) { <option [value]="c">{{ c }}</option> }
+                </select>
+              </div>
+              <button type="button" class="btn btn-outline-secondary btn-sm" (click)="baixarRelatorioErros()">
+                <i class="bi bi-file-earmark-arrow-down me-1"></i>Baixar relatório de erros
+              </button>
+            </div>
+            @if (rel.errosTruncados) {
+              <p class="small text-muted mb-2">Mostrando os primeiros {{ rel.erros.length }} de {{ rel.totalErros }} erros.</p>
+            }
+            <div class="table-responsive border rounded">
+              <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                  <tr><th class="ps-3">Linha</th><th>Plaqueta</th><th>Campo</th><th>Mensagem</th></tr>
+                </thead>
+                <tbody>
+                  @for (e of errosPagina(); track $index) {
+                    <tr>
+                      <td class="ps-3">{{ e.linha }}</td>
+                      <td>{{ e.plaqueta || '—' }}</td>
+                      <td><code>{{ e.campo }}</code></td>
+                      <td>{{ e.mensagem }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+              <app-paginacao [page]="pagina()" [pageSize]="errosPorPagina" [total]="errosFiltrados().length"
+                             (mudar)="pagina.set($event)" />
+            </div>
+          }
+
+          <div class="d-flex flex-wrap gap-2 mt-3">
+            <button type="button" class="btn btn-primary btn-sm" [disabled]="!rel.podeConfirmar || rel.linhasComErro > 0 || ocupado()"
+                    (click)="importar(false)">
+              @if (importando()) { <span class="spinner-border spinner-border-sm me-1"></span>Importando… } @else { Importar {{ rel.linhasValidas }} bem(ns) }
+            </button>
+            @if (rel.linhasComErro > 0 && rel.linhasValidas > 0) {
+              <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="ocupado()" (click)="importar(true)">
+                Importar só as {{ rel.linhasValidas }} válidas
+              </button>
+            }
+          </div>
+          @if (importando()) {
+            <div class="progress mt-2" role="progressbar" aria-label="Importando bens">
+              <div class="progress-bar progress-bar-striped progress-bar-animated w-100"></div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+
+  <app-confirm-dialog />
+</div>

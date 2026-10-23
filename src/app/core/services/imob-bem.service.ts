@@ -1,31 +1,15 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { Observable, from, map, switchMap, throwError, catchError } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, map, catchError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ImobBem, ImobBemFiltro, ImobBemHistorico, SalvarImobBem } from '../models/imob-bem.model';
 import { PagedResult } from '../models/paged-result.model';
+import { erroDeBlob } from '../utils/erro-blob';
 import { montarParams } from '../utils/http-params';
 
 export interface ArquivoExportado {
   blob: Blob;
   nome: string;
-}
-
-/**
- * Com `responseType: 'blob'` o corpo do erro também chega como Blob; reconstrói o erro com o
- * JSON/texto original para que `lerErroApi` consiga ler a mensagem do servidor.
- */
-function erroDeBlob(err: HttpErrorResponse): Observable<never> {
-  if (!(err.error instanceof Blob)) return throwError(() => err);
-  return from(err.error.text()).pipe(
-    switchMap(texto => {
-      let corpo: unknown = texto;
-      try { corpo = JSON.parse(texto); } catch { /* texto puro */ }
-      return throwError(() => new HttpErrorResponse({
-        error: corpo, status: err.status, statusText: err.statusText, headers: err.headers, url: err.url ?? undefined
-      }));
-    })
-  );
 }
 
 @Injectable({ providedIn: 'root' })

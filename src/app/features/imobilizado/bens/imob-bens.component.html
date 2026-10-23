@@ -7,6 +7,9 @@
         Exportar CSV
       </button>
       @if (permissao.canCreate()) {
+        <a class="btn btn-outline-secondary btn-sm" routerLink="/imobilizado/bens/importar">
+          <i class="bi bi-upload me-1"></i>Importar CSV
+        </a>
         <a class="btn btn-primary btn-sm" routerLink="/imobilizado/bens/novo">
           <i class="bi bi-plus-lg me-1"></i>Novo bem
         </a>
