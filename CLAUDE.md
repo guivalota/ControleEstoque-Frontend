@@ -125,7 +125,7 @@ features/imobilizado/
 testing/auth-fake.ts   # provideAuthFake(role) for specs
 ```
 
-Routes: `/imobilizado` (shell, `imobilizadoGuard`) → children `bens`, `bens/importar`, `bens/novo`, `bens/:id/editar`, `bens/:id`, `locais`, `categorias`, `responsaveis`, `empresas`, `empresas/:id/usuarios`.
+Routes: `/imobilizado` (shell, `imobilizadoGuard`) → children `bens`, `bens/importar`, `inventarios*`, `bens/novo`, `bens/:id/editar`, `bens/:id`, `locais`, `categorias`, `responsaveis`, `empresas`, `empresas/:id/usuarios`.
 
 ### Multi-company (X-Empresa-Id)
 
@@ -143,6 +143,7 @@ Routes: `/imobilizado` (shell, `imobilizadoGuard`) → children `bens`, `bens/im
 - Deleting a local/categoria/responsável that has bens returns `400`; screens show `app-bloqueio-exclusao` offering "Desativar" (full `PUT` with `ativo: false`) and a link to the filtered bens list.
 - Bem `dataAquisicao`/`valorAquisicao`/`valorResidual` are optional; without date or value `dadosCompletos` is `false` (badge "Dados incompletos", list filter `?dadosCompletos=false` = "Pendentes de completar"). Residual can't be sent without valor.
 - CSV import (`bens/importar`, admin/operador): validate → report → confirm resending the **same `File`** + `hashArquivo` (`FormData`, no manual Content-Type); changing file or default local invalidates the report; error report CSV is built in the browser.
+- Inventários (`inventarios`, `/novo`, `/:id`, `/:id/editar`): status `rascunho → em_andamento → concluido|cancelado`; edit in rascunho/em_andamento (scope `localIds` frozen once started — the form disables it but still sends the current ids), iniciar freezes the expected list (confirm dialog), cancelar from rascunho/em_andamento, excluir (admin) only rascunho/cancelado. Team picker uses `GET empresas/{id}/usuarios` (admin-only endpoint); operadores see the team read-only and it is preserved on save.
 - Bem `status` is read-only (comes from OS/inventory in later phases); `baixado`/`vendido` bens can't be edited (`bemEditavel()`).
 - Bem form: on create, category pre-fills vida útil and residual (value = % × aquisição) until the user edits them; untouched fields are **omitted** from the payload so the server applies the category values. On edit nothing is pre-filled and current values are sent.
 - Formatting: use `Intl` helpers in `imob-formato.ts` (BRL, `dd/MM/yyyy` without `Date` parsing, `%`). The app does **not** register the `pt-BR` locale, so don't use `DecimalPipe`/`CurrencyPipe`/`DatePipe` with `'pt-BR'`.

@@ -120,6 +120,24 @@ export const routes: Routes = [
             loadComponent: () => import('./features/imobilizado/bens/imob-bem-detalhe.component').then(m => m.ImobBemDetalheComponent)
           },
           {
+            path: 'inventarios',
+            loadComponent: () => import('./features/imobilizado/inventarios/imob-inventarios.component').then(m => m.ImobInventariosComponent)
+          },
+          {
+            path: 'inventarios/novo',
+            canActivate: [escritaGuard],
+            loadComponent: () => import('./features/imobilizado/inventarios/imob-inventario-form.component').then(m => m.ImobInventarioFormComponent)
+          },
+          {
+            path: 'inventarios/:id/editar',
+            canActivate: [escritaGuard],
+            loadComponent: () => import('./features/imobilizado/inventarios/imob-inventario-form.component').then(m => m.ImobInventarioFormComponent)
+          },
+          {
+            path: 'inventarios/:id',
+            loadComponent: () => import('./features/imobilizado/inventarios/imob-inventario-detalhe.component').then(m => m.ImobInventarioDetalheComponent)
+          },
+          {
             path: 'locais',
             loadComponent: () => import('./features/imobilizado/locais/imob-locais.component').then(m => m.ImobLocaisComponent)
           },
