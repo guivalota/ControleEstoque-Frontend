@@ -6,7 +6,7 @@
         @if (exportando()) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-download me-1"></i> }
         Exportar CSV
       </button>
-      @if (permissao.canCreate()) {
+      @if (permissao.imobCanCreate()) {
         <a class="btn btn-outline-secondary btn-sm" routerLink="/imobilizado/bens/importar">
           <i class="bi bi-upload me-1"></i>Importar CSV
         </a>
@@ -135,11 +135,11 @@
                   <td class="text-end pe-3 text-nowrap">
                     <a class="btn btn-sm btn-outline-primary me-1" [routerLink]="['/imobilizado/bens', b.id]"
                        title="Ver detalhes" [attr.aria-label]="'Ver ' + b.plaqueta"><i class="bi bi-eye"></i></a>
-                    @if (permissao.canEdit() && bemEditavel(b.status)) {
+                    @if (permissao.imobCanEdit() && bemEditavel(b.status)) {
                       <a class="btn btn-sm btn-outline-secondary me-1" [routerLink]="['/imobilizado/bens', b.id, 'editar']"
                          title="Editar" [attr.aria-label]="'Editar ' + b.plaqueta"><i class="bi bi-pencil"></i></a>
                     }
-                    @if (permissao.canDelete()) {
+                    @if (permissao.imobCanDelete()) {
                       <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="agindo() === b.id"
                               (click)="excluir(b)" title="Excluir" [attr.aria-label]="'Excluir ' + b.plaqueta">
                         <i class="bi bi-trash"></i>

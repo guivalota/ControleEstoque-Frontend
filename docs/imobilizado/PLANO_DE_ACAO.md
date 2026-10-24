@@ -22,7 +22,7 @@
 | D11 | Hospedagem atual (Docker local + ngrok) é só para viabilidade/MVP. Infra real virá depois. | Sem preocupação com URL fixa agora. |
 | D12 | **Multiempresa (multi-tenant) desde o início**, só no módulo Imobilizado. Toda tabela `imob_*` (exceto a de empresas e a de vínculos) tem `empresa_id NOT NULL`. O módulo de Estoque continua single-tenant e não é alterado. | Decisão do usuário. O `PENDENCIAS.md` dizia para não iniciar multi-tenant sem demanda; agora há demanda. |
 | D13 | **(Aprovada)** **Empresa ativa por requisição via header `X-Empresa-Id`**, validado contra o vínculo do usuário a cada chamada (`ITenantContext`, aplicado por filtro apenas nos controllers de `v1/imobilizado`). **Sem alterar o JWT nem o `AuthController`.** | Mantém a auth existente intacta e permite o usuário trocar de empresa sem novo login. |
-| D14 | **Vínculo usuário↔empresa** em tabela própria (`imob_usuario_empresa`, N:N). Não se altera a tabela `usuarios`. O `admin` global é o **administrador da plataforma**: cria empresas e vincula usuários. Perfil por empresa (admin/operador/leitura diferente em cada empresa) fica para a Fase 5; no MVP vale a role global. | Mudança aditiva; separação do estoque preservada. |
+| D14 | **Vínculo usuário↔empresa** em tabela própria (`imob_usuario_empresa`, N:N). Não se altera a tabela `usuarios`. O `admin` global é o **administrador da plataforma**: cria empresas e vincula usuários. Perfil por empresa (admin/operador/leitura diferente em cada empresa) foi entregue na Fase 5.1 (só restringe a role global). | Mudança aditiva; separação do estoque preservada. |
 | D15 | **Isolamento em camadas:** (1) todo método de repositório recebe `empresaId` obrigatório e filtra por ele; (2) SPs recebem `p_empresa_id`; (3) unicidades são por empresa (ex.: `UNIQUE (empresa_id, plaqueta)`); (4) FKs compostas `(empresa_id, id)` impedem referenciar registro de outra empresa; (5) testes de vazamento entre empresas obrigatórios em toda fatia. **Não usar RLS por sessão** (`SET app.empresa_id`), pois o pooler do Supabase (porta 6543, modo transação) e conexões Dapper por chamada tornam isso frágil. | Segurança prática nesta stack. |
 
 ## 2. Princípios para as fatias
@@ -91,7 +91,7 @@ Migration `0012_imob_empresas.sql`.
 - [x] **0B.2** CRUD de empresas (`v1/imobilizado/empresas`, **apenas `admin`**) e vínculo de usuários (`v1/imobilizado/empresas/{id}/usuarios`, apenas `admin`). Listar "minhas empresas" (`v1/imobilizado/minhas-empresas`, qualquer usuário autenticado) para o seletor do frontend.
 - [x] **0B.3** `ITenantContext` (Application) + implementação (Api) que lê `X-Empresa-Id`, valida vínculo ativo e empresa ativa (cache curto, como o `role_version`) e responde **400/403** se ausente ou sem acesso. Aplicado por filtro/atributo nos controllers de dados do módulo.
 - [x] **0B.4** Convenção de repositório: `empresaId` obrigatório em toda assinatura; helper de teste que cria duas empresas e dois usuários.
-- [ ] **0B.5** Auditoria: avaliar adicionar `empresa_id` (nullable) ao `audit_logs` para registrar a empresa ativa. É alteração aditiva em tabela existente — **pedir aval antes**. **Adiado por decisão do usuário (retomar em fatia futura).**
+- [x] **0B.5** Auditoria com a empresa ativa (migration 0029): `audit_logs.empresa_id` (nulo no Estoque, em acessos negados e nos registros anteriores), preenchido pelo `AuditAccessFilter` a partir do `TenantContext` já validado (nunca o header cru); `GET /v1/audit-logs` ganhou o filtro `empresaId` e devolve `empresaId`/`empresaNome`. Aprovado pelo usuário em 2026-10-23.
 - [x] **0B.6** Testes: acesso sem header, com empresa de outro usuário, empresa inativa, usuário desvinculado (não acessa mais), `leitura` sem escrita.
 - [x] **0B.7** Spec de frontend: seletor de empresa, envio do header em todas as chamadas da área, tratamento de 403, telas de empresas/vínculos para `admin`.
 
@@ -122,24 +122,26 @@ Migrations: `0019_imob_inventarios` (feita: cabeçalho, escopo, equipe e snapsho
 **Pronto quando:** simular um inventário completo só pela web/CSV e obter a conciliação correta.
 
 ### Fase 3 — Ordens de serviço e aprovação (≈ 2 semanas)
-Migration da Fase 3: próximo número livre após a Fase 2.
-- [ ] **3.1** Abrir OS (transferência, manutenção, sinistro, venda, baixa) com itens.
-- [ ] **3.2** Aprovar/rejeitar (somente `admin`); regras de transição de status.
-- [ ] **3.3** Efeito da aprovação **atômico** (SP com transação): atualiza local/responsável/status do bem + grava histórico.
+Migration da Fase 3: a partir de **0024** (feitas: `0024_imob_ordens_servico`, `0025_imob_os_aprovacao`, `0026_imob_os_manutencao`). **Desenho: `DESENHO_FASE_3_ORDENS_DE_SERVICO.md`** (decisões Q1–Q9 adotadas com as recomendações padrão). Fatias do desenho: 3.1 abrir/consultar/rejeitar/cancelar (**feita**, spec `frontend-spec-imob-3-1-ordens-servico.md`) · 3.2 aprovar (transferência, baixa, venda, sinistro; **feita**, spec `frontend-spec-imob-3-2-aprovacao-os.md`) · 3.3 ciclo da manutenção (**feita**, spec `frontend-spec-imob-3-3-manutencao.md`) · 3.4 e-mail (opcional, adiada) · 3.5 specs/prompt de frontend (**feita**, Etapa 11 do `PROMPT_FRONTEND.md`).
+- [x] **3.1** Abrir OS (transferência, manutenção, sinistro, venda, baixa) com itens; listar, detalhar, rejeitar e cancelar.
+- [x] **3.2** Aprovar (somente `admin`) transferência, baixa, venda e sinistro: efeito atômico no bem + histórico com `os_id`, revalidação sob lock, bloqueio por inventário em andamento.
+- [x] **3.3** Ciclo da manutenção: aprovar → `em_manutencao`, concluir (custo real), cancelar aprovada (só admin). Spec `frontend-spec-imob-3-3-manutencao.md`.
 - [ ] **3.4** Notificação por e-mail (reusar `IEmailService`) — opcional.
-- [ ] **3.5** Spec de frontend.
+- [x] **3.5** Specs de frontend (3.1–3.3) e Etapa 11 (ordens de serviço) no `PROMPT_FRONTEND.md`.
 
 ### Fase 4 — Depreciação e relatórios (≈ 2–3 semanas)
-Migration da Fase 4: próximo número livre após a Fase 3.
-- [ ] **4.1** Cálculo **linear** calculado sob demanda por bem/competência (função pura e testada).
-- [ ] **4.2** Fechamento de período: grava `imob_depreciacao` para todos os bens (endpoint `admin`; opcionalmente `BackgroundService` mensal, no estilo do `AlertaBackgroundService`).
-- [ ] **4.3** Relatórios: razão de depreciação, valor contábil por período, bens por categoria/local/responsável, baixas.
-- [ ] **4.4** Dashboard do módulo.
-- [ ] **4.5** **Validação das regras com um contador** (CPC 27 / IAS 16, taxas fiscais, valor residual) antes de qualquer uso real.
-- [ ] **4.6** Spec de frontend.
+Migrations da Fase 4: a partir de **0027**. **Desenho aprovado (Q1–Q10 aceitas em 2026-10-23, mais FAQ de metodologia e histórico de cálculos com valores anteriores): `DESENHO_FASE_4_DEPRECIACAO.md`.**
+- [x] **4.1** Cálculo **linear** sob demanda por bem (migration 0027: `data_baixa` e `fn_imob_depreciacao_acumulada`; `DepreciacaoLinear` em C# com teste de paridade SQL × C#), memória de cálculo por bem e **FAQ da metodologia** (`/depreciacao/ajuda`). Spec `frontend-spec-imob-4-1-depreciacao-bem.md`.
+- [x] **4.2** Fechamento mensal (migration 0028): prévia, fechar e reabrir o último período (só admin), lançamentos com premissas congeladas, **revisões com arquivo dos valores anteriores, eventos de auditoria (quem, quando, motivo, totais, variação) e comparação entre revisões**, bloqueio de edição dos 4 campos de depreciação, FAQ (seções 5–7). Sem `BackgroundService`. Spec `frontend-spec-imob-4-2-fechamento-periodos.md`.
+- [x] **4.3** Relatórios (JSON/CSV/PDF, limite 20.000): razão por bem/categoria/local/responsável/status (valores congelados, com revisão), valor contábil na data, bens por dimensão, baixas e vendas com ganho/perda por OS; histórico e comparação de revisões em CSV/PDF; FAQ (relatórios, glossário, o que o contador valida). Spec `frontend-spec-imob-4-3-relatorios-depreciacao.md`.
+- [x] **4.4** Painel do módulo (`GET depreciacao/dashboard`): posição atual, por categoria/status, últimos fechamentos e alertas (meses sem fechamento, dados incompletos, extraviados, OS, inventários, totalmente depreciados). Spec `frontend-spec-imob-4-4-painel-depreciacao.md`.
+- [ ] **4.5** **Validação das regras com um contador** (CPC 27 / IAS 16, taxas fiscais, valor residual) antes de qualquer uso real. *Adiada por decisão do usuário (2026-10-23); o roteiro já está na FAQ da API (seção `validacao-contador` e itens `validarComContador`). Sem validação, não usar os números como contábeis oficiais.*
+- [x] **4.6** Specs de frontend (`frontend-spec-imob-4-1` a `4-4`), Etapa 12 no `PROMPT_FRONTEND.md` e seção de depreciação no `CLAUDE.md`.
 
 ### Fase 5 — Refinamentos (contínuo)
-Perfil de acesso por empresa (coluna `perfil` em `imob_usuario_empresa`), planos com limite de itens por empresa (como na proposta da Saraf, com aviso ao exceder 10%), fotos (ex.: Supabase Storage), impressão de etiquetas (PDF com código de barras/QR via QuestPDF), campos customizados por empresa, importação Excel, e preparação do **contrato para o app Flutter** (endpoint de sync com cursor, paginação maior que 100, tokens para uso offline).
+- [x] **5.1** Perfil de acesso por empresa (migration 0030; o perfil só restringe a role global; filtro de tenant nega com 403; `PUT` de perfil; `perfil` em minhas-empresas/empresa-ativa). Desenho `DESENHO_FASE_5_PERFIL_POR_EMPRESA.md`; spec `frontend-spec-imob-5-1-perfil-por-empresa.md`.
+
+Próximos itens (ordem sugerida: etiquetas QR, importação Excel, planos, campos customizados, fotos, Flutter): planos com limite de itens por empresa (como na proposta da Saraf, com aviso ao exceder 10%), fotos (ex.: Supabase Storage), impressão de etiquetas (PDF com código de barras/QR via QuestPDF), campos customizados por empresa, importação Excel, e preparação do **contrato para o app Flutter** (endpoint de sync com cursor, paginação maior que 100, tokens para uso offline).
 
 ## 5. Riscos
 

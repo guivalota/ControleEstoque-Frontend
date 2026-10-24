@@ -14,6 +14,7 @@ export function lerErroApi(err: unknown, fallback: string): ErroApi {
   const corpo = e?.error as { error?: unknown; errors?: Record<string, string[]> } | null | undefined;
 
   if (e?.status === 0) return { mensagem: 'Sem conexão com o servidor.', campos: {} };
+  if (e?.status === 403 && typeof corpo?.error === 'string' && corpo.error) return { mensagem: corpo.error, campos: {} };
   if (e?.status === 403) return { mensagem: 'Você não tem permissão para esta ação.', campos: {} };
 
   if (corpo && typeof corpo === 'object') {

@@ -5,7 +5,19 @@ export interface ImobEmpresa {
   cnpj: string;
   ativo: boolean;
   criadoEm: string;
+  /** Perfil efetivo do usuário nesta empresa (menor entre a role global e o vínculo). */
+  perfil?: ImobPerfil;
 }
+
+export type ImobPerfil = 'admin' | 'operador' | 'leitura';
+
+export const PERFIS_IMOB: ImobPerfil[] = ['admin', 'operador', 'leitura'];
+
+export const ROTULO_PERFIL: Record<ImobPerfil, string> = {
+  admin: 'Administrador',
+  operador: 'Operador',
+  leitura: 'Somente leitura'
+};
 
 export interface ImobUsuarioEmpresa {
   usuarioId: string;
@@ -13,6 +25,12 @@ export interface ImobUsuarioEmpresa {
   email: string;
   ativo: boolean;
   criadoEm: string;
+  /** Role global do usuário (teto do perfil). */
+  role?: ImobPerfil;
+  /** Perfil gravado no vínculo. */
+  perfil?: ImobPerfil;
+  /** O que vale de fato: o menor entre `role` e `perfil`. */
+  perfilEfetivo?: ImobPerfil;
 }
 
 export interface CriarImobEmpresa {

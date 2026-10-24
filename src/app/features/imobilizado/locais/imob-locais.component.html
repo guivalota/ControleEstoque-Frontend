@@ -1,7 +1,7 @@
 <div>
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h6 class="fw-bold mb-0">Locais</h6>
-    @if (permissao.canCreate()) {
+    @if (permissao.imobCanCreate()) {
       <button type="button" class="btn btn-primary btn-sm" (click)="openCreate()">
         <i class="bi bi-plus-lg me-1"></i>Novo local
       </button>
@@ -89,20 +89,20 @@
                 @if (!l.no.ativo) { <span class="badge bg-secondary-subtle text-secondary ms-1">Inativo</span> }
               </span>
               <span class="text-nowrap">
-                @if (permissao.canCreate()) {
+                @if (permissao.imobCanCreate()) {
                   <button type="button" class="btn btn-sm btn-outline-primary me-1"
                           (click)="openCreate(l.no)" title="Adicionar sublocal"
                           [attr.aria-label]="'Adicionar sublocal em ' + l.no.nome">
                     <i class="bi bi-node-plus"></i>
                   </button>
                 }
-                @if (permissao.canEdit()) {
+                @if (permissao.imobCanEdit()) {
                   <button type="button" class="btn btn-sm btn-outline-secondary me-1"
                           (click)="openEdit(l.no)" title="Editar" [attr.aria-label]="'Editar ' + l.no.nome">
                     <i class="bi bi-pencil"></i>
                   </button>
                 }
-                @if (permissao.canDelete()) {
+                @if (permissao.imobCanDelete()) {
                   <button type="button" class="btn btn-sm btn-outline-danger"
                           [disabled]="agindo() === l.no.id" (click)="excluir(l.no)" title="Excluir"
                           [attr.aria-label]="'Excluir ' + l.no.nome">

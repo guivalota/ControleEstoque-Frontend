@@ -1,7 +1,7 @@
 <div>
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h6 class="fw-bold mb-0">Inventários</h6>
-    @if (permissao.canCreate()) {
+    @if (permissao.imobCanCreate()) {
       <a class="btn btn-primary btn-sm" routerLink="/imobilizado/inventarios/novo">
         <i class="bi bi-plus-lg me-1"></i>Novo inventário
       </a>
@@ -65,7 +65,7 @@
                   <td class="text-end pe-3 text-nowrap">
                     <a class="btn btn-sm btn-outline-primary me-1" [routerLink]="['/imobilizado/inventarios', i.id]"
                        title="Ver detalhes" [attr.aria-label]="'Ver ' + i.nome"><i class="bi bi-eye"></i></a>
-                    @if (permissao.canEdit() && inventarioEditavel(i.status)) {
+                    @if (permissao.imobCanEdit() && inventarioEditavel(i.status)) {
                       <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/imobilizado/inventarios', i.id, 'editar']"
                          title="Editar" [attr.aria-label]="'Editar ' + i.nome"><i class="bi bi-pencil"></i></a>
                     }

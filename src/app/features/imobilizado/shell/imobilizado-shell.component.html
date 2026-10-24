@@ -8,6 +8,7 @@
     }
     @if (empresa.ativa(); as ativa) {
       <span>Empresa: <strong>{{ ativa.nomeFantasia || ativa.razaoSocial }}</strong> · {{ formatarCnpj(ativa.cnpj) }}</span>
+      @if (ativa.perfil === 'leitura') { <span class="badge bg-secondary-subtle text-secondary">Somente leitura</span> }
       @if (empresa.podeTrocar()) {
         <button type="button" class="btn btn-sm btn-outline-secondary" (click)="empresa.abrirTroca()">Trocar</button>
       }

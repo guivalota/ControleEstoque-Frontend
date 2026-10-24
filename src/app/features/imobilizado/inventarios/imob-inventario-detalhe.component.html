@@ -11,7 +11,7 @@
     </div>
     @if (inventario(); as inv) {
       <div class="d-flex flex-wrap gap-2">
-        @if (inv.status === 'em_andamento' && permissao.canEdit()) {
+        @if (inv.status === 'em_andamento' && permissao.imobCanEdit()) {
           <a class="btn btn-sm btn-success" [routerLink]="['/imobilizado/inventarios', inv.id, 'contagem']">
             <i class="bi bi-upc-scan me-1"></i>Contagem
           </a>

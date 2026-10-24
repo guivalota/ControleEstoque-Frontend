@@ -65,7 +65,7 @@ export class ImobConciliacaoComponent implements OnInit, OnDestroy {
   erroDecisao = signal('');
 
   /** Decisões só valem com o inventário em andamento. */
-  decisoesAbertas = computed(() => this.inventario()?.status === 'em_andamento' && this.permissao.canEdit());
+  decisoesAbertas = computed(() => this.inventario()?.status === 'em_andamento' && this.permissao.imobCanEdit());
 
   private timer?: ReturnType<typeof setInterval>;
 
@@ -139,7 +139,7 @@ export class ImobConciliacaoComponent implements OnInit, OnDestroy {
   /** Quem pode decidir este item: duplicado só admin; encontrado nunca. */
   podeDecidir(i: ConciliacaoItem): boolean {
     if (!this.decisoesAbertas() || i.situacao === 'encontrado') return false;
-    return i.situacao !== 'duplicado' || this.permissao.canDelete();
+    return i.situacao !== 'duplicado' || this.permissao.imobCanDelete();
   }
 
   podeReabrir(i: ConciliacaoItem): boolean {

@@ -38,8 +38,13 @@
             <div class="form-text">Nenhum usuário ativo disponível com esse termo.</div>
           }
         </div>
+        <select class="form-select w-auto" aria-label="Perfil na empresa" [value]="perfilNovo()"
+                (change)="perfilNovo.set($any($event.target).value)">
+          <option value="">Perfil: igual à role</option>
+          @for (p of perfisAte(selecionado()?.role); track p) { <option [value]="p">{{ rotuloPerfil[p] }}</option> }
+        </select>
         <button type="button" class="btn btn-primary" [disabled]="!selecionado() || vinculando()"
-                (click)="vincular(selecionado()!.id)">
+                (click)="vincular(selecionado()!.id, perfilNovo())">
           @if (vinculando()) { <span class="spinner-border spinner-border-sm me-1"></span> }
           Vincular
         </button>
@@ -61,6 +66,7 @@
                 <th class="ps-3">Nome</th>
                 <th>E-mail</th>
                 <th>Vínculo</th>
+                <th>Perfil</th>
                 <th>Criado em</th>
                 <th class="text-end pe-3">Ações</th>
               </tr>
@@ -76,6 +82,21 @@
                     } @else {
                       <span class="badge bg-secondary-subtle text-secondary">Desvinculado</span>
                     }
+                  </td>
+                  <td class="text-nowrap">
+                    @if (v.ativo && v.role === 'admin') {
+                      <span class="badge bg-primary-subtle text-primary">Administrador da plataforma</span>
+                    } @else if (v.ativo && v.perfilEfetivo) {
+                      <select class="form-select form-select-sm w-auto" [attr.aria-label]="'Perfil de ' + v.nome"
+                              [disabled]="agindo() === v.usuarioId" (change)="mudarPerfil(v, $any($event.target).value)">
+                        @for (p of perfisAte(v.role); track p) {
+                          <option [value]="p" [selected]="p === v.perfilEfetivo">{{ rotuloPerfil[p] }}</option>
+                        }
+                      </select>
+                      @if (v.perfil && v.perfil !== v.perfilEfetivo) {
+                        <div class="form-text">perfil gravado: {{ rotuloPerfil[v.perfil] }}</div>
+                      }
+                    } @else { — }
                   </td>
                   <td class="text-nowrap">{{ v.criadoEm | date:'dd/MM/yyyy' }}</td>
                   <td class="text-end pe-3 text-nowrap">
@@ -94,7 +115,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="5" class="text-center text-muted py-4">
+                  <td colspan="6" class="text-center text-muted py-4">
                     <i class="bi bi-inbox me-2"></i>Nenhum usuário vinculado a esta empresa
                   </td>
                 </tr>

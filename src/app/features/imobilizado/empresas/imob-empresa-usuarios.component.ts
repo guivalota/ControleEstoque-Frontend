@@ -4,12 +4,13 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ImobEmpresaService } from '../../../core/services/imob-empresa.service';
 import { EmpresaAtivaService } from '../../../core/services/empresa-ativa.service';
 import { UserService } from '../../../core/services/user.service';
-import { ImobEmpresa, ImobUsuarioEmpresa } from '../../../core/models/imob-empresa.model';
+import { ImobEmpresa, ImobPerfil, ImobUsuarioEmpresa, PERFIS_IMOB, ROTULO_PERFIL } from '../../../core/models/imob-empresa.model';
 import { User } from '../../../core/models/user.model';
 import { lerErroApi } from '../../../core/utils/erros-api';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 
 const MAX_SUGESTOES = 8;
+const NIVEL: Record<ImobPerfil, number> = { leitura: 0, operador: 1, admin: 2 };
 
 @Component({
   selector: 'app-imob-empresa-usuarios',
@@ -38,6 +39,13 @@ export class ImobEmpresaUsuariosComponent implements OnInit {
   termo = signal('');
   selecionado = signal<User | null>(null);
   vinculando = signal(false);
+  perfilNovo = signal<ImobPerfil | ''>('');
+  rotuloPerfil = ROTULO_PERFIL;
+
+  /** Perfis permitidos: nunca acima da role global do usuário (o servidor também valida). */
+  perfisAte(role?: ImobPerfil): ImobPerfil[] {
+    return PERFIS_IMOB.filter(p => !role || NIVEL[p] <= NIVEL[role]);
+  }
 
   sugestoes = computed(() => {
     const t = this.termo().trim().toLowerCase();
@@ -81,13 +89,14 @@ export class ImobEmpresaUsuariosComponent implements OnInit {
     this.termo.set(valor);
   }
 
-  vincular(usuarioId: string) {
+  vincular(usuarioId: string, perfil?: ImobPerfil | '') {
     this.vinculando.set(true);
     this.erro.set('');
-    this.service.vincular(this.empresaId, usuarioId).subscribe({
+    this.service.vincular(this.empresaId, usuarioId, perfil || undefined).subscribe({
       next: () => {
         this.vinculando.set(false);
         this.limparSelecao();
+        this.perfilNovo.set('');
         this.feedback.set('Usuário vinculado.');
         this.carregar();
         this.minhasEmpresas.carregar().subscribe();
@@ -95,6 +104,24 @@ export class ImobEmpresaUsuariosComponent implements OnInit {
       error: err => {
         this.vinculando.set(false);
         this.erro.set(lerErroApi(err, 'Erro ao vincular usuário.').mensagem);
+      }
+    });
+  }
+
+  mudarPerfil(v: ImobUsuarioEmpresa, perfil: ImobPerfil) {
+    this.agindo.set(v.usuarioId);
+    this.erro.set('');
+    this.service.atualizarPerfil(this.empresaId, v.usuarioId, perfil).subscribe({
+      next: () => {
+        this.agindo.set(null);
+        this.feedback.set('Perfil atualizado.');
+        this.carregar();
+        this.minhasEmpresas.carregar().subscribe();
+      },
+      error: err => {
+        this.agindo.set(null);
+        this.erro.set(lerErroApi(err, 'Erro ao atualizar o perfil.').mensagem);
+        this.carregar();
       }
     });
   }

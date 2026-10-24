@@ -1,7 +1,7 @@
 <div>
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h6 class="fw-bold mb-0">Responsáveis</h6>
-    @if (permissao.canCreate()) {
+    @if (permissao.imobCanCreate()) {
       <button type="button" class="btn btn-primary btn-sm" (click)="openCreate()">
         <i class="bi bi-plus-lg me-1"></i>Novo responsável
       </button>
@@ -93,13 +93,13 @@
                     }
                   </td>
                   <td class="text-end pe-3 text-nowrap">
-                    @if (permissao.canEdit()) {
+                    @if (permissao.imobCanEdit()) {
                       <button type="button" class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(r)"
                               title="Editar" [attr.aria-label]="'Editar ' + rotulo(r)">
                         <i class="bi bi-pencil"></i>
                       </button>
                     }
-                    @if (permissao.canDelete()) {
+                    @if (permissao.imobCanDelete()) {
                       <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="agindo() === r.id"
                               (click)="excluir(r)" title="Excluir" [attr.aria-label]="'Excluir ' + rotulo(r)">
                         <i class="bi bi-trash"></i>

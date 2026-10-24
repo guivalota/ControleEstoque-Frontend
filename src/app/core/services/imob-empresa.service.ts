@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { AtualizarImobEmpresa, CriarImobEmpresa, ImobEmpresa, ImobUsuarioEmpresa } from '../models/imob-empresa.model';
+import { AtualizarImobEmpresa, CriarImobEmpresa, ImobEmpresa, ImobPerfil, ImobUsuarioEmpresa } from '../models/imob-empresa.model';
 import { PagedResult } from '../models/paged-result.model';
 
 /** Administração de empresas (somente admin). Não usa o header X-Empresa-Id. */
@@ -31,8 +31,12 @@ export class ImobEmpresaService {
     return this.http.get<ImobUsuarioEmpresa[]>(`${this.url}/${id}/usuarios`);
   }
 
-  vincular(id: number, usuarioId: string) {
-    return this.http.post<void>(`${this.url}/${id}/usuarios`, { usuarioId });
+  vincular(id: number, usuarioId: string, perfil?: ImobPerfil) {
+    return this.http.post<void>(`${this.url}/${id}/usuarios`, perfil ? { usuarioId, perfil } : { usuarioId });
+  }
+
+  atualizarPerfil(id: number, usuarioId: string, perfil: ImobPerfil) {
+    return this.http.put<void>(`${this.url}/${id}/usuarios/${usuarioId}`, { perfil });
   }
 
   desvincular(id: number, usuarioId: string) {

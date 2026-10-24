@@ -110,3 +110,9 @@ export interface ImobBemHistorico {
 ## 4. Fora desta fatia
 
 Filtros por campo/usuário/período, histórico de bens excluídos, e exportação da trilha (auditoria do módulo).
+
+---
+
+## Atualização (Fase 3): histórico gerado por OS
+
+A partir da Fase 3, `ImobBemHistoricoResponse` ganha `osId` e `osNumero` (nulos para edição direta, criação, exclusão e ajustes de inventário) e um novo valor de `campo`: **`status`** (`ativo`, `em_manutencao`, `baixado`, `vendido`, `extraviado`), além de `local_id`/`responsavel_id` quando a mudança vem de uma transferência. Detalhes em `frontend-spec-imob-3-2-aprovacao-os.md`.

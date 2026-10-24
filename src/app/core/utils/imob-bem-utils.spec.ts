@@ -5,6 +5,8 @@ import { dataAquisicaoValida, duasCasas, hojeIso, inteiro } from './validadores'
 import { formatarData, formatarDataHora, formatarMoeda } from './imob-formato';
 import { baixarBlob } from './download';
 import { bemEditavel } from '../models/imob-bem.model';
+import { provideHttpClient } from '@angular/common/http';
+import { EmpresaAtivaService } from '../services/empresa-ativa.service';
 import { escritaGuard } from '../guards/escrita.guard';
 import { provideAuthFake } from '../../testing/auth-fake';
 
@@ -86,8 +88,9 @@ describe('baixarBlob', () => {
 });
 
 describe('escritaGuard', () => {
-  const rodar = (role: 'admin' | 'operador' | 'leitura') => {
-    TestBed.configureTestingModule({ providers: [provideRouter([]), provideAuthFake(role)] });
+  const rodar = (role: 'admin' | 'operador' | 'leitura', perfil?: 'admin' | 'operador' | 'leitura') => {
+    TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideAuthFake(role)] });
+    if (perfil) TestBed.inject(EmpresaAtivaService).empresas.set([{ id: 1, razaoSocial: 'X', cnpj: '', ativo: true, criadoEm: '', perfil }]), TestBed.inject(EmpresaAtivaService).id.set(1);
     return TestBed.runInInjectionContext(() =>
       escritaGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot));
   };
@@ -98,6 +101,14 @@ describe('escritaGuard', () => {
 
   it('operador também', () => {
     expect(rodar('operador')).toBeTrue();
+  });
+
+  it('operador com perfil leitura na empresa ativa é redirecionado', () => {
+    expect(rodar('operador', 'leitura') instanceof UrlTree).toBeTrue();
+  });
+
+  it('perfil na empresa nunca eleva a role global', () => {
+    expect(rodar('leitura', 'admin') instanceof UrlTree).toBeTrue();
   });
 
   it('leitura é redirecionada para a lista de bens', () => {
