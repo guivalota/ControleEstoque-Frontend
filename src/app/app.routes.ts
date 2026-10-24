@@ -40,6 +40,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/movimentacoes/movimentacoes.component').then(m => m.MovimentacoesComponent)
       },
       {
+        path: 'lotes',
+        loadComponent: () => import('./features/lotes/lotes.component').then(m => m.LotesComponent)
+      },
+      {
         path: 'usuarios',
         canActivate: [adminGuard],
         loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent)

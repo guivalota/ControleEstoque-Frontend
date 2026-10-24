@@ -1,0 +1,159 @@
+<div>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-bold mb-0">Lotes</h5>
+    @if (permissao.canCreate()) {
+      <button class="btn btn-primary btn-sm" (click)="openCreate()">
+        <i class="bi bi-plus-lg me-1"></i>Novo Lote
+      </button>
+    }
+  </div>
+
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2">
+      <div class="row g-2">
+        <div class="col-md-6">
+          <select class="form-select form-select-sm" aria-label="Produto" (change)="setProduto($any($event.target).value)">
+            <option value="">Todos os produtos</option>
+            @for (p of produtos(); track p.id) { <option [value]="p.id">{{ p.sku }} — {{ p.nome }}</option> }
+          </select>
+        </div>
+        <div class="col-md-4">
+          <select class="form-select form-select-sm" aria-label="Validade" (change)="setValidade($any($event.target).value)">
+            <option value="">Qualquer validade</option>
+            <option value="vencidos">Vencidos</option>
+            <option value="vencendo">Vencendo em {{ diasAlerta }} dias</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (erro()) { <div class="alert alert-danger py-2" role="alert">{{ erro() }}</div> }
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Carregando...</div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Lote</th><th>Produto</th><th>Fabricação</th><th>Validade</th>
+                <th class="text-end">Qtd. inicial</th><th class="text-end">Saldo</th><th>Fornecedor</th>
+                <th class="text-end pe-3">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of lotes(); track l.id) {
+                <tr>
+                  <td class="ps-3 fw-medium">{{ l.numeroLote }}</td>
+                  <td>{{ produtoNome(l.produtoId) }}</td>
+                  <td>{{ data(l.dataFabricacao) }}</td>
+                  <td>
+                    {{ data(l.dataValidade) }}
+                    @switch (situacao(l)) {
+                      @case ('vencido') { <span class="badge bg-danger-subtle text-danger ms-1">Vencido</span> }
+                      @case ('vencendo') { <span class="badge bg-warning-subtle text-warning-emphasis ms-1">Vence em {{ dias(l) }} dia(s)</span> }
+                    }
+                  </td>
+                  <td class="text-end">{{ l.quantidadeInicial }}</td>
+                  <td class="text-end fw-medium">{{ l.quantidadeAtual }}</td>
+                  <td class="text-muted">{{ fornecedorNome(l.fornecedorId) }}</td>
+                  <td class="text-end pe-3 text-nowrap">
+                    @if (permissao.canEdit()) {
+                      <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(l)" title="Editar"><i class="bi bi-pencil"></i></button>
+                    }
+                    @if (permissao.canDelete()) {
+                      <button class="btn btn-sm btn-outline-danger" (click)="delete(l)" title="Excluir"><i class="bi bi-trash"></i></button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="8" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>Nenhum lote encontrado</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (total() > pageSize) {
+          <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top small text-muted">
+            <span>Página {{ currentPage() }} de {{ totalPages() }} — {{ total() }} lote(s)</span>
+            <div class="btn-group btn-group-sm">
+              <button class="btn btn-outline-secondary" [disabled]="currentPage() <= 1" (click)="carregar(currentPage() - 1)" aria-label="Página anterior"><i class="bi bi-chevron-left"></i></button>
+              <button class="btn btn-outline-secondary" [disabled]="currentPage() >= totalPages()" (click)="carregar(currentPage() + 1)" aria-label="Próxima página"><i class="bi bi-chevron-right"></i></button>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Modal Lote -->
+<div class="modal fade" #modalEl tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fw-semibold">{{ editingId() ? 'Editar Lote' : 'Novo Lote' }}</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"><span class="visually-hidden">Fechar</span></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="form">
+          <div class="mb-3">
+            <label class="form-label fw-medium" for="lotProduto">Produto <span class="text-danger">*</span></label>
+            <select id="lotProduto" class="form-select" formControlName="produtoId" [class.is-invalid]="f('produtoId').invalid && f('produtoId').touched">
+              <option [ngValue]="null">Selecione...</option>
+              @for (p of produtos(); track p.id) { <option [ngValue]="p.id">{{ p.sku }} — {{ p.nome }}</option> }
+            </select>
+            <div class="invalid-feedback">Selecione o produto.</div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-8">
+              <label class="form-label fw-medium" for="lotNumero">Número do lote <span class="text-danger">*</span></label>
+              <input id="lotNumero" type="text" class="form-control" formControlName="numeroLote" maxlength="100"
+                     [class.is-invalid]="f('numeroLote').invalid && f('numeroLote').touched" />
+              <div class="invalid-feedback">Informe o número do lote (máx. 100).</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-medium" for="lotQtd">Qtd. inicial <span class="text-danger">*</span></label>
+              <input id="lotQtd" type="number" min="1" class="form-control" formControlName="quantidadeInicial"
+                     [class.is-invalid]="f('quantidadeInicial').invalid && f('quantidadeInicial').touched" />
+              <div class="invalid-feedback">Maior que zero.</div>
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-medium" for="lotFab">Fabricação</label>
+              <input id="lotFab" type="date" class="form-control" formControlName="dataFabricacao" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium" for="lotVal">Validade</label>
+              <input id="lotVal" type="date" class="form-control" formControlName="dataValidade" />
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-medium" for="lotForn">Fornecedor</label>
+            <select id="lotForn" class="form-select" formControlName="fornecedorId">
+              <option [ngValue]="null">—</option>
+              @for (fo of fornecedores(); track fo.id) { <option [ngValue]="fo.id">{{ fo.razaoSocial }}</option> }
+            </select>
+          </div>
+          <div class="mb-1">
+            <label class="form-label fw-medium" for="lotObs">Observação</label>
+            <textarea id="lotObs" class="form-control" rows="2" maxlength="2000" formControlName="observacao"></textarea>
+          </div>
+          @if (saveError()) {
+            <div class="alert alert-danger py-2 small mt-3"><i class="bi bi-exclamation-triangle me-1"></i>{{ saveError() }}</div>
+          }
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

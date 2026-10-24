@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { AuditLogService } from '../../core/services/audit-log.service';
 import { UserService } from '../../core/services/user.service';
+import { ImobEmpresaService } from '../../core/services/imob-empresa.service';
+import { ImobEmpresa } from '../../core/models/imob-empresa.model';
 import { AuditLog } from '../../core/models/audit-log.model';
 
 const PAGE_SIZE = 50;
@@ -17,8 +19,10 @@ const METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
 export class AuditLogsComponent implements OnInit {
   private auditService = inject(AuditLogService);
   private userService = inject(UserService);
+  private empresaService = inject(ImobEmpresaService);
 
   usuarios = this.userService.users;
+  empresas = signal<ImobEmpresa[]>([]);
   logs = signal<AuditLog[]>([]);
   loading = signal(false);
   erro = signal('');
@@ -31,11 +35,13 @@ export class AuditLogsComponent implements OnInit {
   filterUsuarioId = '';
   filterMethod = '';
   filterEndpoint = '';
+  filterEmpresaId = '';
   filterDataInicio = '';
   filterDataFim = '';
 
   ngOnInit() {
     this.userService.getAll().subscribe();
+    this.empresaService.listar(1, 100).subscribe({ next: r => this.empresas.set(r.items), error: () => this.empresas.set([]) });
     this.carregar(1);
   }
 
@@ -46,6 +52,7 @@ export class AuditLogsComponent implements OnInit {
       usuarioId: this.filterUsuarioId || undefined,
       method: this.filterMethod || undefined,
       endpoint: this.filterEndpoint || undefined,
+      empresaId: this.filterEmpresaId ? +this.filterEmpresaId : undefined,
       dataInicio: this.filterDataInicio || undefined,
       dataFim: this.filterDataFim || undefined,
       page,
@@ -68,6 +75,7 @@ export class AuditLogsComponent implements OnInit {
     this.filterUsuarioId = '';
     this.filterMethod = '';
     this.filterEndpoint = '';
+    this.filterEmpresaId = '';
     this.filterDataInicio = '';
     this.filterDataFim = '';
     this.carregar(1);

@@ -18,6 +18,7 @@ export class AuditLogService {
     if (filtros?.usuarioId) params = params.set('usuarioId', filtros.usuarioId);
     if (filtros?.method)    params = params.set('method', filtros.method);
     if (filtros?.endpoint)  params = params.set('endpoint', filtros.endpoint);
+    if (filtros?.empresaId) params = params.set('empresaId', filtros.empresaId);
     if (filtros?.dataInicio) params = params.set('dataInicio', filtros.dataInicio);
     if (filtros?.dataFim)   params = params.set('dataFim', filtros.dataFim);
     if (filtros?.page)      params = params.set('page', filtros.page);
