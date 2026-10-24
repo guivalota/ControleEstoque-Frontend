@@ -12,6 +12,11 @@
     </div>
     @if (bem(); as b) {
       <div class="d-flex gap-2">
+        @if (permissao.imobCanCreate() && bemEditavel(b.status)) {
+          <a class="btn btn-sm btn-outline-primary" routerLink="/imobilizado/ordens-servico/nova" [queryParams]="{ bemId: b.id }">
+            <i class="bi bi-clipboard-plus me-1"></i>Abrir OS
+          </a>
+        }
         @if (permissao.imobCanEdit() && bemEditavel(b.status)) {
           <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/imobilizado/bens', b.id, 'editar']">
             <i class="bi bi-pencil me-1"></i>Editar

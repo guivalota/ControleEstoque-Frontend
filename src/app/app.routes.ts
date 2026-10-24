@@ -138,6 +138,19 @@ export const routes: Routes = [
             loadComponent: () => import('./features/imobilizado/inventarios/imob-inventario-detalhe.component').then(m => m.ImobInventarioDetalheComponent)
           },
           {
+            path: 'ordens-servico',
+            loadComponent: () => import('./features/imobilizado/ordens-servico/imob-ordens-servico.component').then(m => m.ImobOrdensServicoComponent)
+          },
+          {
+            path: 'ordens-servico/nova',
+            canActivate: [escritaGuard],
+            loadComponent: () => import('./features/imobilizado/ordens-servico/imob-os-form.component').then(m => m.ImobOsFormComponent)
+          },
+          {
+            path: 'ordens-servico/:id',
+            loadComponent: () => import('./features/imobilizado/ordens-servico/imob-os-detalhe.component').then(m => m.ImobOsDetalheComponent)
+          },
+          {
             path: 'locais',
             loadComponent: () => import('./features/imobilizado/locais/imob-locais.component').then(m => m.ImobLocaisComponent)
           },

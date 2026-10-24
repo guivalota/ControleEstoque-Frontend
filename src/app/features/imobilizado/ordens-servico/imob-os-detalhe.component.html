@@ -1,0 +1,149 @@
+<div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <a routerLink="/imobilizado/ordens-servico" class="btn btn-sm btn-outline-secondary" aria-label="Voltar para as ordens de serviço">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <h6 class="fw-bold mb-0">{{ os() ? formatarNumero(os()!.numero) + ' — ' + rotuloTipo[os()!.tipo] : 'Ordem de serviço' }}</h6>
+      @if (os(); as o) { <span class="badge" [class]="classeStatus[o.status]">{{ rotuloStatus[o.status] }}</span> }
+    </div>
+    @if (os()) {
+      <div class="d-flex flex-wrap gap-2">
+        @if (podeConcluir()) {
+          <button type="button" class="btn btn-sm btn-success" (click)="abrirAcao('concluir')"><i class="bi bi-check2-circle me-1"></i>Concluir manutenção</button>
+        }
+        @if (podeAprovar()) {
+          <button type="button" class="btn btn-sm btn-primary" (click)="abrirAcao('aprovar')"><i class="bi bi-check-lg me-1"></i>Aprovar</button>
+          <button type="button" class="btn btn-sm btn-outline-danger" (click)="abrirAcao('rejeitar')"><i class="bi bi-x-lg me-1"></i>Rejeitar</button>
+        }
+        @if (podeCancelar()) {
+          <button type="button" class="btn btn-sm btn-outline-warning" (click)="abrirAcao('cancelar')"><i class="bi bi-slash-circle me-1"></i>Cancelar</button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (erro()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
+      <span>{{ erro() }}</span>
+      @if (!os()) { <button type="button" class="btn btn-sm btn-outline-danger" (click)="carregar()">Tentar novamente</button> }
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Carregando...</div>
+  } @else if (naoEncontrado()) {
+    <div class="alert alert-warning" role="alert">Ordem de serviço não encontrada nesta empresa.</div>
+  } @else if (os()) {
+    @let o = os()!;
+    @if (acao(); as a) {
+      <div class="card border-primary shadow-sm mb-3" role="region" [attr.aria-label]="tituloAcao[a]">
+        <div class="card-header bg-transparent fw-semibold">{{ tituloAcao[a] }}</div>
+        <div class="card-body">
+          @if (a === 'aprovar') {
+            <p class="mb-2">{{ efeitoAprovacao(o) }} <strong>Esta ação não pode ser desfeita.</strong></p>
+          }
+          @if (erroAcao()) { <div class="alert alert-danger py-2" role="alert">{{ erroAcao() }}</div> }
+          <div class="row g-2">
+            @if (a === 'concluir') {
+              <div class="col-md-3">
+                <label class="form-label" for="osCustoReal">Custo real (R$)</label>
+                <input id="osCustoReal" type="number" step="0.01" min="0" class="form-control" [formControl]="custoReal">
+                @if (o.custoEstimado != null) { <div class="form-text">Estimado: {{ formatarMoeda(o.custoEstimado) }}</div> }
+              </div>
+            }
+            <div class="col">
+              <label class="form-label" for="osComentario">Comentário{{ a === 'rejeitar' ? ' (obrigatório)' : ' (opcional)' }}</label>
+              <input id="osComentario" class="form-control" maxlength="2000" [formControl]="comentario">
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-3">
+            <button type="button" class="btn btn-primary btn-sm" [disabled]="enviando()" (click)="confirmar()">
+              @if (enviando()) { <span class="spinner-border spinner-border-sm me-1"></span> }Confirmar
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="enviando()" (click)="fecharAcao()">Voltar</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body">
+        <p class="mb-3 text-break" style="white-space: pre-line">{{ o.justificativa }}</p>
+        <dl class="row mb-0">
+          <dt class="col-sm-3">Solicitante</dt><dd class="col-sm-9">{{ o.solicitanteNome || '—' }} em {{ formatarDataHora(o.criadoEm) }}</dd>
+          @if (o.decididoPorNome) {
+            <dt class="col-sm-3">Decidida por</dt>
+            <dd class="col-sm-9">{{ o.decididoPorNome }}{{ o.decididoEm ? ' em ' + formatarDataHora(o.decididoEm) : '' }}@if (o.motivoDecisao) { — {{ o.motivoDecisao }} }</dd>
+          }
+          @if (o.concluidoPorNome) {
+            <dt class="col-sm-3">Concluída por</dt>
+            <dd class="col-sm-9">{{ o.concluidoPorNome }}{{ o.concluidoEm ? ' em ' + formatarDataHora(o.concluidoEm) : '' }}</dd>
+          }
+          @switch (o.tipo) {
+            @case ('venda') {
+              <dt class="col-sm-3">Venda</dt>
+              <dd class="col-sm-9">
+                {{ formatarMoeda(o.valorVenda) }} para {{ o.compradorNome || '—' }}
+                @if (o.dataVenda) { em {{ formatarData(o.dataVenda) }} }
+                @if (o.numeroDocumento) { · doc. {{ o.numeroDocumento }} }
+              </dd>
+            }
+            @case ('baixa') {
+              <dt class="col-sm-3">Motivo da baixa</dt><dd class="col-sm-9">{{ o.motivoBaixa ? rotuloMotivo[o.motivoBaixa] : '—' }}</dd>
+            }
+            @case ('manutencao') {
+              <dt class="col-sm-3">Fornecedor</dt><dd class="col-sm-9">{{ o.fornecedorServicoNome || '—' }}</dd>
+              <dt class="col-sm-3">Previsão</dt><dd class="col-sm-9">{{ o.previsaoConclusao ? formatarData(o.previsaoConclusao) : '—' }}</dd>
+              <dt class="col-sm-3">Custo</dt>
+              <dd class="col-sm-9">Estimado: {{ o.custoEstimado != null ? formatarMoeda(o.custoEstimado) : '—' }} · Real: {{ o.custoReal != null ? formatarMoeda(o.custoReal) : '—' }}</dd>
+            }
+          }
+        </dl>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-transparent fw-semibold">Bens ({{ o.itens.length }})</div>
+      <div class="small text-muted px-3 pt-2">Situação de cada bem no momento da abertura (pode diferir do cadastro atual).</div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr><th class="ps-3">Plaqueta</th><th>Descrição</th><th>Status</th><th>Local</th><th>Responsável</th>
+              @if (o.tipo === 'transferencia') { <th>Destino</th> }</tr>
+          </thead>
+          <tbody>
+            @for (i of o.itens; track i.id) {
+              <tr>
+                <td class="ps-3"><a [routerLink]="['/imobilizado/bens', i.bemId]">{{ i.plaqueta }}</a></td>
+                <td>{{ i.descricao }}</td>
+                <td>{{ nomeStatusBem(i.statusOrigem) }}</td>
+                <td>{{ i.localOrigemNome || '—' }}</td>
+                <td>{{ i.responsavelOrigemNome || '—' }}</td>
+                @if (o.tipo === 'transferencia') {
+                  <td>
+                    @if (i.localDestinoNome) { <div>Local: {{ i.localDestinoNome }}</div> }
+                    @if (i.responsavelDestinoNome) { <div>Resp.: {{ i.responsavelDestinoNome }}</div> }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent fw-semibold">Histórico da OS</div>
+      <ul class="list-group list-group-flush">
+        @for (e of o.eventos; track e.id) {
+          <li class="list-group-item">
+            <strong>{{ rotuloEvento[e.evento] || e.evento }}</strong>
+            por {{ e.usuarioNome || 'usuário' }} · <span class="text-muted small">{{ formatarDataHora(e.criadoEm) }}</span>
+            @if (e.comentario) { <div class="small text-break">{{ e.comentario }}</div> }
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</div>

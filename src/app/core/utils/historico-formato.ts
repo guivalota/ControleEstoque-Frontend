@@ -1,4 +1,4 @@
-import { ImobBemHistorico } from '../models/imob-bem.model';
+import { ImobBemHistorico, ImobBemStatus, ROTULO_STATUS_BEM } from '../models/imob-bem.model';
 import { formatarData, formatarMoeda } from './imob-formato';
 
 const ROTULOS: Record<string, string> = {
@@ -16,10 +16,12 @@ const ROTULOS: Record<string, string> = {
   fornecedor_nome: 'Fornecedor',
   numero_documento_aquisicao: 'Documento de aquisição',
   numero_serie: 'Nº de série',
-  observacao: 'Observação'
+  observacao: 'Observação',
+  status: 'Status'
 };
 
 const REFERENCIAS = new Set(['categoria_id', 'local_id', 'responsavel_id']);
+const STATUS_BEM = new Set(['status']);
 const VALORES = new Set(['valor_aquisicao', 'valor_residual']);
 
 /** Rótulo amigável do campo; campos desconhecidos (ex.: status, futuros) viram "Campo x y". */
@@ -40,6 +42,7 @@ export function formatarValorHistorico(campo: string, valor: string | null | und
     const n = Number(valor);
     return Number.isFinite(n) ? formatarMoeda(n) : valor;
   }
+  if (STATUS_BEM.has(campo)) return ROTULO_STATUS_BEM[valor as ImobBemStatus] ?? valor;
   if (campo === 'data_aquisicao') return formatarData(valor);
   return valor;
 }

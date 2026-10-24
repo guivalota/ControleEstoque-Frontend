@@ -1,7 +1,9 @@
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ImobBemService } from '../../../core/services/imob-bem.service';
 import { ImobBemHistorico } from '../../../core/models/imob-bem.model';
 import { lerErroApi } from '../../../core/utils/erros-api';
+import { formatarNumeroOs } from '../../../core/models/imob-ordem-servico.model';
 import { formatarDataHora } from '../../../core/utils/imob-formato';
 import {
   agruparHistorico, formatarValorHistorico, rotuloCampoHistorico
@@ -13,6 +15,7 @@ const PAGE_SIZE = 20;
 @Component({
   selector: 'app-imob-bem-historico',
   standalone: true,
+  imports: [RouterLink],
   templateUrl: './imob-bem-historico.component.html'
 })
 export class ImobBemHistoricoComponent implements OnInit {
@@ -23,6 +26,7 @@ export class ImobBemHistoricoComponent implements OnInit {
   rotulo = rotuloCampoHistorico;
   valor = formatarValorHistorico;
   formatarDataHora = formatarDataHora;
+  numeroOs = (n?: number | null) => n ? formatarNumeroOs(n) : 'OS';
 
   itens = signal<ImobBemHistorico[]>([]);
   total = signal(0);

@@ -66,5 +66,8 @@ export interface ImobBemHistorico {
   valorNovoDescricao?: string | null;
   usuarioId: string;
   usuarioNome?: string | null;
+  /** OS que causou a mudança (nulo para edição direta, criação, exclusão e ajustes de inventário). */
+  osId?: number | null;
+  osNumero?: number | null;
   criadoEm: string;
 }
