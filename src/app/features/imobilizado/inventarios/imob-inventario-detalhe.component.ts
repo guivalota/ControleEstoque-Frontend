@@ -5,11 +5,13 @@ import { PermissaoService } from '../../../core/services/permissao.service';
 import {
   CLASSE_STATUS_INVENTARIO, ImobInventario, ROTULO_STATUS_INVENTARIO, inventarioCancelavel, inventarioEditavel, inventarioExcluivel
 } from '../../../core/models/imob-inventario.model';
+import { ImobConciliacaoService } from '../../../core/services/imob-conciliacao.service';
+import { baixarBlob } from '../../../core/utils/download';
 import { lerErroApi } from '../../../core/utils/erros-api';
 import { formatarDataHora } from '../../../core/utils/imob-formato';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 
-type Acao = 'iniciar' | 'cancelar' | 'excluir';
+type Acao = 'iniciar' | 'cancelar' | 'excluir' | 'encerrar';
 
 @Component({
   selector: 'app-imob-inventario-detalhe',
@@ -20,6 +22,7 @@ type Acao = 'iniciar' | 'cancelar' | 'excluir';
 export class ImobInventarioDetalheComponent implements OnInit {
   private service = inject(ImobInventarioService);
   private route = inject(ActivatedRoute);
+  private conciliacao = inject(ImobConciliacaoService);
   private router = inject(Router);
   permissao = inject(PermissaoService);
 
@@ -40,6 +43,10 @@ export class ImobInventarioDetalheComponent implements OnInit {
   podeIniciar = computed(() => this.permissao.canEdit() && this.inventario()?.status === 'rascunho');
   podeCancelar = computed(() => this.permissao.canEdit() && inventarioCancelavel(this.inventario()?.status ?? 'concluido'));
   podeExcluir = computed(() => this.permissao.canDelete() && inventarioExcluivel(this.inventario()?.status ?? 'concluido'));
+  podeEncerrar = computed(() => this.permissao.canDelete() && this.inventario()?.status === 'em_andamento');
+  /** Contagem e conciliação existem a partir do início; o relatório também (parcial até encerrar). */
+  iniciado = computed(() => this.inventario()?.status !== 'rascunho');
+  baixando = signal<'pdf' | 'csv' | null>(null);
   somenteLeitura = computed(() => {
     const s = this.inventario()?.status;
     return s === 'concluido' || s === 'cancelado';
@@ -88,6 +95,42 @@ export class ImobInventarioDetalheComponent implements OnInit {
     });
     if (!ok) return;
     this.executar('cancelar', this.service.cancelar(inv.id), 'Erro ao cancelar o inventário.');
+  }
+
+  async encerrar() {
+    const inv = this.inventario();
+    if (!inv) return;
+    this.erro.set('');
+    this.agindo.set('encerrar');
+    this.conciliacao.resumo(inv.id).subscribe({
+      next: async r => {
+        this.agindo.set(null);
+        const pendentes = r.divergenciasPendentes + r.resolucoesDesatualizadas;
+        const aviso = pendentes > 0
+          ? `Existem ${pendentes} divergência(s) sem decisão válida. Encerrar mesmo assim? `
+          : 'Encerrar o inventário? ';
+        const ok = await this.confirmDialog().abrir({
+          titulo: 'Encerrar inventário',
+          mensagem: aviso + 'O resultado fica congelado e leituras e decisões deixam de ser aceitas. Esta ação não pode ser desfeita.',
+          confirmar: pendentes > 0 ? 'Encerrar mesmo assim' : 'Encerrar',
+          perigo: true
+        });
+        if (!ok) return;
+        this.executar('encerrar', this.service.encerrar(inv.id, pendentes > 0), 'Erro ao encerrar o inventário.');
+      },
+      error: err => { this.agindo.set(null); this.erro.set(lerErroApi(err, 'Erro ao consultar as pendências.').mensagem); }
+    });
+  }
+
+  baixarRelatorio(formato: 'pdf' | 'csv') {
+    const inv = this.inventario();
+    if (!inv) return;
+    this.baixando.set(formato);
+    this.erro.set('');
+    this.service.relatorio(inv.id, formato).subscribe({
+      next: a => { this.baixando.set(null); baixarBlob(a.blob, a.nome); },
+      error: err => { this.baixando.set(null); this.erro.set(lerErroApi(err, 'Erro ao gerar o relatório.').mensagem); }
+    });
   }
 
   async excluir() {

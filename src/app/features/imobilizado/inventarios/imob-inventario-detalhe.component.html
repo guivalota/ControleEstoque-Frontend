@@ -11,6 +11,24 @@
     </div>
     @if (inventario(); as inv) {
       <div class="d-flex flex-wrap gap-2">
+        @if (inv.status === 'em_andamento' && permissao.canEdit()) {
+          <a class="btn btn-sm btn-success" [routerLink]="['/imobilizado/inventarios', inv.id, 'contagem']">
+            <i class="bi bi-upc-scan me-1"></i>Contagem
+          </a>
+        }
+        @if (iniciado()) {
+          <a class="btn btn-sm btn-outline-primary" [routerLink]="['/imobilizado/inventarios', inv.id, 'conciliacao']">
+            <i class="bi bi-clipboard-check me-1"></i>Conciliação
+          </a>
+          <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-outline-secondary" [disabled]="baixando() !== null" (click)="baixarRelatorio('pdf')">
+              <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+            </button>
+            <button type="button" class="btn btn-outline-secondary" [disabled]="baixando() !== null" (click)="baixarRelatorio('csv')">
+              <i class="bi bi-filetype-csv me-1"></i>CSV
+            </button>
+          </div>
+        }
         @if (podeEditar()) {
           <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/imobilizado/inventarios', inv.id, 'editar']">
             <i class="bi bi-pencil me-1"></i>Editar
@@ -20,6 +38,12 @@
           <button type="button" class="btn btn-sm btn-primary" [disabled]="agindo() !== null" (click)="iniciar()">
             @if (agindo() === 'iniciar') { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-play-fill me-1"></i> }
             Iniciar contagem
+          </button>
+        }
+        @if (podeEncerrar()) {
+          <button type="button" class="btn btn-sm btn-danger" [disabled]="agindo() !== null" (click)="encerrar()">
+            @if (agindo() === 'encerrar') { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-check2-all me-1"></i> }
+            Encerrar
           </button>
         }
         @if (podeCancelar()) {
@@ -82,6 +106,13 @@
               <span class="badge bg-light text-dark border me-1">{{ m.nome || 'Usuário ' + m.usuarioId.slice(0, 8) }}</span>
             } @empty { — }
           </dd>
+          @if (inv.status === 'concluido') {
+            <dt class="col-sm-3">Encerrado por</dt>
+            <dd class="col-sm-9">
+              {{ inv.encerradoPorNome || '—' }}
+              @if (inv.pendenciasAoEncerrar) { <span class="badge bg-warning-subtle text-warning-emphasis ms-1">Encerrado com {{ inv.pendenciasAoEncerrar }} pendência(s)</span> }
+            </dd>
+          }
           <dt class="col-sm-3">Criado por</dt><dd class="col-sm-9">{{ inv.criadoPorNome || '—' }} em {{ formatarDataHora(inv.criadoEm) }}</dd>
           <dt class="col-sm-3">Atualizado em</dt><dd class="col-sm-9">{{ formatarDataHora(inv.atualizadoEm) }}</dd>
         </dl>

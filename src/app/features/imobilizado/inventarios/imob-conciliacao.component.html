@@ -1,0 +1,212 @@
+<div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <a [routerLink]="['/imobilizado/inventarios', id]" class="btn btn-sm btn-outline-secondary" aria-label="Voltar para o inventário">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <h6 class="fw-bold mb-0">Conciliação{{ inventario() ? ' — ' + inventario()!.nome : '' }}</h6>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="carregando()" (click)="atualizar()">
+      <i class="bi bi-arrow-clockwise me-1"></i>Atualizar
+    </button>
+  </div>
+
+  @if (erro()) { <div class="alert alert-danger py-2" role="alert">{{ erro() }}</div> }
+
+  @if (naoEncontrado()) {
+    <div class="alert alert-warning" role="alert">Inventário não encontrado nesta empresa.</div>
+  } @else if (inventario()?.status === 'rascunho') {
+    <div class="alert alert-secondary" role="status">A conciliação fica disponível depois que a contagem é iniciada.</div>
+  } @else if (inventario()) {
+    @if (inventario()!.status !== 'em_andamento') {
+      <div class="alert alert-secondary py-2" role="status">
+        <i class="bi bi-lock me-2"></i>Inventário {{ inventario()!.status === 'concluido' ? 'concluído' : 'cancelado' }}: resultado somente para consulta.
+      </div>
+    }
+
+    @if (painel(); as p) {
+      @let r = p.resumo;
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between small mb-1">
+            <span>Progresso da contagem</span>
+            <span>{{ r.percentualLido }}% ({{ r.esperadosLidos }} de {{ r.esperados }} lidos)</span>
+          </div>
+          <div class="progress mb-3" role="progressbar" [attr.aria-valuenow]="r.percentualLido" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar" [style.width.%]="r.percentualLido"></div>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-sm" [class.btn-primary]="situacao() === ''" [class.btn-outline-primary]="situacao() !== ''"
+                    (click)="filtrarSituacao('')">Todas</button>
+            @for (s of situacoes; track s) {
+              <button type="button" class="btn btn-sm" [class.btn-primary]="situacao() === s" [class.btn-outline-primary]="situacao() !== s"
+                      (click)="filtrarSituacao(s)">{{ rotulo[s] }} ({{ contagem(s) }})</button>
+            }
+          </div>
+          <div class="small text-muted mt-2">
+            Pendentes: {{ r.divergenciasPendentes }} · Resolvidas: {{ r.divergenciasResolvidas }}
+            @if (r.resolucoesDesatualizadas) { · Decisões desatualizadas: {{ r.resolucoesDesatualizadas }} }
+            · Plaquetas com leituras repetidas: {{ r.plaquetasComLeiturasRepetidas }} · Leituras: {{ r.leiturasAtivas }} ativas, {{ r.leiturasAnuladas }} anuladas
+          </div>
+        </div>
+      </div>
+    }
+
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-transparent d-flex flex-wrap gap-2 align-items-center">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Filtro de decisão">
+          <button type="button" class="btn" [class.btn-secondary]="resolucaoFiltro() === 'pendentes'" [class.btn-outline-secondary]="resolucaoFiltro() !== 'pendentes'"
+                  (click)="filtrarResolucao('pendentes')">Pendentes</button>
+          <button type="button" class="btn" [class.btn-secondary]="resolucaoFiltro() === 'resolvidas'" [class.btn-outline-secondary]="resolucaoFiltro() !== 'resolvidas'"
+                  (click)="filtrarResolucao('resolvidas')">Resolvidas</button>
+          <button type="button" class="btn" [class.btn-secondary]="resolucaoFiltro() === ''" [class.btn-outline-secondary]="resolucaoFiltro() !== ''"
+                  (click)="filtrarResolucao('')">Todas</button>
+        </div>
+        <div style="min-width: 14rem">
+          <app-seletor-local [formControl]="filtroLocal" [arvore]="arvore()" placeholder="Todos os locais" (change)="carregar(1)" />
+        </div>
+        <input class="form-control form-control-sm w-auto" placeholder="Plaqueta ou descrição" aria-label="Buscar"
+               [formControl]="busca" (keydown.enter)="carregar(1)">
+        <button type="button" class="btn btn-sm btn-outline-primary" (click)="carregar(1)">Filtrar</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr><th>Plaqueta</th><th>Descrição</th><th>Esperado em</th><th>Lido em</th><th class="text-center">Leituras</th><th>Situação</th><th class="text-end">Ações</th></tr>
+          </thead>
+          <tbody>
+            @for (i of itens(); track i.plaqueta) {
+              <tr>
+                <td>{{ i.plaqueta }}</td>
+                <td>{{ i.descricao || (i.bemId == null ? 'Plaqueta desconhecida' : '—') }}</td>
+                <td>{{ i.localEsperadoNome || '—' }}</td>
+                <td>
+                  @if (i.situacao === 'duplicado') {
+                    @for (l of i.locaisLidos; track l.localId) { <span class="badge bg-light text-dark border me-1">{{ l.localNome }}</span> }
+                  } @else { {{ i.localLidoNome || '—' }} }
+                </td>
+                <td class="text-center">
+                  {{ i.qtdLeituras }}
+                  @if (i.leiturasRepetidas) { <i class="bi bi-arrow-repeat text-muted" title="Lida mais de uma vez"></i> }
+                </td>
+                <td>
+                  <span class="badge" [class]="classe[i.situacao]">{{ rotulo[i.situacao] }}</span>
+                  @if (i.resolucaoDesatualizada) {
+                    <span class="badge bg-warning-subtle text-warning-emphasis ms-1" title="Chegaram leituras que mudaram a situação">Decisão desatualizada</span>
+                  } @else if (i.resolvida && i.resolucao) {
+                    @let res = i.resolucao;
+                    <div class="small text-muted">
+                      {{ res.acao === 'ajustar_local' ? 'Local ajustado para ' + (res.localDestinoNome || '—') : 'Mantido' }}
+                      @if (res.resolvidoPorNome) { por {{ res.resolvidoPorNome }} }
+                      @if (res.observacao) { — {{ res.observacao }} }
+                    </div>
+                  }
+                </td>
+                <td class="text-end text-nowrap">
+                  @if (podeReabrir(i)) {
+                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="reabrir(i)">Reabrir</button>
+                  } @else if (podeDecidir(i) && !i.resolvida) {
+                    <button type="button" class="btn btn-sm btn-outline-primary" (click)="abrirDecisao(i)">Decidir</button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="text-center text-muted py-3">{{ carregando() ? 'Carregando...' : 'Nenhum item neste filtro.' }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-paginacao [page]="page()" [pageSize]="pageSize" [total]="total()" [disabled]="carregando()" (mudar)="carregar($event)" />
+    </div>
+
+    @if (decidindo(); as d) {
+      <div class="card border-primary shadow-sm mb-3" role="region" aria-label="Decisão sobre a divergência">
+        <div class="card-header bg-transparent fw-semibold">Decidir: {{ d.plaqueta }} — {{ rotulo[d.situacao] }}</div>
+        <div class="card-body">
+          @if (erroDecisao()) { <div class="alert alert-danger py-2" role="alert">{{ erroDecisao() }}</div> }
+          <form class="row g-2" (ngSubmit)="salvarDecisao()">
+            <div class="col-md-4">
+              <label class="form-label" for="decAcao">Ação</label>
+              <select id="decAcao" class="form-select" [formControl]="acao">
+                <option value="manter">Manter (apenas reconhecer)</option>
+                @if (podeAjustar(d)) { <option value="ajustar_local">Ajustar o local do bem</option> }
+              </select>
+            </div>
+            @if (acao.value === 'ajustar_local') {
+              <div class="col-md-4">
+                <label class="form-label" for="decDestino">Local de destino</label>
+                <select id="decDestino" class="form-select" [formControl]="destino">
+                  @if (d.situacao === 'duplicado') { <option [ngValue]="null">Selecione...</option> }
+                  @for (l of d.locaisLidos; track l.localId) { <option [ngValue]="l.localId">{{ l.localNome }}</option> }
+                </select>
+              </div>
+            }
+            <div class="col-md-4">
+              <label class="form-label" for="decObs">Observação</label>
+              <input id="decObs" class="form-control" [formControl]="observacao" maxlength="2000">
+            </div>
+            <div class="col-12 d-flex gap-2">
+              <button type="submit" class="btn btn-primary btn-sm" [disabled]="salvando()">
+                @if (salvando()) { <span class="spinner-border spinner-border-sm me-1"></span> }Confirmar
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" (click)="fecharDecisao()">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
+
+    @if (painel(); as p) {
+      <div class="row g-3">
+        <div class="col-lg-8">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent fw-semibold">Por local</div>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0">
+                <thead><tr><th>Local</th><th style="min-width: 8rem">Progresso</th><th class="text-center">Esperados</th><th class="text-center">Diverg.</th><th class="text-center">Sobras</th><th class="text-center">Pendentes</th></tr></thead>
+                <tbody>
+                  @for (l of p.locais; track l.localId) {
+                    <tr>
+                      <td>{{ l.localNome }}</td>
+                      <td>
+                        <div class="progress" role="progressbar" [attr.aria-valuenow]="l.percentualLido" aria-valuemin="0" aria-valuemax="100" [attr.aria-label]="'Progresso em ' + l.localNome">
+                          <div class="progress-bar" [style.width.%]="l.percentualLido">{{ l.percentualLido }}%</div>
+                        </div>
+                      </td>
+                      <td class="text-center">{{ l.lidos }}/{{ l.esperados }}</td>
+                      <td class="text-center">{{ l.localDivergente + l.naoEncontrados + l.duplicados }}</td>
+                      <td class="text-center">{{ l.sobrasLidas }}</td>
+                      <td class="text-center">{{ l.divergenciasPendentes }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="6" class="text-center text-muted py-3">Sem dados por local.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent fw-semibold">Equipe</div>
+            <ul class="list-group list-group-flush">
+              @for (m of p.equipe; track m.usuarioId) {
+                <li class="list-group-item">
+                  <div class="d-flex justify-content-between">
+                    <span>{{ m.nome || 'Usuário ' + m.usuarioId.slice(0, 8) }}@if (!m.naEquipe) { <span class="badge bg-light text-dark border ms-1">fora da equipe</span> }</span>
+                    <strong>{{ m.leituras }}</strong>
+                  </div>
+                  <div class="small text-muted">
+                    {{ m.plaquetasDistintas }} plaqueta(s) · última: {{ m.ultimaLeituraEm ? formatarDataHora(m.ultimaLeituraEm) : '—' }}
+                  </div>
+                </li>
+              } @empty {
+                <li class="list-group-item text-muted">Sem atividade.</li>
+              }
+            </ul>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>

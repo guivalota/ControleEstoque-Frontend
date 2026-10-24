@@ -30,7 +30,7 @@ export interface ImobInventarioResumo {
   totalEsperados: number;
 }
 
-export interface ImobInventario extends ImobInventarioResumo {
+export interface ImobInventario extends ImobInventarioResumo, ImobInventarioEncerramento {
   descricao?: string | null;
   atualizadoEm: string;
   locais: { localId: number; localNome: string }[];
@@ -62,4 +62,11 @@ export const inventarioCancelavel = inventarioEditavel;
 /** Exclusão (admin): só rascunho ou cancelado. */
 export function inventarioExcluivel(status: ImobInventarioStatus): boolean {
   return status === 'rascunho' || status === 'cancelado';
+}
+
+export interface ImobInventarioEncerramento {
+  encerradoPorId?: string | null;
+  encerradoPorNome?: string | null;
+  /** Divergências sem decisão no momento do encerramento (nulo se não encerrado). */
+  pendenciasAoEncerrar?: number | null;
 }
