@@ -125,7 +125,9 @@ features/imobilizado/
 testing/auth-fake.ts   # provideAuthFake(role) for specs
 ```
 
-Routes: `/imobilizado` (shell, `imobilizadoGuard`) → children `bens`, `bens/importar`, `inventarios*`, `bens/novo`, `bens/:id/editar`, `bens/:id`, `locais`, `categorias`, `responsaveis`, `empresas`, `empresas/:id/usuarios`.
+Routes: `/imobilizado` (shell, `imobilizadoGuard`) → children `bens`, `bens/importar`, `bens/novo`, `bens/:id/editar`, `bens/:id` (abas Dados · Histórico · Depreciação), `inventarios*` (`/:id/contagem`, `/:id/conciliacao`), `ordens-servico` (`/nova`, `/:id`), `depreciacao` (`/fechamento`, `/periodos/:mes`, `/relatorios`, `/ajuda`), `locais`, `categorias`, `responsaveis`, `empresas`, `empresas/:id/usuarios`.
+
+Estoque também tem `lotes` (CRUD + validade; params PascalCase) e `loteId` opcional na criação de movimentações.
 
 ### Multi-company (X-Empresa-Id)
 
@@ -137,7 +139,9 @@ Routes: `/imobilizado` (shell, `imobilizadoGuard`) → children `bens`, `bens/im
 
 ### Conventions specific to this area
 
-- Roles via `PermissaoService` (`canCreate`/`canEdit` = admin+operador, `canDelete` = admin). Hide write buttons **and** protect routes (`adminGuard`, `escritaGuard`); the backend is the real authority.
+- Roles via `PermissaoService`. No Imobilizado use `imobCanCreate`/`imobCanEdit`/`imobCanDelete` (perfil **efetivo** = menor entre a role global e `EmpresaAtiva.perfil`; o perfil só restringe). `canCreate`/`canEdit`/`canDelete` ficam para o Estoque. Hide write buttons **and** protect routes (`adminGuard`, `escritaGuard`); the backend is the real authority.
+- 403 com `{ error }` (perfil, equipe do inventário, dono da OS) mantém a tela e mostra a mensagem; só `Sem acesso à empresa...` (ou 403 sem mensagem) aciona `perdeuAcesso()`.
+- OS (`ordens-servico`): abrir não altera o bem; aprovar (admin) aplica o efeito; manutenção fica `aprovada` até concluir. Depreciação: valores e memória de cálculo vêm prontos do servidor (não recalcular); ajuda é Markdown renderizado por `renderizarMarkdown` (HTML cru é escapado). Competências usam `yyyy-MM` na rota.
 - Errors: `lerErroApi()` handles both `{ error }` (business rule) and ASP.NET `errors` (per field); `aplicarErroNoForm()` puts them on form controls (keyword → field map for `{ error }` messages). Export errors arrive as `Blob` — `ImobBemService.exportar` rebuilds them.
 - Lists: server-paged, `pageSize` max 100 (default 50), filters sent only when defined (`montarParams`). The bens list keeps filters **in the URL** (query params are the source of truth, which is what the "Ver bens" links from base registers use: `?localId=`, `?categoriaId=`, `?responsavelId=`).
 - Deleting a local/categoria/responsável that has bens returns `400`; screens show `app-bloqueio-exclusao` offering "Desativar" (full `PUT` with `ativo: false`) and a link to the filtered bens list.
