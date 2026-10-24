@@ -60,6 +60,13 @@
           <i class="bi bi-clock-history me-1"></i>Histórico
         </button>
       </li>
+      <li class="nav-item" role="presentation">
+        <button type="button" class="nav-link" [class.active]="aba() === 'depreciacao'" role="tab" id="abaDepreciacao"
+                aria-controls="painelDepreciacao" [attr.aria-selected]="aba() === 'depreciacao'"
+                [attr.tabindex]="aba() === 'depreciacao' ? 0 : -1" (click)="selecionarAba('depreciacao')" (keydown)="aoTeclarAba($event)">
+          <i class="bi bi-graph-down me-1"></i>Depreciação
+        </button>
+      </li>
     </ul>
 
     <div id="painelDados" role="tabpanel" aria-labelledby="abaDados" [hidden]="aba() !== 'dados'">
@@ -88,6 +95,12 @@
     @if (historicoVisitado()) {
       <div id="painelHistorico" role="tabpanel" aria-labelledby="abaHistorico" [hidden]="aba() !== 'historico'">
         <app-imob-bem-historico [bemId]="b.id" />
+      </div>
+    }
+
+    @if (depreciacaoVisitada()) {
+      <div id="painelDepreciacao" role="tabpanel" aria-labelledby="abaDepreciacao" [hidden]="aba() !== 'depreciacao'">
+        <app-imob-bem-depreciacao [bemId]="b.id" />
       </div>
     }
   }

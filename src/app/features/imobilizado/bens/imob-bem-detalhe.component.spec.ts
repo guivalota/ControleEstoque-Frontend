@@ -188,7 +188,9 @@ describe('ImobBemDetalheComponent', () => {
       expect(document.activeElement).toBe(abaDados());
 
       tecla(abaDados(), 'End');
-      expect(comp.aba()).toBe('historico');
+      expect(comp.aba()).toBe('depreciacao');
+      fixture.detectChanges();
+      ctrl.expectOne(r => r.url === '/api/v1/imobilizado/depreciacao/bens/42').flush({ memoriaDeCalculo: [], cronograma: { items: [], page: 1, pageSize: 50, total: 0 } });
       tecla(abaHist(), 'Home');
       expect(comp.aba()).toBe('dados');
     });

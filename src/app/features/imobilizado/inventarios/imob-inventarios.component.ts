@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ImobInventarioService } from '../../../core/services/imob-inventario.service';
@@ -22,6 +23,7 @@ const PAGE_SIZE = 50;
 export class ImobInventariosComponent implements OnInit {
   private fb = inject(FormBuilder);
   private service = inject(ImobInventarioService);
+  private route = inject(ActivatedRoute);
   permissao = inject(PermissaoService);
 
   readonly pageSize = PAGE_SIZE;
@@ -41,6 +43,12 @@ export class ImobInventariosComponent implements OnInit {
   private filtroAtivo: ImobInventarioFiltro = {};
 
   ngOnInit() {
+    // Links de outras telas (ex.: alertas do painel) chegam com ?status=
+    const status = this.route.snapshot.queryParamMap.get('status') as ImobInventarioStatus | null;
+    if (status && this.statusLista.includes(status)) {
+      this.filtros.patchValue({ status });
+      this.filtroAtivo = { status };
+    }
     this.carregar(1);
   }
 

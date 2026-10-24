@@ -1,0 +1,145 @@
+<div>
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <a routerLink="/imobilizado/depreciacao" class="btn btn-sm btn-outline-secondary" aria-label="Voltar para o painel de depreciação">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h6 class="fw-bold mb-0">Fechamento da depreciação</h6>
+  </div>
+
+  <div class="alert alert-warning py-2 small" role="note">
+    As regras de depreciação são a proposta técnica do sistema e só valem para uso contábil real após validação de um contador.
+    <a routerLink="/imobilizado/depreciacao/ajuda">Ver a ajuda</a>.
+  </div>
+
+  @if (feedback()) {
+    <div class="alert alert-success alert-dismissible py-2" role="status">
+      {{ feedback() }}<button type="button" class="btn-close" aria-label="Fechar" (click)="feedback.set('')"></button>
+    </div>
+  }
+  @if (erro()) { <div class="alert alert-danger py-2" role="alert">{{ erro() }}</div> }
+
+  @if (loading() && !lista()) {
+    <div class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Carregando...</div>
+  } @else if (lista()) {
+    @let l = lista()!;
+    @if (l.mesesEncerradosSemFechamento > 0) {
+      <div class="alert alert-warning py-2" role="status">
+        Há {{ l.mesesEncerradosSemFechamento }} mês(es) encerrado(s) sem fechamento.
+      </div>
+    }
+
+    @if (podeFechar() && !mesPrevia()) {
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body d-flex flex-wrap align-items-end gap-2">
+          @if (proximoMes(); as m) {
+            <button type="button" class="btn btn-primary" (click)="abrirPrevia(m)">
+              <i class="bi bi-lock me-1"></i>Fechar {{ formatarMes(m) }}
+            </button>
+          } @else {
+            <div>
+              <label class="form-label mb-1" for="mesInicial">Mês do primeiro fechamento</label>
+              <input id="mesInicial" type="month" class="form-control" [formControl]="mesInicial">
+            </div>
+            <button type="button" class="btn btn-primary" (click)="abrirPreviaInicial()">Ver prévia</button>
+          }
+        </div>
+      </div>
+    }
+
+    @if (mesPrevia()) {
+      <div class="card border-primary shadow-sm mb-3">
+        <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">Prévia de {{ formatarMes(mesPrevia()) }} (não grava nada)</span>
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="fecharPrevia()">Fechar prévia</button>
+        </div>
+        @if (carregandoPrevia() && !previa()) {
+          <div class="card-body text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Calculando...</div>
+        } @else if (previa()) {
+    @let p = previa()!;
+          <div class="card-body">
+            @if (!p.fechavel) {
+              <div class="alert alert-danger py-2" role="alert">{{ p.motivoNaoFechavel || 'Este mês ainda não pode ser fechado.' }}</div>
+            }
+            @for (a of p.avisos; track $index) { <div class="alert alert-warning py-1 small mb-2">{{ a }}</div> }
+            <div class="row g-3 mb-3">
+              <div class="col-6 col-lg-3"><div class="small text-muted">Bens</div><strong>{{ p.totais.totalBens }}</strong></div>
+              <div class="col-6 col-lg-3"><div class="small text-muted">Depreciação do mês</div><strong>{{ formatarMoeda(p.totais.totalDepreciacao) }}</strong></div>
+              <div class="col-6 col-lg-3"><div class="small text-muted">Acumulada</div><strong>{{ formatarMoeda(p.totais.totalAcumulada) }}</strong></div>
+              <div class="col-6 col-lg-3"><div class="small text-muted">Valor contábil</div><strong>{{ formatarMoeda(p.totais.totalValorContabil) }}</strong></div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead><tr><th>Plaqueta</th><th>Descrição</th><th>Categoria</th><th class="text-end">Abertura</th><th class="text-end">Quota</th><th class="text-end">Acumulada</th><th class="text-end">Valor contábil</th></tr></thead>
+                <tbody>
+                  @for (b of p.linhas.items; track b.bemId) {
+                    <tr>
+                      <td>{{ b.plaqueta }}</td><td>{{ b.descricao }}</td><td>{{ b.categoriaNome || '—' }}</td>
+                      <td class="text-end">{{ formatarMoeda(b.saldoAbertura) }}</td><td class="text-end">{{ formatarMoeda(b.quota) }}</td>
+                      <td class="text-end">{{ formatarMoeda(b.acumulada) }}</td><td class="text-end">{{ formatarMoeda(b.valorContabil) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <app-paginacao [page]="paginaPrevia()" [pageSize]="pageSize" [total]="p.linhas.total" [disabled]="carregandoPrevia()"
+                           (mudar)="abrirPrevia(mesPrevia()!, $event)" />
+            @if (podeFechar()) {
+              <button type="button" class="btn btn-primary mt-3" [disabled]="!p.fechavel || fechando()" (click)="fechar()">
+                @if (fechando()) { <span class="spinner-border spinner-border-sm me-1"></span> }Fechar período
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    @if (reabrindo(); as r) {
+      <div class="card border-warning shadow-sm mb-3" role="region" aria-label="Reabrir período">
+        <div class="card-header bg-transparent fw-semibold">Reabrir {{ formatarMes(r.competencia) }}</div>
+        <div class="card-body">
+          <p class="small">Os lançamentos ficam arquivados (consultáveis como revisão anterior). Depois, corrija o cadastro e feche de novo.</p>
+          @if (erroReabertura()) { <div class="alert alert-danger py-2" role="alert">{{ erroReabertura() }}</div> }
+          <label class="form-label" for="motivoReabertura">Motivo</label>
+          <input id="motivoReabertura" class="form-control mb-2" maxlength="500" [formControl]="motivo">
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-warning btn-sm" [disabled]="enviandoReabertura()" (click)="confirmarReabertura()">
+              @if (enviandoReabertura()) { <span class="spinner-border spinner-border-sm me-1"></span> }Reabrir
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" (click)="reabrindo.set(null)">Voltar</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent fw-semibold">Períodos fechados</div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead><tr><th class="ps-3">Mês</th><th class="text-end">Depreciação</th><th class="text-end">Acumulada</th><th class="text-end">Valor contábil</th><th class="text-center">Bens</th><th>Fechado por</th><th></th></tr></thead>
+          <tbody>
+            @for (p of periodos(); track p.mes; let i = $index) {
+              <tr>
+                <td class="ps-3">{{ formatarMes(p.competencia) }} @if (p.revisao > 1) { <span class="badge bg-warning-subtle text-warning-emphasis">Revisão {{ p.revisao }}</span> }</td>
+                <td class="text-end">{{ formatarMoeda(p.totalDepreciacao) }}</td>
+                <td class="text-end">{{ formatarMoeda(p.totalAcumulada) }}</td>
+                <td class="text-end">{{ formatarMoeda(p.totalValorContabil) }}</td>
+                <td class="text-center">{{ p.totalBens }}</td>
+                <td>{{ p.fechadoPorNome || '—' }} · {{ formatarDataHora(p.fechadoEm) }}</td>
+                <td class="text-end text-nowrap pe-3">
+                  <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/imobilizado/depreciacao/periodos', p.mes]">Histórico</a>
+                  @if (i === 0 && podeFechar()) {
+                    <button type="button" class="btn btn-sm btn-outline-warning ms-1" (click)="abrirReabertura(p)">Reabrir</button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="text-center text-muted py-4">Nenhum período fechado ainda.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>
+
+<app-confirm-dialog />

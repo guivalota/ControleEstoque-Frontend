@@ -1,0 +1,112 @@
+<div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h6 class="fw-bold mb-0">Depreciação</h6>
+    <div class="d-flex flex-wrap gap-2">
+      <a routerLink="/imobilizado/depreciacao/fechamento" class="btn btn-sm btn-outline-primary"><i class="bi bi-lock me-1"></i>Fechamento</a>
+      <a routerLink="/imobilizado/depreciacao/relatorios" class="btn btn-sm btn-outline-primary"><i class="bi bi-table me-1"></i>Relatórios</a>
+      <a routerLink="/imobilizado/depreciacao/ajuda" class="btn btn-sm btn-outline-secondary"><i class="bi bi-question-circle me-1"></i>Ajuda</a>
+    </div>
+  </div>
+
+  @if (erro()) { <div class="alert alert-danger py-2" role="alert">{{ erro() }}</div> }
+
+  @if (loading()) {
+    <div class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Carregando...</div>
+  } @else if (painel()) {
+    @let p = painel()!;
+    @for (a of p.alertas; track a.codigo) {
+      <div [class]="'alert ' + classeSeveridade[a.severidade] + ' py-2 d-flex justify-content-between align-items-center'" role="status">
+        <span>{{ a.mensagem }}</span>
+        @if (destino(a); as d) {
+          <a class="btn btn-sm btn-outline-dark" [routerLink]="d.rota" [queryParams]="d.queryParams">Ver</a>
+        }
+      </div>
+    }
+
+    <h6 class="text-muted mt-3">Posição atual (calculada pelo cadastro) — {{ formatarData(p.em) }}</h6>
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+        <div class="small text-muted">Valor de aquisição</div><div class="fs-5 fw-semibold">{{ formatarMoeda(p.totais.valorAquisicao) }}</div></div></div></div>
+      <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+        <div class="small text-muted">Depreciação acumulada</div><div class="fs-5 fw-semibold">{{ formatarMoeda(p.totais.acumulada) }}</div></div></div></div>
+      <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+        <div class="small text-muted">Valor contábil</div><div class="fs-5 fw-semibold">{{ formatarMoeda(p.totais.valorContabil) }}</div></div></div></div>
+      <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+        <div class="small text-muted">Bens</div><div class="fs-5 fw-semibold">{{ p.totais.quantidade }}</div></div></div></div>
+    </div>
+
+    @if (ultimoFechamento(); as u) {
+      <p class="small text-muted">
+        Último fechamento ({{ formatarMes(u.competencia) }}): valor contábil {{ formatarMoeda(u.totalValorContabil) }},
+        acumulada {{ formatarMoeda(u.totalAcumulada) }}. A posição atual pode diferir se o cadastro mudou depois do fechamento.
+      </p>
+    }
+
+    <div class="row g-3 mb-3">
+      <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent fw-semibold">Valor contábil por categoria</div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead><tr><th class="ps-3">Categoria</th><th class="text-center">Bens</th><th style="min-width: 8rem">Valor contábil</th></tr></thead>
+              <tbody>
+                @for (c of p.porCategoria; track c.nome) {
+                  <tr>
+                    <td class="ps-3">{{ c.nome }}</td>
+                    <td class="text-center">{{ c.quantidade }}</td>
+                    <td>
+                      <div class="progress" style="height: 0.5rem" role="presentation"><div class="progress-bar" [style.width.%]="c.valorContabil / maxCategoria() * 100"></div></div>
+                      <span class="small">{{ formatarMoeda(c.valorContabil) }}</span>
+                    </td>
+                  </tr>
+                } @empty { <tr><td colspan="3" class="text-center text-muted py-3">Sem bens depreciáveis.</td></tr> }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent fw-semibold">Bens por status</div>
+          <ul class="list-group list-group-flush">
+            @for (s of p.porStatus; track s.nome) {
+              <li class="list-group-item d-flex justify-content-between"><span>{{ nomeStatus(s.nome) }}</span><strong>{{ s.quantidade }}</strong></li>
+            } @empty { <li class="list-group-item text-muted">Sem bens.</li> }
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">Últimos fechamentos</span>
+        @if (p.mesesEncerradosSemFechamento > 0 && permissao.imobCanDelete()) {
+          <a routerLink="/imobilizado/depreciacao/fechamento" class="btn btn-sm btn-primary">
+            Fechar {{ p.proximaCompetenciaAFechar ? formatarMes(p.proximaCompetenciaAFechar) : 'período' }}
+          </a>
+        }
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead><tr><th class="ps-3">Mês</th><th class="text-end">Depreciação</th><th class="text-end">Acumulada</th><th class="text-end">Valor contábil</th><th>Fechado por</th><th></th></tr></thead>
+          <tbody>
+            @for (f of p.ultimosFechamentos; track f.mes) {
+              <tr>
+                <td class="ps-3">{{ formatarMes(f.competencia) }} @if (f.revisao > 1) { <span class="badge bg-warning-subtle text-warning-emphasis">revisado</span> }</td>
+                <td class="text-end">{{ formatarMoeda(f.totalDepreciacao) }}</td>
+                <td class="text-end">{{ formatarMoeda(f.totalAcumulada) }}</td>
+                <td class="text-end">{{ formatarMoeda(f.totalValorContabil) }}</td>
+                <td>{{ f.fechadoPorNome || '—' }} · {{ formatarDataHora(f.fechadoEm) }}</td>
+                <td class="text-end pe-3"><a class="btn btn-sm btn-outline-secondary" [routerLink]="['/imobilizado/depreciacao/periodos', f.mes]">Histórico</a></td>
+              </tr>
+            } @empty { <tr><td colspan="6" class="text-center text-muted py-3">Nenhum período fechado.</td></tr> }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="small text-muted">
+      Metodologia v{{ p.metodologiaVersao }} · <a routerLink="/imobilizado/depreciacao/ajuda">Ajuda da depreciação</a>
+    </p>
+  }
+</div>

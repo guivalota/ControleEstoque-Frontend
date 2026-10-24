@@ -7,13 +7,16 @@ import { lerErroApi } from '../../../core/utils/erros-api';
 import { formatarData, formatarDataHora, formatarMoeda, formatarVidaUtil } from '../../../core/utils/imob-formato';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 import { ImobBemHistoricoComponent } from './imob-bem-historico.component';
+import { ImobBemDepreciacaoComponent } from './imob-bem-depreciacao.component';
 
-type Aba = 'dados' | 'historico';
+type Aba = 'dados' | 'historico' | 'depreciacao';
+const ABAS: Aba[] = ['dados', 'historico', 'depreciacao'];
+const ID_ABA: Record<Aba, string> = { dados: '#abaDados', historico: '#abaHistorico', depreciacao: '#abaDepreciacao' };
 
 @Component({
   selector: 'app-imob-bem-detalhe',
   standalone: true,
-  imports: [RouterLink, ConfirmDialogComponent, ImobBemHistoricoComponent],
+  imports: [RouterLink, ConfirmDialogComponent, ImobBemHistoricoComponent, ImobBemDepreciacaoComponent],
   templateUrl: './imob-bem-detalhe.component.html'
 })
 export class ImobBemDetalheComponent implements OnInit {
@@ -42,6 +45,7 @@ export class ImobBemDetalheComponent implements OnInit {
   aba = signal<Aba>('dados');
   /** O histórico só é buscado na primeira vez que a aba é aberta e depois fica montado. */
   historicoVisitado = signal(false);
+  depreciacaoVisitada = signal(false);
 
   ngOnInit() {
     this.carregar();
@@ -64,18 +68,22 @@ export class ImobBemDetalheComponent implements OnInit {
   selecionarAba(aba: Aba) {
     this.aba.set(aba);
     if (aba === 'historico') this.historicoVisitado.set(true);
+    if (aba === 'depreciacao') this.depreciacaoVisitada.set(true);
   }
 
   /** Setas, Home e End alternam as abas (padrão WAI-ARIA de tabs). */
   aoTeclarAba(ev: KeyboardEvent) {
+    const atual = ABAS.indexOf(this.aba());
     const alvo: Aba | null =
-      ev.key === 'ArrowRight' || ev.key === 'End' ? 'historico'
-      : ev.key === 'ArrowLeft' || ev.key === 'Home' ? 'dados'
+      ev.key === 'ArrowRight' ? ABAS[Math.min(atual + 1, ABAS.length - 1)]
+      : ev.key === 'ArrowLeft' ? ABAS[Math.max(atual - 1, 0)]
+      : ev.key === 'End' ? ABAS[ABAS.length - 1]
+      : ev.key === 'Home' ? ABAS[0]
       : null;
     if (!alvo) return;
     ev.preventDefault();
     this.selecionarAba(alvo);
-    (ev.currentTarget as HTMLElement).closest('[role="tablist"]')?.querySelector<HTMLElement>(alvo === 'dados' ? '#abaDados' : '#abaHistorico')?.focus();
+    (ev.currentTarget as HTMLElement).closest('[role="tablist"]')?.querySelector<HTMLElement>(ID_ABA[alvo])?.focus();
   }
 
   async excluir() {

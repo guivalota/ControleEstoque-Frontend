@@ -151,6 +151,26 @@ export const routes: Routes = [
             loadComponent: () => import('./features/imobilizado/ordens-servico/imob-os-detalhe.component').then(m => m.ImobOsDetalheComponent)
           },
           {
+            path: 'depreciacao',
+            loadComponent: () => import('./features/imobilizado/depreciacao/imob-depreciacao-painel.component').then(m => m.ImobDepreciacaoPainelComponent)
+          },
+          {
+            path: 'depreciacao/fechamento',
+            loadComponent: () => import('./features/imobilizado/depreciacao/imob-depreciacao-fechamento.component').then(m => m.ImobDepreciacaoFechamentoComponent)
+          },
+          {
+            path: 'depreciacao/periodos/:mes',
+            loadComponent: () => import('./features/imobilizado/depreciacao/imob-depreciacao-periodo.component').then(m => m.ImobDepreciacaoPeriodoComponent)
+          },
+          {
+            path: 'depreciacao/relatorios',
+            loadComponent: () => import('./features/imobilizado/depreciacao/imob-depreciacao-relatorios.component').then(m => m.ImobDepreciacaoRelatoriosComponent)
+          },
+          {
+            path: 'depreciacao/ajuda',
+            loadComponent: () => import('./features/imobilizado/depreciacao/imob-depreciacao-ajuda.component').then(m => m.ImobDepreciacaoAjudaComponent)
+          },
+          {
             path: 'locais',
             loadComponent: () => import('./features/imobilizado/locais/imob-locais.component').then(m => m.ImobLocaisComponent)
           },

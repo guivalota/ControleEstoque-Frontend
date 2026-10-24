@@ -1,0 +1,124 @@
+<div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <a routerLink="/imobilizado/depreciacao/fechamento" class="btn btn-sm btn-outline-secondary" aria-label="Voltar para o fechamento">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <h6 class="fw-bold mb-0">Histórico do período {{ formatarMes(mes) }}</h6>
+    </div>
+    @if (historico()) {
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-outline-secondary" [disabled]="baixando() !== null" (click)="baixarHistorico('csv')">CSV</button>
+        <button type="button" class="btn btn-outline-secondary" [disabled]="baixando() !== null" (click)="baixarHistorico('pdf')">PDF</button>
+      </div>
+    }
+  </div>
+
+  @if (erro()) { <div class="alert alert-danger py-2" role="alert">{{ erro() }}</div> }
+
+  @if (loading()) {
+    <div class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Carregando...</div>
+  } @else if (naoEncontrado()) {
+    <div class="alert alert-warning" role="alert">Este período nunca foi fechado.</div>
+  } @else if (historico()) {
+    @let h = historico()!;
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-transparent fw-semibold">
+        Linha do tempo
+        <span class="badge ms-1" [class]="h.fechado ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis'">{{ h.fechado ? 'Fechado' : 'Reaberto' }}</span>
+      </div>
+      <ol class="list-group list-group-flush">
+        @for (e of h.eventos; track e.id) {
+          <li class="list-group-item">
+            <div class="d-flex flex-wrap justify-content-between gap-2">
+              <span><i class="bi me-1" [class]="iconeEvento[e.evento]"></i><strong>{{ rotuloEvento[e.evento] }}</strong> (revisão {{ e.revisao }}) por {{ e.usuarioNome || 'usuário' }}</span>
+              <span class="text-muted small">{{ formatarDataHora(e.ocorridoEm) }} · metodologia v{{ e.metodologiaVersao }}</span>
+            </div>
+            @if (e.motivo) { <div class="small text-break">Motivo: {{ e.motivo }}</div> }
+            @if (e.totais; as t) {
+              <div class="small text-muted">
+                {{ t.totalBens }} bem(ns) · depreciação {{ formatarMoeda(t.totalDepreciacao) }} · acumulada {{ formatarMoeda(t.totalAcumulada) }} · valor contábil {{ formatarMoeda(t.totalValorContabil) }}
+              </div>
+            }
+            @if (eventoComVariacao(e)) {
+              <div class="small">
+                Variação sobre a revisão anterior:
+                <span [class]="variacaoClasse(e.variacao!.totalDepreciacao)">depreciação {{ formatarMoeda(e.variacao!.totalDepreciacao) }}</span> ·
+                <span [class]="variacaoClasse(e.variacao!.totalAcumulada)">acumulada {{ formatarMoeda(e.variacao!.totalAcumulada) }}</span> ·
+                <span [class]="variacaoClasse(e.variacao!.totalValorContabil)">valor contábil {{ formatarMoeda(e.variacao!.totalValorContabil) }}</span>
+              </div>
+            }
+            @if (e.evento !== 'reaberto') {
+              <button type="button" class="btn btn-sm btn-link p-0" (click)="verRevisao(e.revisao)">Ver lançamentos da revisão {{ e.revisao }}</button>
+            }
+          </li>
+        }
+      </ol>
+    </div>
+
+    @if (revisao(); as r) {
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-transparent fw-semibold">Lançamentos da revisão {{ r.revisao }} @if (!r.vigente) { <span class="badge bg-secondary-subtle text-secondary">arquivada</span> }</div>
+        @if (!r.vigente) { <div class="alert alert-secondary m-3 py-2 small">Revisão arquivada: valores como estavam antes da correção.</div> }
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th class="ps-3">Plaqueta</th><th>Descrição</th><th>Categoria</th><th class="text-end">Abertura</th><th class="text-end">Quota</th><th class="text-end">Acumulada</th><th class="text-end">Valor contábil</th></tr></thead>
+            <tbody>
+              @for (b of r.linhas.items; track b.bemId) {
+                <tr><td class="ps-3">{{ b.plaqueta }}</td><td>{{ b.descricao }}</td><td>{{ b.categoriaNome || '—' }}</td>
+                  <td class="text-end">{{ formatarMoeda(b.saldoAbertura) }}</td><td class="text-end">{{ formatarMoeda(b.quota) }}</td>
+                  <td class="text-end">{{ formatarMoeda(b.acumulada) }}</td><td class="text-end">{{ formatarMoeda(b.valorContabil) }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacao [page]="paginaRevisao()" [pageSize]="pageSize" [total]="r.linhas.total" [disabled]="carregandoRevisao()" (mudar)="verRevisao(r.revisao, $event)" />
+      </div>
+    }
+
+    @if (revisoes().length > 1) {
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent fw-semibold">Comparar revisões</div>
+        <div class="card-body">
+          <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+            <div>
+              <label class="form-label mb-1" for="cmpDe">De</label>
+              <select id="cmpDe" class="form-select form-select-sm" (change)="setSelecao('de', $any($event.target).value)">
+                @for (n of revisoes(); track n) { <option [value]="n" [selected]="n === de()">Revisão {{ n }}</option> }
+              </select>
+            </div>
+            <div>
+              <label class="form-label mb-1" for="cmpPara">Para</label>
+              <select id="cmpPara" class="form-select form-select-sm" (change)="setSelecao('para', $any($event.target).value)">
+                @for (n of revisoes(); track n) { <option [value]="n" [selected]="n === para()">Revisão {{ n }}</option> }
+              </select>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" [disabled]="carregandoComparacao()" (click)="comparar()">Comparar</button>
+          </div>
+
+          @if (comparacao(); as c) {
+            <div class="row g-2 small mb-3">
+              <div class="col-md-6">Revisão {{ c.de }}: depreciação {{ formatarMoeda(c.totaisDe.totalDepreciacao) }}, acumulada {{ formatarMoeda(c.totaisDe.totalAcumulada) }}</div>
+              <div class="col-md-6">Revisão {{ c.para }}: depreciação {{ formatarMoeda(c.totaisPara.totalDepreciacao) }}, acumulada {{ formatarMoeda(c.totaisPara.totalAcumulada) }}</div>
+            </div>
+            <div class="btn-group btn-group-sm mb-3">
+              <button type="button" class="btn btn-outline-secondary" [disabled]="baixando() !== null" (click)="baixarComparacao('csv')">CSV</button>
+              <button type="button" class="btn btn-outline-secondary" [disabled]="baixando() !== null" (click)="baixarComparacao('pdf')">PDF</button>
+            </div>
+            @for (d of c.diferencas.items; track d.bemId) {
+              <div class="border rounded p-2 mb-2">
+                <strong>{{ d.plaqueta }}</strong> <span class="badge bg-light text-dark border ms-1">{{ rotuloSituacao[d.situacao] }}</span>
+                <ul class="list-unstyled small mb-0 mt-1">
+                  @for (campo of d.camposAlterados; track campo) {
+                    <li>{{ rotuloCampo(campo) }}: {{ valorCampo(d.antes, campo) }} <i class="bi bi-arrow-right mx-1"></i> <strong>{{ valorCampo(d.depois, campo) }}</strong></li>
+                  }
+                </ul>
+              </div>
+            } @empty { <p class="text-muted mb-0">Nenhum bem mudou entre as revisões.</p> }
+            <app-paginacao [page]="paginaComparacao()" [pageSize]="pageSize" [total]="c.diferencas.total" [disabled]="carregandoComparacao()" (mudar)="comparar($event)" />
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

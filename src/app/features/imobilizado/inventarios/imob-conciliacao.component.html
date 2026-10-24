@@ -78,7 +78,7 @@
             @for (i of itens(); track i.plaqueta) {
               <tr>
                 <td>{{ i.plaqueta }}</td>
-                <td>{{ i.descricao || (i.bemId == null ? 'Plaqueta desconhecida' : '—') }}</td>
+                <td>{{ i.descricao || ((i.bemId ?? null) === null ? 'Plaqueta desconhecida' : '—') }}</td>
                 <td>{{ i.localEsperadoNome || '—' }}</td>
                 <td>
                   @if (i.situacao === 'duplicado') {

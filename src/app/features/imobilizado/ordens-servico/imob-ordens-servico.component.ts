@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ImobOrdemServicoService } from '../../../core/services/imob-ordem-servico.service';
 import { PermissaoService } from '../../../core/services/permissao.service';
 import {
@@ -21,6 +21,7 @@ const PAGE_SIZE = 20;
 })
 export class ImobOrdensServicoComponent implements OnInit {
   private service = inject(ImobOrdemServicoService);
+  private route = inject(ActivatedRoute);
   permissao = inject(PermissaoService);
 
   readonly pageSize = PAGE_SIZE;
@@ -43,6 +44,12 @@ export class ImobOrdensServicoComponent implements OnInit {
   erro = signal('');
 
   ngOnInit() {
+    // Links de outras telas (ex.: alertas do painel de depreciação) chegam com ?status= / ?tipo=
+    const q = this.route.snapshot.queryParamMap;
+    const status = q.get('status') as ImobOsStatus | null;
+    const tipo = q.get('tipo') as ImobOsTipo | null;
+    if (status && this.statusLista.includes(status)) this.status.setValue(status);
+    if (tipo && this.tipos.includes(tipo)) this.tipo.setValue(tipo);
     this.carregar(1);
   }
 

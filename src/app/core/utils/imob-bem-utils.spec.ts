@@ -90,7 +90,11 @@ describe('baixarBlob', () => {
 describe('escritaGuard', () => {
   const rodar = (role: 'admin' | 'operador' | 'leitura', perfil?: 'admin' | 'operador' | 'leitura') => {
     TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideAuthFake(role)] });
-    if (perfil) TestBed.inject(EmpresaAtivaService).empresas.set([{ id: 1, razaoSocial: 'X', cnpj: '', ativo: true, criadoEm: '', perfil }]), TestBed.inject(EmpresaAtivaService).id.set(1);
+    if (perfil) {
+      const empresa = TestBed.inject(EmpresaAtivaService);
+      empresa.empresas.set([{ id: 1, razaoSocial: 'X', cnpj: '', ativo: true, criadoEm: '', perfil }]);
+      empresa.id.set(1);
+    }
     return TestBed.runInInjectionContext(() =>
       escritaGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot));
   };
