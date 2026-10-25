@@ -141,7 +141,9 @@ Migrations da Fase 4: a partir de **0027**. **Desenho aprovado (Q1–Q10 aceitas
 ### Fase 5 — Refinamentos (contínuo)
 - [x] **5.1** Perfil de acesso por empresa (migration 0030; o perfil só restringe a role global; filtro de tenant nega com 403; `PUT` de perfil; `perfil` em minhas-empresas/empresa-ativa). Desenho `DESENHO_FASE_5_PERFIL_POR_EMPRESA.md`; spec `frontend-spec-imob-5-1-perfil-por-empresa.md`.
 
-Próximos itens (ordem sugerida: etiquetas QR, importação Excel, planos, campos customizados, fotos, Flutter): planos com limite de itens por empresa (como na proposta da Saraf, com aviso ao exceder 10%), fotos (ex.: Supabase Storage), impressão de etiquetas (PDF com código de barras/QR via QuestPDF), campos customizados por empresa, importação Excel, e preparação do **contrato para o app Flutter** (endpoint de sync com cursor, paginação maior que 100, tokens para uso offline).
+- [x] **5.2** Etiquetas patrimoniais em PDF com QR da plaqueta (`GET etiquetas`, `etiquetas/modelos`; modelos a4-21, a4-65 e rolo-50x30; por `ids` ou por filtro; máx. 500). Spec `frontend-spec-imob-5-2-etiquetas.md`.
+
+Próximos itens (ordem sugerida: importação Excel, planos, campos customizados, fotos, Flutter): planos com limite de itens por empresa (como na proposta da Saraf, com aviso ao exceder 10%), fotos (ex.: Supabase Storage), impressão de etiquetas (PDF com código de barras/QR via QuestPDF), campos customizados por empresa, importação Excel, e preparação do **contrato para o app Flutter** (endpoint de sync com cursor, paginação maior que 100, tokens para uso offline).
 
 ## 5. Riscos
 

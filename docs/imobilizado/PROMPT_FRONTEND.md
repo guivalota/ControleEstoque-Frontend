@@ -88,6 +88,8 @@ Pontos de atenção: aprovações/conclusões simultâneas podem retornar `400` 
 
 **Etapa 11b — Perfil por empresa** (spec 5.1). Guarde o `perfil` efetivo vindo de `minhas-empresas`/`empresa-ativa` e troque ao mudar de empresa; esconda/desabilite escrita por esse perfil (não pela role global); trate o `403` "Seu perfil nesta empresa (…)" mostrando a mensagem; na tela de vínculos use `perfil`/`perfilEfetivo`, `POST` com `perfil` opcional e `PUT` para alterar, desabilitando perfis acima da role global.
 
+**Etapa 11c — Etiquetas** (spec 5.2). Seleção de bens (checkbox ou filtro) → diálogo com modelo (`GET etiquetas/modelos`), opção de bordas e pré-visualização; PDF baixado como blob pelo interceptor; mostrar o `400` do servidor (limite de 500, ids inexistentes na empresa). Sem biblioteca de QR no front.
+
 **Etapa 12 (cont.) — Painel** (spec 4.4). (i) Página inicial "Depreciação" com `GET .../depreciacao/dashboard`: faixa de alertas por severidade (mapear `destino` para as rotas do front; sem botão quando o papel não permite), cartões de totais da posição atual (rotular como calculada pelo cadastro atual), gráficos por categoria e status com tabela acessível, últimos fechamentos com link para o histórico e botão "Fechar próximo mês" só para `admin`.
 
 ## Qualidade

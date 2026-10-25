@@ -17,6 +17,7 @@ import { baixarBlob } from '../../../core/utils/download';
 import { formatarMoeda } from '../../../core/utils/imob-formato';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 import { PaginacaoComponent } from '../shared/paginacao.component';
+import { ImobEtiquetasDialogComponent } from '../shared/imob-etiquetas-dialog.component';
 import { SeletorLocalComponent } from '../shared/seletor-local.component';
 import { AutocompleteResponsavelComponent } from '../shared/autocomplete-responsavel.component';
 
@@ -32,7 +33,7 @@ function idDaQuery(params: ParamMap, chave: string): number | null {
   selector: 'app-imob-bens',
   standalone: true,
   imports: [
-    ReactiveFormsModule, RouterLink, ConfirmDialogComponent, PaginacaoComponent,
+    ReactiveFormsModule, RouterLink, ConfirmDialogComponent, PaginacaoComponent, ImobEtiquetasDialogComponent,
     SeletorLocalComponent, AutocompleteResponsavelComponent
   ],
   templateUrl: './imob-bens.component.html'
@@ -47,6 +48,7 @@ export class ImobBensComponent implements OnInit {
   permissao = inject(PermissaoService);
 
   private confirmDialog = viewChild.required(ConfirmDialogComponent);
+  private etiquetasDialog = viewChild.required(ImobEtiquetasDialogComponent);
 
   readonly pageSize = PAGE_SIZE;
   readonly statusLista = STATUS_BEM;
@@ -65,6 +67,9 @@ export class ImobBensComponent implements OnInit {
 
   categorias = signal<ImobCategoria[]>([]);
   arvore = signal<ImobLocalArvore[]>([]);
+
+  /** Bens marcados para etiqueta; vale entre páginas e zera quando o filtro muda. */
+  selecionados = signal<ReadonlySet<number>>(new Set());
 
   exportando = signal(false);
   erroExportacao = signal('');
@@ -122,6 +127,7 @@ export class ImobBensComponent implements OnInit {
       status: status && STATUS_BEM.includes(status) ? status : undefined,
       dadosCompletos: params.get('dadosCompletos') === 'false' ? false : undefined
     };
+    if (JSON.stringify(filtro) !== JSON.stringify(this.filtroAtivo)) this.selecionados.set(new Set());
     this.filtroAtivo = filtro;
     this.filtros.reset({
       busca: filtro.busca ?? '',
@@ -192,6 +198,32 @@ export class ImobBensComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  // ---- etiquetas ----
+
+  alternar(id: number, marcado: boolean) {
+    const novo = new Set(this.selecionados());
+    if (marcado) novo.add(id); else novo.delete(id);
+    this.selecionados.set(novo);
+  }
+
+  paginaToda(): boolean {
+    return this.bens().length > 0 && this.bens().every(b => this.selecionados().has(b.id));
+  }
+
+  alternarPagina(marcado: boolean) {
+    const novo = new Set(this.selecionados());
+    for (const b of this.bens()) { if (marcado) novo.add(b.id); else novo.delete(b.id); }
+    this.selecionados.set(novo);
+  }
+
+  imprimirSelecionados() {
+    this.etiquetasDialog().abrir({ ids: [...this.selecionados()] });
+  }
+
+  imprimirFiltro() {
+    this.etiquetasDialog().abrir({ filtro: this.filtroAtivo, total: this.total() });
   }
 
   buscarPlaqueta() {

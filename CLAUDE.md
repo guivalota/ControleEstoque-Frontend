@@ -152,6 +152,7 @@ Estoque também tem `lotes` (CRUD + validade; params PascalCase) e `loteId` opci
 - Bem form: on create, category pre-fills vida útil and residual (value = % × aquisição) until the user edits them; untouched fields are **omitted** from the payload so the server applies the category values. On edit nothing is pre-filled and current values are sent.
 - Formatting: use `Intl` helpers in `imob-formato.ts` (BRL, `dd/MM/yyyy` without `Date` parsing, `%`). The app does **not** register the `pt-BR` locale, so don't use `DecimalPipe`/`CurrencyPipe`/`DatePipe` with `'pt-BR'`.
 - Angular `@if (...; as x)` alias only works on the first `@if` block; use `@let` otherwise.
+- Etiquetas (spec 5.2): `ImobEtiquetasDialogComponent` (shared) recebe `abrir({ ids } | { filtro, total }, modelo?)`; PDF vem como blob (`ImobEtiquetaService.gerar`), pré-visualização em `<iframe>` via object URL, `ids` ignora os filtros, limite de 500 por pedido (erros 400 do servidor são exibidos). Seleção por checkbox na lista de bens; "Imprimir etiqueta" (`rolo-50x30`) no detalhe. O QR é gerado no servidor.
 - CSV export and any download needing the header: `HttpClient` + `responseType: 'blob'` + `baixarBlob()`, never `<a href>` to the API.
 
 ### Testing

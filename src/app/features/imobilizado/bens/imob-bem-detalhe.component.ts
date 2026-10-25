@@ -6,6 +6,7 @@ import { CLASSE_STATUS_BEM, ImobBem, ROTULO_STATUS_BEM, bemEditavel } from '../.
 import { lerErroApi } from '../../../core/utils/erros-api';
 import { formatarData, formatarDataHora, formatarMoeda, formatarVidaUtil } from '../../../core/utils/imob-formato';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
+import { ImobEtiquetasDialogComponent } from '../shared/imob-etiquetas-dialog.component';
 import { ImobBemHistoricoComponent } from './imob-bem-historico.component';
 import { ImobBemDepreciacaoComponent } from './imob-bem-depreciacao.component';
 
@@ -16,7 +17,7 @@ const ID_ABA: Record<Aba, string> = { dados: '#abaDados', historico: '#abaHistor
 @Component({
   selector: 'app-imob-bem-detalhe',
   standalone: true,
-  imports: [RouterLink, ConfirmDialogComponent, ImobBemHistoricoComponent, ImobBemDepreciacaoComponent],
+  imports: [RouterLink, ConfirmDialogComponent, ImobEtiquetasDialogComponent, ImobBemHistoricoComponent, ImobBemDepreciacaoComponent],
   templateUrl: './imob-bem-detalhe.component.html'
 })
 export class ImobBemDetalheComponent implements OnInit {
@@ -26,6 +27,7 @@ export class ImobBemDetalheComponent implements OnInit {
   permissao = inject(PermissaoService);
 
   private confirmDialog = viewChild.required(ConfirmDialogComponent);
+  private etiquetasDialog = viewChild.required(ImobEtiquetasDialogComponent);
 
   readonly id = Number(this.route.snapshot.paramMap.get('id'));
   rotuloStatus = ROTULO_STATUS_BEM;
@@ -84,6 +86,10 @@ export class ImobBemDetalheComponent implements OnInit {
     ev.preventDefault();
     this.selecionarAba(alvo);
     (ev.currentTarget as HTMLElement).closest('[role="tablist"]')?.querySelector<HTMLElement>(ID_ABA[alvo])?.focus();
+  }
+
+  imprimirEtiqueta() {
+    this.etiquetasDialog().abrir({ ids: [this.id] }, 'rolo-50x30');
   }
 
   async excluir() {

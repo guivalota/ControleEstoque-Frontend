@@ -6,6 +6,14 @@
         @if (exportando()) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-download me-1"></i> }
         Exportar CSV
       </button>
+      @if (selecionados().size) {
+        <button type="button" class="btn btn-outline-primary btn-sm" (click)="imprimirSelecionados()">
+          <i class="bi bi-qr-code me-1"></i>Etiquetas ({{ selecionados().size }})
+        </button>
+      }
+      <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="!total()" (click)="imprimirFiltro()">
+        <i class="bi bi-printer me-1"></i>Etiquetas do filtro
+      </button>
       @if (permissao.imobCanCreate()) {
         <a class="btn btn-outline-secondary btn-sm" routerLink="/imobilizado/bens/importar">
           <i class="bi bi-upload me-1"></i>Importar CSV
@@ -112,7 +120,10 @@
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th class="ps-3">Plaqueta</th>
+                <th class="ps-3">
+                  <input type="checkbox" class="form-check-input me-2" aria-label="Selecionar todos da página"
+                         [checked]="paginaToda()" (change)="alternarPagina($any($event.target).checked)">Plaqueta
+                </th>
                 <th>Descrição</th>
                 <th>Local</th>
                 <th>Responsável</th>
@@ -124,7 +135,11 @@
             <tbody>
               @for (b of bens(); track b.id) {
                 <tr>
-                  <td class="ps-3 text-nowrap"><a [routerLink]="['/imobilizado/bens', b.id]" class="fw-medium">{{ b.plaqueta }}</a></td>
+                  <td class="ps-3 text-nowrap">
+                    <input type="checkbox" class="form-check-input me-2" [attr.aria-label]="'Selecionar ' + b.plaqueta"
+                           [checked]="selecionados().has(b.id)" (change)="alternar(b.id, $any($event.target).checked)">
+                    <a [routerLink]="['/imobilizado/bens', b.id]" class="fw-medium">{{ b.plaqueta }}</a>
+                  </td>
                   <td>{{ b.descricao }}
                     @if (!b.dadosCompletos) { <span class="badge bg-warning-subtle text-warning-emphasis ms-1">Dados incompletos</span> }
                   </td>
@@ -165,3 +180,4 @@
 </div>
 
 <app-confirm-dialog />
+<app-imob-etiquetas-dialog />
