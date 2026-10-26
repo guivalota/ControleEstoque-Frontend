@@ -55,7 +55,7 @@ npm start        # http://localhost:4200
 
 Em desenvolvimento, o `proxy.conf.json` encaminha `/api/*` para `http://localhost:5062`, removendo o prefixo `/api`. Suba o backend localmente ou ajuste o `target` do proxy. Cada serviço acrescenta `/v1/...` à URL.
 
-A API usada em produção precisa estar acessível publicamente a partir do navegador de quem usa o site.
+A API usada em produção precisa estar acessível publicamente a partir do navegador de quem usa o site. **Ao trocar a URL da API, atualize também a diretiva `connect-src` da CSP em `src/index.html`**: sem isso o navegador bloqueia todas as chamadas, e o login parece falhar sem que a API seja consultada.
 
 ### Credenciais para testes manuais
 
