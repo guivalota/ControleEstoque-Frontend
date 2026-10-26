@@ -1,59 +1,96 @@
-# ControleEstoque
+# Controle de Estoque — Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.13.
+Aplicação web (SPA) para controle de **estoque** e de **ativos imobilizados (patrimônio)**, consumindo a API `controle-estoque-dotnet`.
 
-## Development server
+- Produção: https://guivalota.github.io/ControleEstoque-Frontend/
+- Stack: Angular 19 (componentes standalone, signals, Reactive Forms), Bootstrap 5, RxJS, testes com Jasmine/Karma.
 
-To start a local development server, run:
+## Módulos
 
-```bash
-ng serve
-```
+### Estoque
+Dashboard, categorias, produtos, fornecedores, clientes, notas fiscais (importação de NF-e), movimentações (entrada, saída, ajustes), conferência de estoque, lotes com validade, pedidos de compra, impressões, usuários, logs de auditoria e manual.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+### Imobilizado (multiempresa)
+Área própria em `/imobilizado`, com a empresa ativa enviada em todas as chamadas (`X-Empresa-Id`).
 
-## Code scaffolding
+| Funcionalidade | Descrição |
+|---|---|
+| Empresas e vínculos | Administração de empresas e usuários, com perfil por empresa (admin) |
+| Cadastros base | Locais (árvore), categorias de bem, responsáveis |
+| Bens | Lista com filtros na URL, formulário, detalhe com histórico, dados incompletos, exportação e importação por CSV |
+| Etiquetas | PDF com QR por seleção, por filtro ou pelo detalhe do bem (modelos A4 e rolo) |
+| Inventários | Escopo e equipe, contagem (leituras e CSV), conciliação, painel de divergências, encerramento e relatório |
+| Ordens de serviço | Transferência, manutenção, baixa e venda, com fluxo de aprovação |
+| Depreciação | Prévia, fechamento de períodos, razão, relatórios e memória de cálculo |
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Perfis: `admin`, `operador` e `leitura`. No Imobilizado vale o menor entre o perfil global e o perfil na empresa.
 
-```bash
-ng generate component component-name
-```
+## Pré-requisitos
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+- Node.js 20
+- npm
+- Chrome (para os testes)
 
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Como rodar
 
 ```bash
-ng test
+npm ci
+npm start        # http://localhost:4200
 ```
 
-## Running end-to-end tests
+| Comando | O que faz |
+|---|---|
+| `npm start` | Servidor de desenvolvimento |
+| `npm run build` | Build de produção em `dist/controle-estoque/` |
+| `npm test` | Testes unitários (Karma) |
+| `npx ng test --watch=false --browsers=ChromeHeadless` | Testes sem interface, como no CI |
+| `npx eslint <caminhos>` | Lint apenas dos arquivos alterados (o código legado do Estoque ainda tem erros antigos) |
 
-For end-to-end (e2e) testing, run:
+## Configuração da API
 
-```bash
-ng e2e
+| Ambiente | Arquivo | `apiUrl` |
+|---|---|---|
+| Desenvolvimento | `src/environments/environment.ts` | `/api` (proxy) |
+| Produção | `src/environments/environment.prod.ts` | URL base da API, sem `/v1` |
+
+Em desenvolvimento, o `proxy.conf.json` encaminha `/api/*` para `http://localhost:5062`, removendo o prefixo `/api`. Suba o backend localmente ou ajuste o `target` do proxy. Cada serviço acrescenta `/v1/...` à URL.
+
+A API usada em produção precisa estar acessível publicamente a partir do navegador de quem usa o site.
+
+### Credenciais para testes manuais
+
+Ficam em `.env.local`, na raiz do projeto (não versionado):
+
+```
+API_URL=<url base da API>
+API_EMAIL=<email>
+API_SENHA=<senha>
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+O login é `POST /v1/auth/login` com `{ "email", "senha" }`. Nunca versione esse arquivo.
 
-## Additional Resources
+## Estrutura
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+```
+src/app/
+  core/        guards, interceptors, models, services, utils
+  layout/      shell, sidebar, topbar
+  features/    uma pasta por módulo (rotas lazy-loaded)
+    imobilizado/   área de patrimônio (shell, bens, inventários, OS, depreciação...)
+docs/imobilizado/  especificações de contrato da API para o Imobilizado
+```
+
+Convenções do projeto (estado com signals, modais Bootstrap, paginação, formatação, tratamento de erros, multiempresa) estão no [CLAUDE.md](CLAUDE.md). As especificações por funcionalidade estão em [docs/imobilizado](docs/imobilizado); leia-as antes de alterar endpoints, mensagens de erro ou tipos.
+
+## Fluxo de trabalho e deploy
+
+| Branch | Função |
+|---|---|
+| `master` | Produção; protegida, merge só por PR com 1 aprovação |
+| `develop` | Base para novas features e correções |
+
+1. Trabalhe em `develop` ou em uma branch de feature.
+2. Abra um PR para `master` e aguarde a aprovação.
+3. No merge, o workflow `.github/workflows/deploy.yml` roda `npm ci` e `npm run build`, copia `index.html` para `404.html` (rotas da SPA) e publica na branch `gh-pages`, servida pelo GitHub Pages.
+
+O build de produção usa `baseHref` `/ControleEstoque-Frontend/`. O workflow não executa testes nem lint; rode-os localmente antes de abrir o PR.
