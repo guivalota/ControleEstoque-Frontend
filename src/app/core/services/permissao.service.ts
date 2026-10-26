@@ -3,8 +3,6 @@ import { AuthService } from './auth.service';
 import { EmpresaAtivaService } from './empresa-ativa.service';
 import { ImobPerfil } from '../models/imob-empresa.model';
 
-const NIVEL: Record<ImobPerfil, number> = { leitura: 0, operador: 1, admin: 2 };
-
 @Injectable({ providedIn: 'root' })
 export class PermissaoService {
   private auth = inject(AuthService);
@@ -23,15 +21,14 @@ export class PermissaoService {
   canManageUsers = computed(() => this.role() === 'admin');
 
   /**
-   * Imobilizado: perfil efetivo = menor entre a role global e o perfil na empresa ativa
-   * (o perfil só restringe). Sem perfil informado pelo servidor vale a role global.
+   * Imobilizado: perfil efetivo na empresa ativa, como o servidor devolve em `perfil`
+   * (plataforma: menor entre role global e vínculo; conta cliente: o do vínculo).
+   * Não recombinar com a role do token: a conta cliente tem role global `leitura`.
+   * Sem perfil informado pelo servidor vale a role global.
    */
-  perfilImob = computed<ImobPerfil | undefined>(() => {
-    const role = this.role() as ImobPerfil | undefined;
-    const perfil = this.empresa.ativa()?.perfil;
-    if (!role || !perfil) return role;
-    return NIVEL[perfil] < NIVEL[role] ? perfil : role;
-  });
+  perfilImob = computed<ImobPerfil | undefined>(
+    () => this.empresa.ativa()?.perfil ?? (this.role() as ImobPerfil | undefined)
+  );
 
   imobCanCreate = computed(() => this.perfilImob() === 'admin' || this.perfilImob() === 'operador');
   imobCanEdit = this.imobCanCreate;

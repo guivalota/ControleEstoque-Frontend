@@ -111,8 +111,8 @@ describe('escritaGuard', () => {
     expect(rodar('operador', 'leitura') instanceof UrlTree).toBeTrue();
   });
 
-  it('perfil na empresa nunca eleva a role global', () => {
-    expect(rodar('leitura', 'admin') instanceof UrlTree).toBeTrue();
+  it('vale o perfil que o servidor devolve para a empresa (conta cliente tem role global leitura)', () => {
+    expect(rodar('leitura', 'admin')).toBeTrue();
   });
 
   it('leitura é redirecionada para a lista de bens', () => {
