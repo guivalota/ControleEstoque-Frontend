@@ -2,7 +2,7 @@
 
 **Data:** 2026-06-06  
 **Branch ativa:** `develop`  
-**Backend:** `https://sleeve-equation-duly.ngrok-free.dev` (v1.9.8) — Docker Compose local + túnel ngrok (free); URL muda a cada restart do túnel, atualizar `environment.prod.ts` e a CSP `connect-src` em `src/index.html` quando isso acontecer.  
+**Backend:** `https://guilherme-linux.tail223137.ts.net` — Docker local exposto via Tailscale Funnel (o ngrok foi abandonado: a cota mensal acabou). Se a URL mudar, atualizar juntos `environment.prod.ts` e a CSP `connect-src` em `src/index.html`.  
 **Deploy:** GitHub Pages via GitHub Actions (merge em `master` → deploy automático)
 
 ---
