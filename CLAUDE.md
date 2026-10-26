@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm start          # dev server → http://localhost:4200
 npm run build      # production build → dist/controle-estoque/
 npm test           # unit tests via Karma
-ng lint            # ESLint
+ng lint            # ESLint (legacy Estoque code has ~140 pre-existing errors; lint only changed paths: npx eslint <paths>)
 ```
 
 ## Backend
@@ -81,6 +81,7 @@ src/app/
     clientes/                         # CRUD with Bootstrap Modal; CPF or CNPJ identifier
     notas-fiscais/                    # NF-e import and listing; links to movimentacoes
     conferencia/                      # stock audit: individual product (with date filter) + general overview (paginated)
+    imobilizado/                      # fixed-assets module (multi-company) — see "Área Imobilizado" below
 ```
 
 ### Routing
@@ -100,6 +101,65 @@ JWT claims use full URI keys: `http://schemas.xmlsoap.org/ws/2005/05/identity/cl
 ### Bootstrap Modals
 
 Components import `Modal` from `'bootstrap'` (typed via `src/typings.d.ts`). Each component holds `private modal!: Modal` initialised lazily on first open via `@ViewChild('modalEl')`. Always call `modal.dispose()` in `ngOnDestroy`.
+
+---
+
+## Área Imobilizado (controle patrimonial)
+
+Separate module from Estoque (own routes, services, models). Contract specs live in `docs/imobilizado/` (`frontend-spec-imob-*.md`; `PLANO_DE_ACAO.md` is backend context) — read them before changing endpoints, error messages or types, and report backend divergences instead of working around them.
+
+```
+core/models/imob-*.model.ts, paged-result.model.ts
+core/services/empresa-ativa.service.ts    # active company state (signals) + localStorage `imob.empresaId`
+core/services/imob-{empresa,local,categoria,responsavel,bem}.service.ts   # stateless: return Observables, no signals
+core/interceptors/empresa.interceptor.ts  # X-Empresa-Id + 403 handling
+core/guards/empresa-ativa.guard.ts        # imobilizadoGuard (loads companies) + empresaAtivaGuard (canActivateChild)
+core/guards/escrita.guard.ts              # create/edit routes: admin/operador only
+core/utils/                               # cnpj, erros-api, http-params, imob-formato (BRL/date/%/vida útil), historico-formato, local-arvore, validadores, download
+features/imobilizado/
+  shell/        # area header (active company + "Trocar"), tabs, mandatory company selector modal
+  empresas/     # company admin + user links (admin only)
+  locais/ categorias/ responsaveis/   # base registers
+  bens/         # list, form, detail (+ Histórico tab), CSV export
+  shared/       # confirm-dialog, paginacao, seletor-local (CVA), autocomplete-responsavel (CVA), bloqueio-exclusao
+testing/auth-fake.ts   # provideAuthFake(role) for specs
+```
+
+Routes: `/imobilizado` (shell, `imobilizadoGuard`) → children `bens`, `bens/importar`, `bens/novo`, `bens/:id/editar`, `bens/:id` (abas Dados · Histórico · Depreciação), `inventarios*` (`/:id/contagem`, `/:id/conciliacao`), `ordens-servico` (`/nova`, `/:id`), `depreciacao` (`/fechamento`, `/periodos/:mes`, `/relatorios`, `/ajuda`), `locais`, `categorias`, `responsaveis`, `empresas`, `empresas/:id/usuarios`.
+
+Estoque também tem `lotes` (CRUD + validade; params PascalCase) e `loteId` opcional na criação de movimentações.
+
+### Multi-company (X-Empresa-Id)
+
+- Every data call to `v1/imobilizado/**` carries `X-Empresa-Id` (set by `empresaInterceptor`). **No header** for `minhas-empresas` and `empresas/**` (admin). Never send `empresaId` in body or query.
+- `EmpresaAtivaService.carregar()` reloads `minhas-empresas`: 0 companies → "sem acesso" screen, 1 → auto-select, 2+ → restore saved id if still listed, else mandatory selector. `imobilizadoGuard` calls it on every entry to the area.
+- A `403` on a data call → `perdeuAcesso()`: clears selection, reloads the list, shows "Seu acesso a esta empresa foi alterado.".
+- Switching company recreates the `<router-outlet>` (keyed by company id) and navigates to `/imobilizado`, discarding screen state.
+- Routes marked `data: { dispensaEmpresa: true }` skip `empresaAtivaGuard`; `data: { administracao: true }` (company admin screens) also render without an active company and don't force the selector. Even admins must be linked to a company to see its data.
+
+### Conventions specific to this area
+
+- Roles via `PermissaoService`. No Imobilizado use `imobCanCreate`/`imobCanEdit`/`imobCanDelete` (perfil **efetivo** = menor entre a role global e `EmpresaAtiva.perfil`; o perfil só restringe). `canCreate`/`canEdit`/`canDelete` ficam para o Estoque. Hide write buttons **and** protect routes (`adminGuard`, `escritaGuard`); the backend is the real authority.
+- 403 com `{ error }` (perfil, equipe do inventário, dono da OS) mantém a tela e mostra a mensagem; só `Sem acesso à empresa...` (ou 403 sem mensagem) aciona `perdeuAcesso()`.
+- OS (`ordens-servico`): abrir não altera o bem; aprovar (admin) aplica o efeito; manutenção fica `aprovada` até concluir. Depreciação: valores e memória de cálculo vêm prontos do servidor (não recalcular); ajuda é Markdown renderizado por `renderizarMarkdown` (HTML cru é escapado). Competências usam `yyyy-MM` na rota.
+- Errors: `lerErroApi()` handles both `{ error }` (business rule) and ASP.NET `errors` (per field); `aplicarErroNoForm()` puts them on form controls (keyword → field map for `{ error }` messages). Export errors arrive as `Blob` — `ImobBemService.exportar` rebuilds them.
+- Lists: server-paged, `pageSize` max 100 (default 50), filters sent only when defined (`montarParams`). The bens list keeps filters **in the URL** (query params are the source of truth, which is what the "Ver bens" links from base registers use: `?localId=`, `?categoriaId=`, `?responsavelId=`).
+- Deleting a local/categoria/responsável that has bens returns `400`; screens show `app-bloqueio-exclusao` offering "Desativar" (full `PUT` with `ativo: false`) and a link to the filtered bens list.
+- Bem `dataAquisicao`/`valorAquisicao`/`valorResidual` are optional; without date or value `dadosCompletos` is `false` (badge "Dados incompletos", list filter `?dadosCompletos=false` = "Pendentes de completar"). Residual can't be sent without valor.
+- CSV import (`bens/importar`, admin/operador): validate → report → confirm resending the **same `File`** + `hashArquivo` (`FormData`, no manual Content-Type); changing file or default local invalidates the report; error report CSV is built in the browser.
+- Inventários (`inventarios`, `/novo`, `/:id`, `/:id/editar`): status `rascunho → em_andamento → concluido|cancelado`; edit in rascunho/em_andamento (scope `localIds` frozen once started — the form disables it but still sends the current ids), iniciar freezes the expected list (confirm dialog), cancelar from rascunho/em_andamento, excluir (admin) only rascunho/cancelado. Team picker uses `GET empresas/{id}/usuarios` (admin-only endpoint); operadores see the team read-only and it is preserved on save.
+- Bem `status` is read-only (comes from OS/inventory in later phases); `baixado`/`vendido` bens can't be edited (`bemEditavel()`).
+- Bem form: on create, category pre-fills vida útil and residual (value = % × aquisição) until the user edits them; untouched fields are **omitted** from the payload so the server applies the category values. On edit nothing is pre-filled and current values are sent.
+- Formatting: use `Intl` helpers in `imob-formato.ts` (BRL, `dd/MM/yyyy` without `Date` parsing, `%`). The app does **not** register the `pt-BR` locale, so don't use `DecimalPipe`/`CurrencyPipe`/`DatePipe` with `'pt-BR'`.
+- Angular `@if (...; as x)` alias only works on the first `@if` block; use `@let` otherwise.
+- Etiquetas (spec 5.2): `ImobEtiquetasDialogComponent` (shared) recebe `abrir({ ids } | { filtro, total }, modelo?)`; PDF vem como blob (`ImobEtiquetaService.gerar`), pré-visualização em `<iframe>` via object URL, `ids` ignora os filtros, limite de 500 por pedido (erros 400 do servidor são exibidos). Seleção por checkbox na lista de bens; "Imprimir etiqueta" (`rolo-50x30`) no detalhe. O QR é gerado no servidor.
+- CSV export and any download needing the header: `HttpClient` + `responseType: 'blob'` + `baixarBlob()`, never `<a href>` to the API.
+
+### Testing
+
+- Specs use Jasmine + `HttpTestingController`; roles via `provideAuthFake(role)`. Stub `Modal.prototype.show/hide` in specs that open Bootstrap modals (the fade animation otherwise finishes after teardown and breaks Karma).
+- `fixture.whenStable()` does **not** wait for router navigation or `Blob.text()` — await a `NavigationEnd` / poll instead.
+- Run headless: `npx ng test --watch=false --browsers=ChromeHeadless` (add `--include='src/app/features/imobilizado/**/*.spec.ts'` to narrow).
 
 ---
 

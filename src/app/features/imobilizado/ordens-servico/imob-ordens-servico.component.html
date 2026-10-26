@@ -1,0 +1,60 @@
+<div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h6 class="fw-bold mb-0">Ordens de serviço</h6>
+    @if (permissao.imobCanCreate()) {
+      <a routerLink="/imobilizado/ordens-servico/nova" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>Nova OS</a>
+    }
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+      <form class="row g-2" (ngSubmit)="carregar(1)">
+        <div class="col-md-4">
+          <input class="form-control form-control-sm" placeholder="Nº da OS ou plaqueta" aria-label="Buscar" [formControl]="busca">
+        </div>
+        <div class="col-md-3">
+          <select class="form-select form-select-sm" aria-label="Tipo" [formControl]="tipo" (change)="carregar(1)">
+            <option value="">Todos os tipos</option>
+            @for (t of tipos; track t) { <option [value]="t">{{ rotuloTipo[t] }}</option> }
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select form-select-sm" aria-label="Status" [formControl]="status" (change)="carregar(1)">
+            <option value="">Todos os status</option>
+            @for (s of statusLista; track s) { <option [value]="s">{{ rotuloStatus[s] }}</option> }
+          </select>
+        </div>
+        <div class="col-md-2"><button type="submit" class="btn btn-sm btn-outline-primary w-100">Filtrar</button></div>
+      </form>
+    </div>
+
+    @if (erro()) { <div class="alert alert-danger m-3 py-2" role="alert">{{ erro() }}</div> }
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr><th class="ps-3">Nº</th><th>Tipo</th><th>Status</th><th class="text-center">Bens</th><th>Solicitante</th><th>Aberta em</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (o of itens(); track o.id) {
+            <tr>
+              <td class="ps-3 text-nowrap">{{ formatarNumero(o.numero) }}</td>
+              <td>{{ rotuloTipo[o.tipo] }}</td>
+              <td><span class="badge" [class]="classeStatus[o.status]">{{ rotuloStatus[o.status] }}</span></td>
+              <td class="text-center">{{ o.totalItens }}</td>
+              <td>{{ o.solicitanteNome || '—' }}</td>
+              <td class="text-nowrap">{{ formatarDataHora(o.criadoEm) }}</td>
+              <td class="text-end pe-3">
+                <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/imobilizado/ordens-servico', o.id]"
+                   [attr.aria-label]="'Abrir ' + formatarNumero(o.numero)"><i class="bi bi-eye"></i></a>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="7" class="text-center text-muted py-4">{{ loading() ? 'Carregando...' : 'Nenhuma ordem de serviço encontrada.' }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-paginacao [page]="page()" [pageSize]="pageSize" [total]="total()" [disabled]="loading()" (mudar)="carregar($event)" />
+  </div>
+</div>

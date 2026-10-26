@@ -9,6 +9,8 @@ import { ProdutoService } from '../../core/services/produto.service';
 import { CategoriaService } from '../../core/services/categoria.service';
 import { PermissaoService } from '../../core/services/permissao.service';
 import { PedidoCompraService } from '../../core/services/pedido-compra.service';
+import { LoteService } from '../../core/services/lote.service';
+import { Lote } from '../../core/models/lote.model';
 import { ImpressaoService } from '../../core/services/impressao.service';
 import { Movimentacao, CreateMovimentacaoRequest, UpdateMovimentacaoRequest, TipoMovimentacao, MotivoAjuste } from '../../core/models/movimentacao.model';
 import { PedidoCompra } from '../../core/models/pedido-compra.model';
@@ -26,6 +28,7 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
   categoriaService = inject(CategoriaService);
   permissao = inject(PermissaoService);
   private pedidoService = inject(PedidoCompraService);
+  private loteService = inject(LoteService);
   private impressaoService = inject(ImpressaoService);
   imprimindo = signal(false);
   exportando = signal(false);
@@ -52,6 +55,8 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
   saving = signal(false);
   saveError = signal('');
   pedidosAbertos = signal<PedidoCompra[]>([]);
+  /** Lotes do produto escolhido (opcional na entrada/saída; só na criação). */
+  lotesProduto = signal<Lote[]>([]);
 
   filteredMovimentacoes = computed(() => {
     const prodMap = new Map(this.produtos().map(p => [p.id, p.nome]));
@@ -72,7 +77,8 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
     dataMovimentacao: ['' as string | null],
     observacao: ['' as string | null],
     motivoAjuste: [null as MotivoAjuste | null],
-    pedidoCompraItemId: [null as number | null]
+    pedidoCompraItemId: [null as number | null],
+    loteId: [null as number | null]
   });
 
   private tipoValue = toSignal(
@@ -102,6 +108,7 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit() {
+    this.form.controls['produtoId'].valueChanges.subscribe(id => this.carregarLotes(id));
     this.carregarPagina(1);
     this.produtoService.getAll().subscribe();
     this.categoriaService.getAll().subscribe();
@@ -171,10 +178,20 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
     this.carregarPagina(1);
   }
 
+  private carregarLotes(produtoId: number | null) {
+    this.f('loteId').setValue(null);
+    this.lotesProduto.set([]);
+    if (!produtoId || this.editingId()) return;
+    this.loteService.getAll({ ProdutoId: +produtoId, PageSize: 100 }).subscribe({
+      next: r => this.lotesProduto.set(r.items),
+      error: () => this.lotesProduto.set([])
+    });
+  }
+
   openCreate() {
     this.editingId.set(null);
     this.editingProdutoNome.set('');
-    this.form.reset({ tipo: 'entrada', quantidade: 1, valorUnitario: 0, observacao: null, produtoId: null, dataMovimentacao: null, motivoAjuste: null, pedidoCompraItemId: null });
+    this.form.reset({ tipo: 'entrada', quantidade: 1, valorUnitario: 0, observacao: null, produtoId: null, dataMovimentacao: null, motivoAjuste: null, pedidoCompraItemId: null, loteId: null });
     this.f('produtoId').enable();
     this.saveError.set('');
     this.pedidoService.getAbertos().subscribe({
@@ -222,7 +239,8 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
           ...val as CreateMovimentacaoRequest,
           dataMovimentacao: val.dataMovimentacao || null,
           motivoAjuste: val.motivoAjuste || null,
-          pedidoCompraItemId: val.pedidoCompraItemId ? +val.pedidoCompraItemId : null
+          pedidoCompraItemId: val.pedidoCompraItemId ? +val.pedidoCompraItemId : null,
+          loteId: val.loteId ? +val.loteId : null
         });
 
     op.subscribe({

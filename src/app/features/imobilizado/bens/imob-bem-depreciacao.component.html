@@ -1,0 +1,84 @@
+@if (naoEncontrado()) {
+  <div class="alert alert-warning" role="alert">Bem não encontrado nesta empresa.</div>
+} @else {
+  @if (erro()) { <div class="alert alert-danger py-2" role="alert">{{ erro() }}</div> }
+
+  <form class="d-flex flex-wrap gap-2 align-items-end mb-3" (ngSubmit)="carregar(1)">
+    <div>
+      <label class="form-label mb-1" for="depEm">Data de referência</label>
+      <input id="depEm" type="date" class="form-control form-control-sm" [formControl]="em">
+    </div>
+    <button type="submit" class="btn btn-sm btn-primary" [disabled]="loading()">Calcular</button>
+    <a routerLink="/imobilizado/depreciacao/ajuda" class="btn btn-sm btn-link">Ver ajuda</a>
+  </form>
+
+  @if (loading() && !dados()) {
+    <div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Calculando...</div>
+  } @else if (dados()) {
+    @let d = dados()!;
+    @if (d.situacao === 'dados_incompletos') {
+      <div class="alert alert-warning" role="status">
+        Este bem não tem data ou valor de aquisição e fica fora da depreciação.
+        <a [routerLink]="['/imobilizado/bens', d.bemId, 'editar']">Completar o cadastro</a>.
+      </div>
+    }
+
+    @if (d.premissas?.dataBaixa; as baixa) {
+      <div class="alert alert-secondary py-2" role="status">
+        Bem {{ d.status }} em {{ formatarData(baixa) }}: a depreciação para no mês anterior ao da baixa.
+      </div>
+    }
+
+    @if (d.resumo; as r) {
+      @if (r.totalmenteDepreciado) { <div class="alert alert-info py-2" role="status">Totalmente depreciado.</div> }
+      <div class="row g-3 mb-3">
+        <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+          <div class="small text-muted">Valor de aquisição</div><div class="fs-6 fw-semibold">{{ formatarMoeda(d.premissas?.valorAquisicao) }}</div></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+          <div class="small text-muted">Depreciação acumulada em {{ formatarData(r.em) }}</div><div class="fs-6 fw-semibold">{{ formatarMoeda(r.acumuladaEm) }}</div></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+          <div class="small text-muted">Valor contábil</div><div class="fs-6 fw-semibold">{{ formatarMoeda(r.valorContabilEm) }}</div></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+          <div class="small text-muted">Quota mensal</div><div class="fs-6 fw-semibold">{{ formatarMoeda(r.quotaMensal) }}</div></div></div></div>
+      </div>
+    }
+
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">Como foi calculado</span>
+        <span class="badge bg-light text-dark border">Metodologia v{{ d.metodologiaVersao }}</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead><tr><th class="ps-3">Passo</th><th>Regra</th><th>Cálculo</th><th>Resultado</th></tr></thead>
+          <tbody>
+            @for (p of d.memoriaDeCalculo; track p.numero) {
+              <tr><td class="ps-3"><strong>{{ p.numero }}.</strong> {{ p.titulo }}</td><td>{{ p.regra }}</td><td>{{ p.calculo }}</td><td><strong>{{ p.resultado }}</strong></td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    @if (d.cronograma.items.length) {
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent fw-semibold">Cronograma</div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th class="ps-3">#</th><th>Competência</th><th class="text-end">Quota</th><th class="text-end">Acumulada</th><th class="text-end">Valor contábil</th></tr></thead>
+            <tbody>
+              @for (q of d.cronograma.items; track q.numero) {
+                <tr [class.table-primary]="ehReferencia(q.competencia)">
+                  <td class="ps-3">{{ q.numero }}</td><td>{{ formatarMes(q.competencia) }}</td>
+                  <td class="text-end" [class.fw-bold]="quotaDiferente(q.quota)">{{ formatarMoeda(q.quota) }}</td>
+                  <td class="text-end">{{ formatarMoeda(q.acumulada) }}</td><td class="text-end">{{ formatarMoeda(q.valorContabil) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacao [page]="pagina()" [pageSize]="pageSize" [total]="d.cronograma.total" [disabled]="loading()" (mudar)="carregar($event)" />
+      </div>
+    }
+  }
+}

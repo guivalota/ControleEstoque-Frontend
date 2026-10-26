@@ -96,7 +96,7 @@
               @for (m of filteredMovimentacoes(); track m.id) {
                 <tr>
                   <td class="ps-3 text-muted small">{{ m.id }}</td>
-                  <td>{{ m.produtoNome ?? 'Produto #' + m.produtoId }}</td>
+                  <td>{{ m.produtoNome ?? 'Produto #' + m.produtoId }}@if (m.loteId) { <div class="text-muted" style="font-size:.7rem">Lote #{{ m.loteId }}</div> }</td>
                   <td>
                     <span class="badge" [class]="tipoBadge(m.tipo)">{{ tipoLabel(m.tipo) }}</span>
                     @if (m.motivoAjuste) {
@@ -203,6 +203,20 @@
               }
             </div>
           </div>
+
+          <!-- Lote (opcional; só na criação) -->
+          @if (!editingId() && lotesProduto().length) {
+            <div class="mb-3">
+              <label class="form-label fw-medium" for="movLote">Lote</label>
+              <select id="movLote" class="form-select" formControlName="loteId">
+                <option [ngValue]="null">Sem lote</option>
+                @for (l of lotesProduto(); track l.id) {
+                  <option [ngValue]="l.id">{{ l.numeroLote }} — saldo {{ l.quantidadeAtual }}</option>
+                }
+              </select>
+              <div class="form-text">Saídas e ajustes de saída não podem exceder o saldo do lote.</div>
+            </div>
+          }
 
           <!-- Motivo (só para ajuste) -->
           @if (isAjuste()) {

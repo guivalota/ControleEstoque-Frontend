@@ -1,0 +1,147 @@
+<div>
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <a routerLink="/imobilizado/ordens-servico" class="btn btn-sm btn-outline-secondary" aria-label="Voltar para as ordens de serviço">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h6 class="fw-bold mb-0">Nova ordem de serviço</h6>
+  </div>
+
+  <div class="alert alert-info py-2 small" role="note">
+    <i class="bi bi-info-circle me-1"></i>Abrir uma OS não altera o bem: nada muda até a aprovação de um administrador.
+  </div>
+
+  @if (erro()) { <div class="alert alert-danger py-2" role="alert">{{ erro() }}</div> }
+
+  <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="osTipo">Tipo</label>
+          <select id="osTipo" class="form-select" [value]="tipo()" (change)="mudarTipo($any($event.target).value)">
+            @for (t of tipos; track t) { <option [value]="t" [selected]="t === tipo()">{{ rotuloTipo[t] }}</option> }
+          </select>
+        </div>
+        <div class="col-md-8">
+          <label class="form-label" for="osJust">Justificativa</label>
+          <textarea id="osJust" class="form-control" rows="2" maxlength="2000" formControlName="justificativa"
+                    [class.is-invalid]="form.controls.justificativa.invalid && form.controls.justificativa.touched"></textarea>
+          <div class="invalid-feedback">A justificativa é obrigatória.</div>
+        </div>
+
+        @switch (tipo()) {
+          @case ('venda') {
+            <div class="col-md-3">
+              <label class="form-label" for="osValor">Valor da venda (R$)</label>
+              <input id="osValor" type="number" step="0.01" min="0" class="form-control" formControlName="valorVenda">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="osComprador">Comprador</label>
+              <input id="osComprador" class="form-control" maxlength="255" formControlName="compradorNome">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label" for="osDataVenda">Data da venda</label>
+              <input id="osDataVenda" type="date" class="form-control" formControlName="dataVenda">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="osDocumento">Documento</label>
+              <input id="osDocumento" class="form-control" maxlength="100" formControlName="numeroDocumento">
+            </div>
+          }
+          @case ('baixa') {
+            <div class="col-md-4">
+              <label class="form-label" for="osMotivo">Motivo da baixa</label>
+              <select id="osMotivo" class="form-select" formControlName="motivoBaixa">
+                <option value="">Selecione...</option>
+                @for (m of motivos; track m) { <option [value]="m">{{ rotuloMotivo[m] }}</option> }
+              </select>
+            </div>
+          }
+          @case ('manutencao') {
+            <div class="col-md-4">
+              <label class="form-label" for="osFornecedor">Fornecedor do serviço</label>
+              <input id="osFornecedor" class="form-control" maxlength="255" formControlName="fornecedorServicoNome">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="osPrevisao">Previsão de conclusão</label>
+              <input id="osPrevisao" type="date" class="form-control" formControlName="previsaoConclusao">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="osCusto">Custo estimado (R$)</label>
+              <input id="osCusto" type="number" step="0.01" min="0" class="form-control" formControlName="custoEstimado">
+            </div>
+          }
+        }
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-transparent fw-semibold">Bens ({{ itens().length }}/{{ maxBens }})</div>
+      <div class="card-body">
+        <div class="input-group mb-2">
+          <input class="form-control" placeholder="Buscar bem por plaqueta ou descrição" aria-label="Buscar bem"
+                 [formControl]="busca" (keydown.enter)="$event.preventDefault(); buscar()">
+          <button type="button" class="btn btn-outline-primary" [disabled]="buscando()" (click)="buscar()">
+            @if (buscando()) { <span class="spinner-border spinner-border-sm me-1"></span> }Buscar
+          </button>
+        </div>
+        @if (resultados().length) {
+          <div class="list-group mb-3">
+            @for (b of resultados(); track b.id) {
+              <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                      [disabled]="!elegivel(b) || idsSelecionados().has(b.id)" (click)="adicionar(b)">
+                <span><strong>{{ b.plaqueta }}</strong> {{ b.descricao }} <small class="text-muted">— {{ b.localNome }}</small></span>
+                <span class="badge bg-light text-dark border">
+                  {{ elegivel(b) ? rotuloStatusBem[b.status] : rotuloStatusBem[b.status] + ' (não elegível para ' + rotuloTipo[tipo()].toLowerCase() + ')' }}
+                </span>
+              </button>
+            }
+          </div>
+        }
+
+        @if (itens().length) {
+          @if (tipo() === 'transferencia' && itens().length > 1) {
+            <button type="button" class="btn btn-sm btn-outline-secondary mb-2" (click)="aplicarATodos()">
+              Aplicar o destino do primeiro bem a todos
+            </button>
+          }
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr><th>Plaqueta</th><th>Descrição</th><th>Situação atual</th>
+                  @if (tipo() === 'transferencia') { <th style="min-width: 14rem">Local de destino</th><th style="min-width: 14rem">Responsável de destino</th> }
+                  <th></th></tr>
+              </thead>
+              <tbody>
+                @for (i of itens(); track i.bem.id) {
+                  <tr>
+                    <td>{{ i.bem.plaqueta }}</td>
+                    <td>{{ i.bem.descricao }}</td>
+                    <td class="small">{{ i.bem.localNome }}@if (i.bem.responsavelNome) { · {{ i.bem.responsavelNome }} }</td>
+                    @if (tipo() === 'transferencia') {
+                      <td><app-seletor-local [formControl]="i.local" [arvore]="arvore()" [somenteAtivos]="true" placeholder="(não muda)" /></td>
+                      <td><app-autocomplete-responsavel [formControl]="i.responsavel" placeholder="(não muda)" /></td>
+                    }
+                    <td class="text-end">
+                      <button type="button" class="btn btn-sm btn-outline-danger" (click)="remover(i.bem.id)" [attr.aria-label]="'Remover ' + i.bem.plaqueta">
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="text-muted mb-0">Nenhum bem selecionado.</p>
+        }
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary" [disabled]="enviando()">
+        @if (enviando()) { <span class="spinner-border spinner-border-sm me-1"></span> }Abrir OS
+      </button>
+      <a routerLink="/imobilizado/ordens-servico" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>

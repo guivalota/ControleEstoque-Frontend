@@ -1,0 +1,113 @@
+<div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <a routerLink="/imobilizado/bens" class="btn btn-sm btn-outline-secondary" aria-label="Voltar para a lista de bens">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <h6 class="fw-bold mb-0">{{ bem() ? 'Bem ' + bem()!.plaqueta : 'Bem' }}</h6>
+      @if (bem(); as b) {
+        <span class="badge" [class]="classeStatus[b.status]">{{ rotuloStatus[b.status] }}</span>
+        @if (!b.dadosCompletos) { <span class="badge bg-warning-subtle text-warning-emphasis">Dados incompletos</span> }
+      }
+    </div>
+    @if (bem(); as b) {
+      <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="imprimirEtiqueta()">
+          <i class="bi bi-qr-code me-1"></i>Imprimir etiqueta
+        </button>
+        @if (permissao.imobCanCreate() && bemEditavel(b.status)) {
+          <a class="btn btn-sm btn-outline-primary" routerLink="/imobilizado/ordens-servico/nova" [queryParams]="{ bemId: b.id }">
+            <i class="bi bi-clipboard-plus me-1"></i>Abrir OS
+          </a>
+        }
+        @if (permissao.imobCanEdit() && bemEditavel(b.status)) {
+          <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/imobilizado/bens', b.id, 'editar']">
+            <i class="bi bi-pencil me-1"></i>Editar
+          </a>
+        }
+        @if (permissao.imobCanDelete()) {
+          <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="excluindo()" (click)="excluir()">
+            @if (excluindo()) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-trash me-1"></i> }
+            Excluir
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (erro()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
+      <span>{{ erro() }}</span>
+      @if (!bem()) { <button type="button" class="btn btn-sm btn-outline-danger" (click)="carregar()">Tentar novamente</button> }
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="text-center py-5 text-muted">
+      <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+    </div>
+  } @else if (naoEncontrado()) {
+    <div class="alert alert-warning" role="alert">Bem não encontrado nesta empresa.</div>
+  } @else if (bem()) {
+    @let b = bem()!;
+    <ul class="nav nav-tabs mb-3" role="tablist" aria-label="Seções do bem">
+      <li class="nav-item" role="presentation">
+        <button type="button" class="nav-link" [class.active]="aba() === 'dados'" role="tab" id="abaDados"
+                aria-controls="painelDados" [attr.aria-selected]="aba() === 'dados'"
+                [attr.tabindex]="aba() === 'dados' ? 0 : -1" (click)="selecionarAba('dados')" (keydown)="aoTeclarAba($event)">Dados</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button type="button" class="nav-link" [class.active]="aba() === 'historico'" role="tab" id="abaHistorico"
+                aria-controls="painelHistorico" [attr.aria-selected]="aba() === 'historico'"
+                [attr.tabindex]="aba() === 'historico' ? 0 : -1" (click)="selecionarAba('historico')" (keydown)="aoTeclarAba($event)">
+          <i class="bi bi-clock-history me-1"></i>Histórico
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button type="button" class="nav-link" [class.active]="aba() === 'depreciacao'" role="tab" id="abaDepreciacao"
+                aria-controls="painelDepreciacao" [attr.aria-selected]="aba() === 'depreciacao'"
+                [attr.tabindex]="aba() === 'depreciacao' ? 0 : -1" (click)="selecionarAba('depreciacao')" (keydown)="aoTeclarAba($event)">
+          <i class="bi bi-graph-down me-1"></i>Depreciação
+        </button>
+      </li>
+    </ul>
+
+    <div id="painelDados" role="tabpanel" aria-labelledby="abaDados" [hidden]="aba() !== 'dados'">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <p class="fs-5 mb-4">{{ b.descricao }}</p>
+        <dl class="row mb-0">
+          <dt class="col-sm-3">Categoria</dt><dd class="col-sm-9">{{ b.categoriaNome }}</dd>
+          <dt class="col-sm-3">Local</dt><dd class="col-sm-9">{{ b.localNome }}</dd>
+          <dt class="col-sm-3">Responsável</dt><dd class="col-sm-9">{{ b.responsavelNome || '—' }}</dd>
+          <dt class="col-sm-3">Data de aquisição</dt><dd class="col-sm-9">{{ formatarData(b.dataAquisicao) }}</dd>
+          <dt class="col-sm-3">Valor de aquisição</dt><dd class="col-sm-9">{{ formatarMoeda(b.valorAquisicao) }}</dd>
+          <dt class="col-sm-3">Valor residual</dt><dd class="col-sm-9">{{ formatarMoeda(b.valorResidual) }}</dd>
+          <dt class="col-sm-3">Vida útil</dt><dd class="col-sm-9">{{ formatarVidaUtil(b.vidaUtilMeses) }}</dd>
+          <dt class="col-sm-3">Fornecedor</dt><dd class="col-sm-9">{{ b.fornecedorNome || '—' }}</dd>
+          <dt class="col-sm-3">Documento de aquisição</dt><dd class="col-sm-9">{{ b.numeroDocumentoAquisicao || '—' }}</dd>
+          <dt class="col-sm-3">Número de série</dt><dd class="col-sm-9">{{ b.numeroSerie || '—' }}</dd>
+          <dt class="col-sm-3">Observação</dt><dd class="col-sm-9 text-break" style="white-space: pre-line">{{ b.observacao || '—' }}</dd>
+          <dt class="col-sm-3">Criado em</dt><dd class="col-sm-9">{{ formatarDataHora(b.criadoEm) }}</dd>
+          <dt class="col-sm-3">Atualizado em</dt><dd class="col-sm-9">{{ formatarDataHora(b.atualizadoEm) }}</dd>
+        </dl>
+      </div>
+    </div>
+    </div>
+
+    @if (historicoVisitado()) {
+      <div id="painelHistorico" role="tabpanel" aria-labelledby="abaHistorico" [hidden]="aba() !== 'historico'">
+        <app-imob-bem-historico [bemId]="b.id" />
+      </div>
+    }
+
+    @if (depreciacaoVisitada()) {
+      <div id="painelDepreciacao" role="tabpanel" aria-labelledby="abaDepreciacao" [hidden]="aba() !== 'depreciacao'">
+        <app-imob-bem-depreciacao [bemId]="b.id" />
+      </div>
+    }
+  }
+</div>
+
+<app-confirm-dialog />
+<app-imob-etiquetas-dialog />

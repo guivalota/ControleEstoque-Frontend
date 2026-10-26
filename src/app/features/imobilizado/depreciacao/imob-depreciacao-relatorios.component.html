@@ -1,0 +1,224 @@
+<div>
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <a routerLink="/imobilizado/depreciacao" class="btn btn-sm btn-outline-secondary" aria-label="Voltar para o painel de depreciação">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h6 class="fw-bold mb-0">Relatórios de depreciação</h6>
+  </div>
+
+  <div class="alert alert-warning py-2 small" role="note">
+    Regras sujeitas à validação de um contador. Relatórios de dados atuais (valor contábil, por dimensão) podem diferir do razão se o cadastro mudou depois do fechamento.
+    <a routerLink="/imobilizado/depreciacao/ajuda">Ver a ajuda</a>.
+  </div>
+
+  <ul class="nav nav-tabs mb-3" role="tablist">
+    @for (a of abas; track a.chave) {
+      <li class="nav-item" role="presentation">
+        <button type="button" class="nav-link" role="tab" [class.active]="aba() === a.chave" [attr.aria-selected]="aba() === a.chave"
+                (click)="selecionarAba(a.chave)">{{ a.rotulo }}</button>
+      </li>
+    }
+  </ul>
+
+  @if (erro()) { <div class="alert alert-danger py-2" role="alert">{{ erro() }}</div> }
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+      @switch (aba()) {
+        @case ('razao') {
+          <form class="row g-2 align-items-end" (ngSubmit)="gerarRazao()">
+            <div class="col-md-3">
+              <label class="form-label mb-1" for="rzMes">Período fechado</label>
+              <select id="rzMes" class="form-select form-select-sm" [formControl]="razaoCompetencia">
+                <option value="">Selecione...</option>
+                @for (p of periodos(); track p.mes) { <option [value]="p.mes">{{ formatarMes(p.competencia) }}</option> }
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label mb-1" for="rzAgr">Agrupar por</label>
+              <select id="rzAgr" class="form-select form-select-sm" [formControl]="razaoAgrupar">
+                <option value="bem">Bem</option><option value="categoria">Categoria</option><option value="local">Local</option>
+                <option value="responsavel">Responsável</option><option value="status">Status</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label mb-1" for="rzRev">Revisão</label>
+              <input id="rzRev" type="number" min="1" class="form-control form-control-sm" placeholder="vigente" [formControl]="razaoRevisao">
+            </div>
+            <div class="col-md-2"><button type="submit" class="btn btn-sm btn-primary w-100" [disabled]="carregando()">Gerar</button></div>
+          </form>
+        }
+        @case ('valor-contabil') {
+          <form class="row g-2 align-items-end" (ngSubmit)="gerarValorContabil()">
+            <div class="col-md-2"><label class="form-label mb-1" for="vcEm">Em</label><input id="vcEm" type="date" class="form-control form-control-sm" [formControl]="vcEm"></div>
+            <div class="col-md-2">
+              <label class="form-label mb-1" for="vcCat">Categoria</label>
+              <select id="vcCat" class="form-select form-select-sm" [formControl]="vcCategoria">
+                <option [ngValue]="null">Todas</option>
+                @for (c of categorias(); track c.id) { <option [ngValue]="c.id">{{ c.nome }}</option> }
+              </select>
+            </div>
+            <div class="col-md-2"><label class="form-label mb-1" for="vcLoc">Local</label><app-seletor-local inputId="vcLoc" [formControl]="vcLocal" [arvore]="arvore()" placeholder="Todos" /></div>
+            <div class="col-md-2"><label class="form-label mb-1" for="vcResp">Responsável</label><app-autocomplete-responsavel inputId="vcResp" [formControl]="vcResponsavel" placeholder="Todos" /></div>
+            <div class="col-md-2">
+              <label class="form-label mb-1" for="vcSt">Status</label>
+              <select id="vcSt" class="form-select form-select-sm" [formControl]="vcStatus">
+                <option value="">Todos</option>
+                @for (s of statusBem; track s) { <option [value]="s">{{ nomeStatus(s) }}</option> }
+              </select>
+            </div>
+            <div class="col-md-2"><button type="submit" class="btn btn-sm btn-primary w-100" [disabled]="carregando()">Gerar</button></div>
+          </form>
+        }
+        @case ('dimensao') {
+          <form class="row g-2 align-items-end" (ngSubmit)="gerarDimensao()">
+            <div class="col-md-3">
+              <label class="form-label mb-1" for="dmPor">Agrupar por</label>
+              <select id="dmPor" class="form-select form-select-sm" [formControl]="dimPor">
+                <option value="categoria">Categoria</option><option value="local">Local</option>
+                <option value="responsavel">Responsável</option><option value="status">Status</option>
+              </select>
+            </div>
+            <div class="col-md-3"><label class="form-label mb-1" for="dmEm">Em</label><input id="dmEm" type="date" class="form-control form-control-sm" [formControl]="dimEm"></div>
+            <div class="col-md-2"><button type="submit" class="btn btn-sm btn-primary w-100" [disabled]="carregando()">Gerar</button></div>
+          </form>
+        }
+        @case ('baixas') {
+          <form class="row g-2 align-items-end" (ngSubmit)="gerarBaixas()">
+            <div class="col-md-3"><label class="form-label mb-1" for="bxDe">De</label><input id="bxDe" type="date" class="form-control form-control-sm" [formControl]="baixasDe"></div>
+            <div class="col-md-3"><label class="form-label mb-1" for="bxAte">Até</label><input id="bxAte" type="date" class="form-control form-control-sm" [formControl]="baixasAte"></div>
+            <div class="col-md-2"><button type="submit" class="btn btn-sm btn-primary w-100" [disabled]="carregando()">Gerar</button></div>
+          </form>
+        }
+      }
+    </div>
+
+    <div class="card-body">
+      @if (carregando()) { <div class="text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Gerando...</div> }
+
+      <div class="btn-group btn-group-sm mb-3">
+        <button type="button" class="btn btn-outline-secondary" [disabled]="baixando() !== null" (click)="baixar('csv')"><i class="bi bi-filetype-csv me-1"></i>Baixar CSV</button>
+        <button type="button" class="btn btn-outline-secondary" [disabled]="baixando() !== null" (click)="baixar('pdf')"><i class="bi bi-file-earmark-pdf me-1"></i>Baixar PDF</button>
+      </div>
+
+      @switch (aba()) {
+        @case ('razao') {
+          @if (razao(); as r) {
+            @if (!r.vigente) { <div class="alert alert-secondary py-2 small">Revisão {{ r.revisao }} arquivada.</div> }
+            <div class="small text-muted mb-2">Período {{ formatarMes(r.competencia) }} · revisão {{ r.revisao }} · metodologia v{{ r.metodologiaVersao }}</div>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead><tr><th>{{ r.agrupar === 'bem' ? 'Plaqueta' : 'Grupo' }}</th><th>Descrição</th><th class="text-center">Qtd.</th><th class="text-end">Aquisição</th><th class="text-end">Abertura</th><th class="text-end">Quota</th><th class="text-end">Acumulada</th><th class="text-end">Valor contábil</th></tr></thead>
+                <tbody>
+                  @for (l of r.linhas.items; track $index) {
+                    <tr><td>{{ l.nome }}</td><td>{{ l.descricao || '' }}</td><td class="text-center">{{ l.quantidade }}</td>
+                      <td class="text-end">{{ formatarMoeda(l.valorAquisicao) }}</td><td class="text-end">{{ formatarMoeda(l.saldoAbertura) }}</td>
+                      <td class="text-end">{{ formatarMoeda(l.quota) }}</td><td class="text-end">{{ formatarMoeda(l.acumulada) }}</td><td class="text-end">{{ formatarMoeda(l.valorContabil) }}</td></tr>
+                  }
+                </tbody>
+                <tfoot class="table-light fw-semibold">
+                  <tr><td colspan="2">Total</td><td class="text-center">{{ r.totais.quantidade }}</td>
+                    <td class="text-end">{{ formatarMoeda(r.totais.valorAquisicao) }}</td><td class="text-end">{{ formatarMoeda(r.totais.saldoAbertura) }}</td>
+                    <td class="text-end">{{ formatarMoeda(r.totais.quota) }}</td><td class="text-end">{{ formatarMoeda(r.totais.acumulada) }}</td><td class="text-end">{{ formatarMoeda(r.totais.valorContabil) }}</td></tr>
+                </tfoot>
+              </table>
+            </div>
+            <app-paginacao [page]="razaoPagina()" [pageSize]="pageSize" [total]="r.linhas.total" [disabled]="carregando()" (mudar)="gerarRazao($event)" />
+          }
+        }
+        @case ('valor-contabil') {
+          @if (valorContabil(); as r) {
+            <p class="small text-muted">{{ r.observacao }}</p>
+            @if (r.bensDadosIncompletos > 0) {
+              <div class="alert alert-warning py-2 small">
+                {{ r.bensDadosIncompletos }} bem(ns) sem data ou valor de aquisição ficaram fora.
+                <a routerLink="/imobilizado/bens" [queryParams]="{ dadosCompletos: 'false' }">Ver pendentes</a>
+              </div>
+            }
+            <div class="row g-3 mb-3">
+              <div class="col-6 col-lg-3"><div class="small text-muted">Bens</div><strong>{{ r.totais.totalBens }}</strong></div>
+              <div class="col-6 col-lg-3"><div class="small text-muted">Aquisição</div><strong>{{ formatarMoeda(r.totais.totalValorAquisicao) }}</strong></div>
+              <div class="col-6 col-lg-3"><div class="small text-muted">Acumulada</div><strong>{{ formatarMoeda(r.totais.totalAcumulada) }}</strong></div>
+              <div class="col-6 col-lg-3"><div class="small text-muted">Valor contábil</div><strong>{{ formatarMoeda(r.totais.totalValorContabil) }}</strong></div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead><tr><th>Plaqueta</th><th>Descrição</th><th>Categoria</th><th>Local</th><th>Status</th><th class="text-end">Aquisição</th><th class="text-end">Acumulada</th><th class="text-end">Valor contábil</th></tr></thead>
+                <tbody>
+                  @for (i of r.itens.items; track i.bemId) {
+                    <tr><td><a [routerLink]="['/imobilizado/bens', i.bemId]">{{ i.plaqueta }}</a></td><td>{{ i.descricao }}</td><td>{{ i.categoriaNome || '—' }}</td><td>{{ i.localNome || '—' }}</td>
+                      <td>{{ nomeStatus(i.status) }}</td><td class="text-end">{{ formatarMoeda(i.valorAquisicao) }}</td>
+                      <td class="text-end">{{ formatarMoeda(i.acumulada) }}</td><td class="text-end">{{ formatarMoeda(i.valorContabil) }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <app-paginacao [page]="vcPagina()" [pageSize]="pageSize" [total]="r.itens.total" [disabled]="carregando()" (mudar)="gerarValorContabil($event)" />
+          }
+        }
+        @case ('dimensao') {
+          @if (dimensao(); as r) {
+            <div class="small text-muted mb-2">Posição em {{ formatarData(r.em) }} · metodologia v{{ r.metodologiaVersao }}</div>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead><tr><th>Grupo</th><th class="text-center">Bens</th><th class="text-end">Aquisição</th><th class="text-end">Acumulada</th><th class="text-end">Valor contábil</th></tr></thead>
+                <tbody>
+                  @for (l of r.linhas; track $index) {
+                    <tr><td>{{ r.por === 'status' ? nomeStatus(l.nome) : l.nome }}</td><td class="text-center">{{ l.quantidade }}</td>
+                      <td class="text-end">{{ formatarMoeda(l.valorAquisicao) }}</td><td class="text-end">{{ formatarMoeda(l.acumulada) }}</td><td class="text-end">{{ formatarMoeda(l.valorContabil) }}</td></tr>
+                  }
+                </tbody>
+                <tfoot class="table-light fw-semibold">
+                  <tr><td>Total</td><td class="text-center">{{ r.totais.quantidade }}</td><td class="text-end">{{ formatarMoeda(r.totais.valorAquisicao) }}</td>
+                    <td class="text-end">{{ formatarMoeda(r.totais.acumulada) }}</td><td class="text-end">{{ formatarMoeda(r.totais.valorContabil) }}</td></tr>
+                </tfoot>
+              </table>
+            </div>
+          }
+        }
+        @case ('baixas') {
+          @if (baixas(); as r) {
+            <div class="row g-3 mb-3">
+              <div class="col-6 col-lg-3"><div class="small text-muted">Bens baixados</div><strong>{{ r.totais.quantidade }}</strong></div>
+              <div class="col-6 col-lg-3"><div class="small text-muted">Valor contábil</div><strong>{{ formatarMoeda(r.totais.valorContabil) }}</strong></div>
+              <div class="col-6 col-lg-3"><div class="small text-muted">Total de vendas</div><strong>{{ formatarMoeda(r.totais.totalVendas) }}</strong></div>
+              <div class="col-6 col-lg-3"><div class="small text-muted">Ganho/perda</div><strong [class]="classeGanho(r.totais.ganhoPerdaTotal)">{{ formatarMoeda(r.totais.ganhoPerdaTotal) }}</strong></div>
+            </div>
+            <p class="small text-muted">Ganho/perda é por OS (o valor de venda é da OS inteira). Em CSV/PDF, venda e ganho/perda aparecem só na primeira linha de cada OS. Impostos e custos da venda não entram.</p>
+
+            <h6>Ordens</h6>
+            <div class="table-responsive mb-3">
+              <table class="table table-sm align-middle">
+                <thead><tr><th>OS</th><th>Tipo</th><th>Data</th><th class="text-center">Bens</th><th class="text-end">Valor contábil</th><th class="text-end">Venda</th><th class="text-end">Ganho/perda</th></tr></thead>
+                <tbody>
+                  @for (o of r.ordens; track o.osId) {
+                    <tr><td><a [routerLink]="['/imobilizado/ordens-servico', o.osId]">{{ formatarNumeroOs(o.osNumero) }}</a></td><td>{{ o.tipo }}</td><td>{{ formatarData(o.dataBaixa) }}</td>
+                      <td class="text-center">{{ o.quantidade }}</td><td class="text-end">{{ formatarMoeda(o.valorContabil) }}</td>
+                      <td class="text-end">{{ (o.valorVenda ?? null) !== null ? formatarMoeda(o.valorVenda) : '—' }}</td>
+                      <td class="text-end" [class]="classeGanho(o.ganhoPerda)">{{ (o.ganhoPerda ?? null) !== null ? formatarMoeda(o.ganhoPerda) : '—' }}</td></tr>
+                  } @empty { <tr><td colspan="7" class="text-center text-muted">Nenhuma OS no período.</td></tr> }
+                </tbody>
+              </table>
+            </div>
+
+            <h6>Bens</h6>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead><tr><th>Plaqueta</th><th>Descrição</th><th>Status</th><th>Baixa</th><th>OS</th><th class="text-end">Aquisição</th><th class="text-end">Acumulada</th><th class="text-end">Valor contábil</th></tr></thead>
+                <tbody>
+                  @for (i of r.itens.items; track i.bemId) {
+                    <tr><td><a [routerLink]="['/imobilizado/bens', i.bemId]">{{ i.plaqueta }}</a></td><td>{{ i.descricao }}</td><td>{{ nomeStatus(i.status) }}</td><td>{{ formatarData(i.dataBaixa) }}</td>
+                      <td>@if (i.osId && i.osNumero) { <a [routerLink]="['/imobilizado/ordens-servico', i.osId]">{{ formatarNumeroOs(i.osNumero) }}</a> } @else { — }</td>
+                      <td class="text-end">{{ formatarMoeda(i.valorAquisicao) }}</td><td class="text-end">{{ formatarMoeda(i.depreciacaoAcumulada) }}</td><td class="text-end">{{ formatarMoeda(i.valorContabil) }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <app-paginacao [page]="baixasPagina()" [pageSize]="pageSize" [total]="r.itens.total" [disabled]="carregando()" (mudar)="gerarBaixas($event)" />
+          }
+        }
+      }
+    </div>
+  </div>
+  <p class="small text-muted mt-2">Valores exatamente como devolvidos pelo servidor. <a routerLink="/imobilizado/depreciacao/ajuda">Ajuda da depreciação</a></p>
+</div>

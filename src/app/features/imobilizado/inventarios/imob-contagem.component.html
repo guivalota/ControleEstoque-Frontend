@@ -1,0 +1,149 @@
+<div>
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <a [routerLink]="['/imobilizado/inventarios', id]" class="btn btn-sm btn-outline-secondary" aria-label="Voltar para o inventário">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h6 class="fw-bold mb-0">Contagem{{ inventario() ? ' — ' + inventario()!.nome : '' }}</h6>
+  </div>
+
+  @if (erro()) { <div class="alert alert-danger py-2" role="alert">{{ erro() }}</div> }
+
+  @if (naoEncontrado()) {
+    <div class="alert alert-warning" role="alert">Inventário não encontrado nesta empresa.</div>
+  } @else if (inventario() && !emAndamento) {
+    <div class="alert alert-secondary" role="status">
+      <i class="bi bi-lock me-2"></i>A contagem só está disponível com o inventário em andamento.
+    </div>
+  } @else if (inventario()) {
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body">
+        <form class="row g-2 align-items-end" (ngSubmit)="registrar()">
+          <div class="col-md-4">
+            <label class="form-label" for="contagemLocal">Estou em</label>
+            <app-seletor-local inputId="contagemLocal" [formControl]="local" [arvore]="arvore()" [somenteAtivos]="true" placeholder="Selecione o local" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="contagemPlaqueta">Plaqueta</label>
+            <input #campoPlaqueta id="contagemPlaqueta" class="form-control" [formControl]="plaqueta" autocomplete="off" maxlength="50">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="contagemObs">Observação</label>
+            <input id="contagemObs" class="form-control" [formControl]="observacao" maxlength="2000">
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100" [disabled]="registrando()">
+              @if (registrando()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              Registrar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    @if (sessao().length) {
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-transparent fw-semibold">Leituras desta sessão ({{ sessao().length }})</div>
+        <ul class="list-group list-group-flush">
+          @for (r of sessao(); track r.id) {
+            <li class="list-group-item d-flex justify-content-between align-items-center gap-2" [class.text-decoration-line-through]="r.anulada">
+              <span>
+                @if (r.info.situacaoPrevista; as s) {
+                  <i class="bi me-2" [class]="iconeSituacao[s] + ' ' + classeSituacao[s]"></i>
+                }
+                <strong>{{ r.plaqueta }}</strong>
+                {{ r.info.descricao ?? '' }}
+                @if (r.info.situacaoPrevista; as s) {
+                  <span class="small ms-1" [class]="classeSituacao[s]">
+                    — {{ rotuloSituacao[s] }}@if (s === 'em_outro_local' && r.info.localEsperadoNome) {: {{ r.info.localEsperadoNome }}}
+                  </span>
+                }
+                @if (r.info.leiturasAtivas > 1) { <span class="badge bg-light text-dark border ms-1">lida {{ r.info.leiturasAtivas }}x</span> }
+                @if (r.reaproveitada) { <span class="badge bg-light text-dark border ms-1">já registrada</span> }
+              </span>
+              @if (!r.anulada) {
+                <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="anulando() === r.id" (click)="anular(r)">Anular</button>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-transparent d-flex flex-wrap gap-2 justify-content-between align-items-center">
+        <span class="fw-semibold">Leituras registradas</span>
+        <div class="d-flex gap-2 align-items-center">
+          <input class="form-control form-control-sm" placeholder="Filtrar plaqueta" aria-label="Filtrar por plaqueta"
+                 [formControl]="filtroPlaqueta" (keydown.enter)="carregar(1)">
+          <div class="form-check form-switch mb-0 text-nowrap">
+            <input id="anuladas" type="checkbox" class="form-check-input" [checked]="incluirAnuladas()" (change)="alternarAnuladas()">
+            <label for="anuladas" class="form-check-label small">Incluir anuladas</label>
+          </div>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead><tr><th>Plaqueta</th><th>Local lido</th><th>Lido em</th><th>Por</th><th>Origem</th><th class="text-end">Ações</th></tr></thead>
+          <tbody>
+            @for (l of leituras(); track l.id) {
+              <tr [class.text-muted]="l.anulada">
+                <td [class.text-decoration-line-through]="l.anulada">{{ l.plaqueta }}</td>
+                <td>{{ l.localLidoNome }}</td>
+                <td>{{ formatarDataHora(l.lidoEm) }}</td>
+                <td>{{ l.usuarioNome || '—' }}</td>
+                <td><span class="badge bg-light text-dark border">{{ l.origem }}</span></td>
+                <td class="text-end">
+                  @if (l.anulada) { <span class="badge bg-secondary-subtle text-secondary">Anulada</span> } @else {
+                    <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="anulando() === l.id" (click)="anular(l)">Anular</button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="text-center text-muted py-3">{{ carregando() ? 'Carregando...' : 'Nenhuma leitura registrada.' }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-paginacao [page]="page()" [pageSize]="pageSize" [total]="total()" [disabled]="carregando()" (mudar)="carregar($event)" />
+    </div>
+
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent fw-semibold">Importar leituras por CSV</div>
+      <div class="card-body">
+        @if (erroImportacao()) { <div class="alert alert-danger py-2" role="alert">{{ erroImportacao() }}</div> }
+        <p class="small text-muted">Linhas sem a coluna <code>local</code> usam o local selecionado acima. Linhas válidas são gravadas; as com erro são relatadas e ignoradas. Reimportar o mesmo arquivo não duplica.</p>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="baixarModelo()"><i class="bi bi-download me-1"></i>Baixar modelo</button>
+          <input type="file" class="form-control form-control-sm w-auto" accept=".csv,text/csv" aria-label="Arquivo CSV" (change)="escolherArquivo($event)">
+          <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="!arquivo() || importando()" (click)="validar()">Validar</button>
+          <button type="button" class="btn btn-sm btn-primary" [disabled]="!arquivo() || importando()" (click)="importar()">
+            @if (importando()) { <span class="spinner-border spinner-border-sm me-1"></span> }Importar
+          </button>
+        </div>
+        @if (relatorio(); as r) {
+          <div class="mt-3">
+            <div class="alert py-2" [class.alert-success]="r.linhasComErro === 0" [class.alert-warning]="r.linhasComErro > 0" role="status">
+              @if (r.somenteValidacao) { Validação: } @else { Importação concluída: }
+              {{ r.totalLinhas }} linha(s), {{ r.linhasValidas }} válida(s), {{ r.linhasComErro }} com erro.
+              @if (!r.somenteValidacao) { {{ r.importadas }} importada(s), {{ r.jaExistentes }} já existente(s). }
+            </div>
+            @if (r.colunasIgnoradas.length) { <p class="small text-muted">Colunas ignoradas: {{ r.colunasIgnoradas.join(', ') }}</p> }
+            @if (r.erros.length) {
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead><tr><th>Linha</th><th>Plaqueta</th><th>Campo</th><th>Mensagem</th></tr></thead>
+                  <tbody>
+                    @for (e of r.erros; track $index) {
+                      <tr><td>{{ e.linha }}</td><td>{{ e.plaqueta || '—' }}</td><td>{{ e.campo }}</td><td>{{ e.mensagem }}</td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              @if (r.errosTruncados) { <p class="small text-muted">Exibindo apenas parte dos {{ r.totalErros }} erros.</p> }
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

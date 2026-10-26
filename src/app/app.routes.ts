@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
+import { escritaGuard } from './core/guards/escrita.guard';
+import { empresaAtivaGuard, imobilizadoGuard } from './core/guards/empresa-ativa.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -36,6 +38,10 @@ export const routes: Routes = [
       {
         path: 'movimentacoes',
         loadComponent: () => import('./features/movimentacoes/movimentacoes.component').then(m => m.MovimentacoesComponent)
+      },
+      {
+        path: 'lotes',
+        loadComponent: () => import('./features/lotes/lotes.component').then(m => m.LotesComponent)
       },
       {
         path: 'usuarios',
@@ -82,6 +88,117 @@ export const routes: Routes = [
         path: 'admin/audit-logs',
         canActivate: [adminGuard],
         loadComponent: () => import('./features/audit-logs/audit-logs.component').then(m => m.AuditLogsComponent)
+      },
+      {
+        path: 'imobilizado',
+        canActivate: [imobilizadoGuard],
+        canActivateChild: [empresaAtivaGuard],
+        loadComponent: () => import('./features/imobilizado/shell/imobilizado-shell.component').then(m => m.ImobilizadoShellComponent),
+        children: [
+          {
+            path: '',
+            data: { dispensaEmpresa: true },
+            loadComponent: () => import('./features/imobilizado/inicio/imobilizado-inicio.component').then(m => m.ImobilizadoInicioComponent)
+          },
+          {
+            path: 'bens',
+            loadComponent: () => import('./features/imobilizado/bens/imob-bens.component').then(m => m.ImobBensComponent)
+          },
+          {
+            path: 'bens/importar',
+            canActivate: [escritaGuard],
+            loadComponent: () => import('./features/imobilizado/bens/imob-importacao-bens.component').then(m => m.ImobImportacaoBensComponent)
+          },
+          {
+            path: 'bens/novo',
+            canActivate: [escritaGuard],
+            loadComponent: () => import('./features/imobilizado/bens/imob-bem-form.component').then(m => m.ImobBemFormComponent)
+          },
+          {
+            path: 'bens/:id/editar',
+            canActivate: [escritaGuard],
+            loadComponent: () => import('./features/imobilizado/bens/imob-bem-form.component').then(m => m.ImobBemFormComponent)
+          },
+          {
+            path: 'bens/:id',
+            loadComponent: () => import('./features/imobilizado/bens/imob-bem-detalhe.component').then(m => m.ImobBemDetalheComponent)
+          },
+          {
+            path: 'inventarios',
+            loadComponent: () => import('./features/imobilizado/inventarios/imob-inventarios.component').then(m => m.ImobInventariosComponent)
+          },
+          {
+            path: 'inventarios/novo',
+            canActivate: [escritaGuard],
+            loadComponent: () => import('./features/imobilizado/inventarios/imob-inventario-form.component').then(m => m.ImobInventarioFormComponent)
+          },
+          {
+            path: 'inventarios/:id/editar',
+            canActivate: [escritaGuard],
+            loadComponent: () => import('./features/imobilizado/inventarios/imob-inventario-form.component').then(m => m.ImobInventarioFormComponent)
+          },
+          {
+            path: 'inventarios/:id',
+            loadComponent: () => import('./features/imobilizado/inventarios/imob-inventario-detalhe.component').then(m => m.ImobInventarioDetalheComponent)
+          },
+          {
+            path: 'ordens-servico',
+            loadComponent: () => import('./features/imobilizado/ordens-servico/imob-ordens-servico.component').then(m => m.ImobOrdensServicoComponent)
+          },
+          {
+            path: 'ordens-servico/nova',
+            canActivate: [escritaGuard],
+            loadComponent: () => import('./features/imobilizado/ordens-servico/imob-os-form.component').then(m => m.ImobOsFormComponent)
+          },
+          {
+            path: 'ordens-servico/:id',
+            loadComponent: () => import('./features/imobilizado/ordens-servico/imob-os-detalhe.component').then(m => m.ImobOsDetalheComponent)
+          },
+          {
+            path: 'depreciacao',
+            loadComponent: () => import('./features/imobilizado/depreciacao/imob-depreciacao-painel.component').then(m => m.ImobDepreciacaoPainelComponent)
+          },
+          {
+            path: 'depreciacao/fechamento',
+            loadComponent: () => import('./features/imobilizado/depreciacao/imob-depreciacao-fechamento.component').then(m => m.ImobDepreciacaoFechamentoComponent)
+          },
+          {
+            path: 'depreciacao/periodos/:mes',
+            loadComponent: () => import('./features/imobilizado/depreciacao/imob-depreciacao-periodo.component').then(m => m.ImobDepreciacaoPeriodoComponent)
+          },
+          {
+            path: 'depreciacao/relatorios',
+            loadComponent: () => import('./features/imobilizado/depreciacao/imob-depreciacao-relatorios.component').then(m => m.ImobDepreciacaoRelatoriosComponent)
+          },
+          {
+            path: 'depreciacao/ajuda',
+            loadComponent: () => import('./features/imobilizado/depreciacao/imob-depreciacao-ajuda.component').then(m => m.ImobDepreciacaoAjudaComponent)
+          },
+          {
+            path: 'locais',
+            loadComponent: () => import('./features/imobilizado/locais/imob-locais.component').then(m => m.ImobLocaisComponent)
+          },
+          {
+            path: 'categorias',
+            loadComponent: () => import('./features/imobilizado/categorias/imob-categorias.component').then(m => m.ImobCategoriasComponent)
+          },
+          {
+            path: 'responsaveis',
+            loadComponent: () => import('./features/imobilizado/responsaveis/imob-responsaveis.component').then(m => m.ImobResponsaveisComponent)
+          },
+          {
+            path: 'empresas',
+            canActivate: [adminGuard],
+            data: { dispensaEmpresa: true, administracao: true },
+            loadComponent: () => import('./features/imobilizado/empresas/imob-empresas.component').then(m => m.ImobEmpresasComponent)
+          },
+          {
+            path: 'empresas/:id/usuarios',
+            canActivate: [adminGuard],
+            data: { dispensaEmpresa: true, administracao: true },
+            loadComponent: () => import('./features/imobilizado/empresas/imob-empresa-usuarios.component').then(m => m.ImobEmpresaUsuariosComponent)
+          }
+        ]
       },
       {
         path: 'manual',

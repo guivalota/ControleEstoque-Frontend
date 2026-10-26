@@ -44,6 +44,11 @@
         <i class="bi bi-arrow-left-right me-2"></i>Movimentações
       </a>
     </li>
+    <li class="nav-item">
+      <a class="nav-link sidebar-link" routerLink="/lotes" routerLinkActive="active">
+        <i class="bi bi-boxes me-2"></i>Lotes
+      </a>
+    </li>
     @if (permissao.canManageUsers()) {
       <li class="nav-item">
         <a class="nav-link sidebar-link" routerLink="/usuarios" routerLinkActive="active">
@@ -81,6 +86,13 @@
         </a>
       </li>
     }
+
+    <li class="mt-2 px-2"><small class="text-uppercase fw-semibold" style="color:#475569;font-size:.7rem;letter-spacing:.05em">Patrimônio</small></li>
+    <li class="nav-item">
+      <a class="nav-link sidebar-link" routerLink="/imobilizado" routerLinkActive="active">
+        <i class="bi bi-buildings me-2"></i>Imobilizado
+      </a>
+    </li>
 
     <li class="mt-2 px-2"><small class="text-uppercase fw-semibold" style="color:#475569;font-size:.7rem;letter-spacing:.05em">Fiscal</small></li>
 

@@ -1,0 +1,183 @@
+<div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h6 class="fw-bold mb-0">Bens</h6>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="exportando()" (click)="exportar()">
+        @if (exportando()) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-download me-1"></i> }
+        Exportar CSV
+      </button>
+      @if (selecionados().size) {
+        <button type="button" class="btn btn-outline-primary btn-sm" (click)="imprimirSelecionados()">
+          <i class="bi bi-qr-code me-1"></i>Etiquetas ({{ selecionados().size }})
+        </button>
+      }
+      <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="!total()" (click)="imprimirFiltro()">
+        <i class="bi bi-printer me-1"></i>Etiquetas do filtro
+      </button>
+      @if (permissao.imobCanCreate()) {
+        <a class="btn btn-outline-secondary btn-sm" routerLink="/imobilizado/bens/importar">
+          <i class="bi bi-upload me-1"></i>Importar CSV
+        </a>
+        <a class="btn btn-primary btn-sm" routerLink="/imobilizado/bens/novo">
+          <i class="bi bi-plus-lg me-1"></i>Novo bem
+        </a>
+      }
+    </div>
+  </div>
+
+  <form class="row g-2 align-items-end mb-3" (ngSubmit)="buscarPlaqueta()">
+    <div class="col-12 col-md-4">
+      <label for="bemPlaqueta" class="form-label small mb-1">Ir para a plaqueta</label>
+      <div class="input-group input-group-sm">
+        <input id="bemPlaqueta" class="form-control" placeholder="Digite ou leia a plaqueta" [formControl]="plaquetaBusca">
+        <button type="submit" class="btn btn-outline-primary" [disabled]="buscandoPlaqueta()" aria-label="Ir para a plaqueta">
+          @if (buscandoPlaqueta()) { <span class="spinner-border spinner-border-sm"></span> } @else { <i class="bi bi-upc-scan"></i> }
+        </button>
+      </div>
+    </div>
+    @if (erroPlaqueta()) {
+      <div class="col-12 col-md-8"><span class="text-danger small" role="alert">{{ erroPlaqueta() }}</span></div>
+    }
+  </form>
+
+  <form class="card card-body border-0 shadow-sm mb-3" [formGroup]="filtros" (ngSubmit)="aplicar(1)">
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-4">
+        <label for="bemBusca" class="form-label small mb-1">Buscar</label>
+        <input id="bemBusca" class="form-control form-control-sm" formControlName="busca"
+               placeholder="Plaqueta, descrição ou nº de série">
+      </div>
+      <div class="col-12 col-md-5">
+        <label for="bemLocal" class="form-label small mb-1">Local</label>
+        <div class="d-flex align-items-center gap-3">
+          <app-seletor-local class="flex-grow-1" inputId="bemLocal" formControlName="localId"
+                             [arvore]="arvore()" placeholder="(Todos os locais)" />
+          <div class="form-check text-nowrap mb-0">
+            <input id="bemSublocais" class="form-check-input" type="checkbox" formControlName="incluirSublocais">
+            <label for="bemSublocais" class="form-check-label small">c/ sublocais</label>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <label for="bemStatus" class="form-label small mb-1">Status</label>
+        <select id="bemStatus" class="form-select form-select-sm" formControlName="status">
+          <option value="">Todos</option>
+          @for (s of statusLista; track s) { <option [value]="s">{{ rotuloStatus[s] }}</option> }
+        </select>
+      </div>
+      <div class="col-12 col-md-3">
+        <div class="form-check mt-md-4">
+          <input id="bemPendentes" class="form-check-input" type="checkbox" formControlName="pendentes">
+          <label for="bemPendentes" class="form-check-label small">Pendentes de completar</label>
+        </div>
+      </div>
+      <div class="col-6 col-md-4">
+        <label for="bemCategoria" class="form-label small mb-1">Categoria</label>
+        <select id="bemCategoria" class="form-select form-select-sm" formControlName="categoriaId">
+          <option [ngValue]="null">Todas</option>
+          @for (c of categorias(); track c.id) { <option [ngValue]="c.id">{{ c.nome }}{{ c.ativo ? '' : ' (inativa)' }}</option> }
+        </select>
+      </div>
+      <div class="col-12 col-md-5">
+        <label for="bemResponsavel" class="form-label small mb-1">Responsável</label>
+        <app-autocomplete-responsavel inputId="bemResponsavel" formControlName="responsavelId"
+                                      [somenteAtivos]="false" placeholder="Todos" />
+      </div>
+      <div class="col-12 col-md-3 text-md-end">
+        <button type="submit" class="btn btn-sm btn-outline-primary me-1">Filtrar</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="limparFiltros()">Limpar</button>
+      </div>
+    </div>
+  </form>
+
+  @if (feedback()) {
+    <div class="alert alert-success alert-dismissible py-2" role="status">
+      {{ feedback() }}
+      <button type="button" class="btn-close" aria-label="Fechar" (click)="feedback.set('')"></button>
+    </div>
+  }
+  @if (erroExportacao()) {
+    <div class="alert alert-warning alert-dismissible py-2" role="alert">
+      <i class="bi bi-exclamation-triangle me-2"></i>{{ erroExportacao() }}
+      <button type="button" class="btn-close" aria-label="Fechar" (click)="erroExportacao.set('')"></button>
+    </div>
+  }
+  @if (erro()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
+      <span>{{ erro() }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="carregar()">Tentar novamente</button>
+    </div>
+  }
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">
+                  <input type="checkbox" class="form-check-input me-2" aria-label="Selecionar todos da página"
+                         [checked]="paginaToda()" (change)="alternarPagina($any($event.target).checked)">Plaqueta
+                </th>
+                <th>Descrição</th>
+                <th>Local</th>
+                <th>Responsável</th>
+                <th class="text-end">Valor</th>
+                <th>Status</th>
+                <th class="text-end pe-3">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of bens(); track b.id) {
+                <tr>
+                  <td class="ps-3 text-nowrap">
+                    <input type="checkbox" class="form-check-input me-2" [attr.aria-label]="'Selecionar ' + b.plaqueta"
+                           [checked]="selecionados().has(b.id)" (change)="alternar(b.id, $any($event.target).checked)">
+                    <a [routerLink]="['/imobilizado/bens', b.id]" class="fw-medium">{{ b.plaqueta }}</a>
+                  </td>
+                  <td>{{ b.descricao }}
+                    @if (!b.dadosCompletos) { <span class="badge bg-warning-subtle text-warning-emphasis ms-1">Dados incompletos</span> }
+                  </td>
+                  <td>{{ b.localNome }}</td>
+                  <td>{{ b.responsavelNome || '—' }}</td>
+                  <td class="text-end text-nowrap">{{ formatarMoeda(b.valorAquisicao) }}</td>
+                  <td><span class="badge" [class]="classeStatus[b.status]">{{ rotuloStatus[b.status] }}</span></td>
+                  <td class="text-end pe-3 text-nowrap">
+                    <a class="btn btn-sm btn-outline-primary me-1" [routerLink]="['/imobilizado/bens', b.id]"
+                       title="Ver detalhes" [attr.aria-label]="'Ver ' + b.plaqueta"><i class="bi bi-eye"></i></a>
+                    @if (permissao.imobCanEdit() && bemEditavel(b.status)) {
+                      <a class="btn btn-sm btn-outline-secondary me-1" [routerLink]="['/imobilizado/bens', b.id, 'editar']"
+                         title="Editar" [attr.aria-label]="'Editar ' + b.plaqueta"><i class="bi bi-pencil"></i></a>
+                    }
+                    @if (permissao.imobCanDelete()) {
+                      <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="agindo() === b.id"
+                              (click)="excluir(b)" title="Excluir" [attr.aria-label]="'Excluir ' + b.plaqueta">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox me-2"></i>{{ temFiltro() ? 'Nenhum bem encontrado com os filtros atuais' : 'Nenhum bem cadastrado' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacao [page]="page()" [pageSize]="pageSize" [total]="total()" [disabled]="loading()"
+                       (mudar)="mudarPagina($event)" />
+      }
+    </div>
+  </div>
+</div>
+
+<app-confirm-dialog />
+<app-imob-etiquetas-dialog />

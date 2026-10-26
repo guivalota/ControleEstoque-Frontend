@@ -1,0 +1,89 @@
+<div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h6 class="fw-bold mb-0">Inventários</h6>
+    @if (permissao.imobCanCreate()) {
+      <a class="btn btn-primary btn-sm" routerLink="/imobilizado/inventarios/novo">
+        <i class="bi bi-plus-lg me-1"></i>Novo inventário
+      </a>
+    }
+  </div>
+
+  <form class="card card-body border-0 shadow-sm mb-3" [formGroup]="filtros" (ngSubmit)="filtrar()">
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-5">
+        <label for="invBusca" class="form-label small mb-1">Buscar pelo nome</label>
+        <input id="invBusca" class="form-control form-control-sm" formControlName="busca">
+      </div>
+      <div class="col-6 col-md-3">
+        <label for="invStatus" class="form-label small mb-1">Status</label>
+        <select id="invStatus" class="form-select form-select-sm" formControlName="status" (change)="filtrar()">
+          <option value="">Todos</option>
+          @for (s of statusLista; track s) { <option [value]="s">{{ rotuloStatus[s] }}</option> }
+        </select>
+      </div>
+      <div class="col-6 col-md-4 text-md-end">
+        <button type="submit" class="btn btn-sm btn-outline-primary me-1">Filtrar</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="limpar()">Limpar</button>
+      </div>
+    </div>
+  </form>
+
+  @if (erro()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
+      <span>{{ erro() }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="carregar()">Tentar novamente</button>
+    </div>
+  }
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Nome</th>
+                <th>Status</th>
+                <th>Início</th>
+                <th class="text-end">Locais</th>
+                <th class="text-end">Esperados</th>
+                <th class="text-end pe-3">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (i of inventarios(); track i.id) {
+                <tr>
+                  <td class="ps-3"><a [routerLink]="['/imobilizado/inventarios', i.id]" class="fw-medium">{{ i.nome }}</a></td>
+                  <td><span class="badge" [class]="classeStatus[i.status]">{{ rotuloStatus[i.status] }}</span></td>
+                  <td>{{ formatarData(i.dataInicio) }}</td>
+                  <td class="text-end">{{ i.totalLocais }}</td>
+                  <td class="text-end">{{ i.status === 'rascunho' ? '—' : i.totalEsperados }}</td>
+                  <td class="text-end pe-3 text-nowrap">
+                    <a class="btn btn-sm btn-outline-primary me-1" [routerLink]="['/imobilizado/inventarios', i.id]"
+                       title="Ver detalhes" [attr.aria-label]="'Ver ' + i.nome"><i class="bi bi-eye"></i></a>
+                    @if (permissao.imobCanEdit() && inventarioEditavel(i.status)) {
+                      <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/imobilizado/inventarios', i.id, 'editar']"
+                         title="Editar" [attr.aria-label]="'Editar ' + i.nome"><i class="bi bi-pencil"></i></a>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox me-2"></i>{{ temFiltro() ? 'Nenhum inventário encontrado com os filtros atuais' : 'Nenhum inventário cadastrado' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacao [page]="page()" [pageSize]="pageSize" [total]="total()" [disabled]="loading()"
+                       (mudar)="carregar($event)" />
+      }
+    </div>
+  </div>
+</div>

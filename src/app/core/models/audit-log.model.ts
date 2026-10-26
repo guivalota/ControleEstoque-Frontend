@@ -7,12 +7,16 @@ export interface AuditLog {
   recursoId: string | null;
   ip: string;
   criadoEm: string;
+  /** Empresa do Imobilizado validada pelo servidor; nulo para Estoque, plataforma e acessos negados. */
+  empresaId?: number | null;
+  empresaNome?: string | null;
 }
 
 export interface AuditLogFiltros {
   usuarioId?: string;
   method?: string;
   endpoint?: string;
+  empresaId?: number;
   dataInicio?: string;
   dataFim?: string;
   page?: number;

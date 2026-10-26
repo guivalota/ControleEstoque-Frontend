@@ -1,0 +1,184 @@
+<div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="fw-bold mb-0">Categorias de bem</h6>
+    @if (permissao.imobCanCreate()) {
+      <button type="button" class="btn btn-primary btn-sm" (click)="openCreate()">
+        <i class="bi bi-plus-lg me-1"></i>Nova categoria
+      </button>
+    }
+  </div>
+
+  <form class="row g-2 align-items-end mb-3" (ngSubmit)="carregar(1)">
+    <div class="col-12 col-md-5">
+      <label for="catBusca" class="form-label small mb-1">Buscar</label>
+      <input id="catBusca" name="busca" class="form-control form-control-sm" placeholder="Nome da categoria"
+             [(ngModel)]="busca">
+    </div>
+    <div class="col-6 col-md-3">
+      <label for="catAtivo" class="form-label small mb-1">Situação</label>
+      <select id="catAtivo" name="ativo" class="form-select form-select-sm" [(ngModel)]="ativoFiltro" (ngModelChange)="carregar(1)">
+        <option value="">Todas</option>
+        <option value="true">Somente ativas</option>
+        <option value="false">Somente inativas</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-sm btn-outline-primary me-1">Buscar</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="limparFiltros()">Limpar</button>
+    </div>
+  </form>
+
+  @if (feedback()) {
+    <div class="alert alert-success alert-dismissible py-2" role="status">
+      {{ feedback() }}
+      <button type="button" class="btn-close" aria-label="Fechar" (click)="feedback.set('')"></button>
+    </div>
+  }
+  @if (erro()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
+      <span>{{ erro() }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="carregar()">Tentar novamente</button>
+    </div>
+  }
+  @if (bloqueio(); as b) {
+    <app-bloqueio-exclusao
+      [mensagem]="b.mensagem"
+      [permiteDesativar]="b.categoria.ativo"
+      [filtroBens]="bloqueioTemBens() ? { categoriaId: b.categoria.id } : null"
+      [desativando]="agindo() === b.categoria.id"
+      (desativar)="desativar()"
+      (fechar)="bloqueio.set(null)" />
+  }
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Nome</th>
+                <th>Vida útil</th>
+                <th>Residual</th>
+                <th>Método</th>
+                <th>Situação</th>
+                <th class="text-end pe-3">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of categorias(); track c.id) {
+                <tr>
+                  <td class="ps-3">{{ c.nome }}</td>
+                  <td class="text-nowrap">{{ formatarVidaUtil(c.vidaUtilMeses) }}</td>
+                  <td>{{ formatarPercentual(c.valorResidualPercentual) }}</td>
+                  <td class="text-capitalize">{{ c.metodoDepreciacao }}</td>
+                  <td>
+                    @if (c.ativo) {
+                      <span class="badge bg-success-subtle text-success">Ativa</span>
+                    } @else {
+                      <span class="badge bg-secondary-subtle text-secondary">Inativa</span>
+                    }
+                  </td>
+                  <td class="text-end pe-3 text-nowrap">
+                    @if (permissao.imobCanEdit()) {
+                      <button type="button" class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(c)"
+                              title="Editar" [attr.aria-label]="'Editar ' + c.nome">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                    }
+                    @if (permissao.imobCanDelete()) {
+                      <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="agindo() === c.id"
+                              (click)="excluir(c)" title="Excluir" [attr.aria-label]="'Excluir ' + c.nome">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox me-2"></i>Nenhuma categoria encontrada
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacao [page]="page()" [pageSize]="pageSize" [total]="total()" [disabled]="loading()"
+                       (mudar)="carregar($event)" />
+      }
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" #modalEl tabindex="-1" aria-labelledby="catModalTitulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <div class="modal-header">
+        <h5 class="modal-title" id="catModalTitulo">{{ editingId() !== null ? 'Editar categoria' : 'Nova categoria' }}</h5>
+        <button type="button" class="btn-close" aria-label="Fechar" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        @if (saveError()) {
+          <div class="alert alert-danger py-2" role="alert">{{ saveError() }}</div>
+        }
+
+        <div class="mb-3">
+          <label for="catNome" class="form-label">Nome *</label>
+          <input id="catNome" class="form-control" formControlName="nome" maxlength="255"
+                 [class.is-invalid]="erroCampo('nome')">
+          <div class="invalid-feedback">{{ erroCampo('nome') }}</div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-6">
+            <label for="catVida" class="form-label">Vida útil (meses) *</label>
+            <input id="catVida" class="form-control" type="number" min="1" max="1200" step="1"
+                   formControlName="vidaUtilMeses" [class.is-invalid]="erroCampo('vidaUtilMeses')">
+            <div class="invalid-feedback">{{ erroCampo('vidaUtilMeses') }}</div>
+            @if (dicaVidaUtil() && !erroCampo('vidaUtilMeses')) {
+              <div class="form-text">{{ dicaVidaUtil() }}</div>
+            }
+          </div>
+          <div class="col-6">
+            <label for="catResidual" class="form-label">Valor residual (%) *</label>
+            <div class="input-group has-validation">
+              <input id="catResidual" class="form-control" type="number" min="0" max="100" step="0.01"
+                     formControlName="valorResidualPercentual" [class.is-invalid]="erroCampo('valorResidualPercentual')">
+              <span class="input-group-text">%</span>
+              <div class="invalid-feedback">{{ erroCampo('valorResidualPercentual') }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="catMetodo" class="form-label">Método de depreciação</label>
+          <select id="catMetodo" class="form-select" formControlName="metodoDepreciacao">
+            <option value="linear">Linear</option>
+          </select>
+        </div>
+
+        @if (editingId() !== null) {
+          <div class="form-check form-switch">
+            <input id="catAtivoForm" class="form-check-input" type="checkbox" role="switch" formControlName="ativo">
+            <label for="catAtivoForm" class="form-check-label">Categoria ativa</label>
+          </div>
+          <div class="form-text">Alterar vida útil ou residual não recalcula nada retroativamente.</div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<app-confirm-dialog />
