@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { carregarTodasPaginas } from '../utils/paginas';
 import {
   PedidoCompra, PedidoCompraFiltros,
   CreatePedidoCompraRequest, UpdatePedidoCompraRequest, AddPedidoItemRequest
@@ -28,7 +29,10 @@ export class PedidoCompraService {
   }
 
   getAbertos() {
-    return this.getAll({ status: 'aberto', pageSize: 1000 });
+    // todas as páginas (o servidor limita pageSize; 1000 truncava a lista)
+    return carregarTodasPaginas<PedidoCompra>((page, pageSize) => this.getAll({ status: 'aberto', page, pageSize })).pipe(
+      map(items => ({ items, total: items.length } as PedidoCompraPage))
+    );
   }
 
   getById(id: number) {

@@ -1,8 +1,11 @@
-import { Component, inject, signal, ViewChild, ElementRef, OnDestroy } from '@angular/core';
+import { Component, computed, inject, signal, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
+import { EmpresaAtivaService } from '../../core/services/empresa-ativa.service';
+import { PermissaoService } from '../../core/services/permissao.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { UserService } from '../../core/services/user.service';
+import { lerErroApi } from '../../core/utils/erros-api';
 import { Modal } from 'bootstrap';
 
 function senhasIguais(group: AbstractControl) {
@@ -20,7 +23,15 @@ function senhasIguais(group: AbstractControl) {
 })
 export class TopbarComponent implements OnDestroy {
   auth = inject(AuthService);
+  empresa = inject(EmpresaAtivaService);
+  private permissao = inject(PermissaoService);
   theme = inject(ThemeService);
+
+  /** Selo: perfil efetivo na empresa ativa (superadmin: role global). Sem empresa ativa não mostra selo. */
+  selo = computed(() => {
+    if (this.permissao.isSuperAdmin()) return 'superadmin';
+    return this.empresa.ativa() ? this.permissao.perfil() : undefined;
+  });
   private userService = inject(UserService);
   private fb = inject(FormBuilder);
 
@@ -74,7 +85,8 @@ export class TopbarComponent implements OnDestroy {
         setTimeout(() => this.getModal().hide(), 1200);
       },
       error: (err) => {
-        this.saveError.set(err.error?.message ?? 'Erro ao salvar perfil.');
+        const e = lerErroApi(err, 'Erro ao salvar perfil.');
+        this.saveError.set(e.mensagem || Object.values(e.campos).join(' ') || 'Erro ao salvar perfil.');
         this.saving.set(false);
       }
     });
@@ -88,7 +100,8 @@ export class TopbarComponent implements OnDestroy {
     const map: Record<string, string> = {
       admin: 'bg-danger',
       operador: 'bg-primary',
-      leitura: 'bg-secondary'
+      leitura: 'bg-secondary',
+      superadmin: 'bg-dark'
     };
     return map[role ?? ''] ?? 'bg-secondary';
   }
@@ -97,7 +110,8 @@ export class TopbarComponent implements OnDestroy {
     const map: Record<string, string> = {
       admin: 'Admin',
       operador: 'Operador',
-      leitura: 'Somente leitura'
+      leitura: 'Somente leitura',
+      superadmin: 'Super admin'
     };
     return map[role ?? ''] ?? (role ?? '');
   }

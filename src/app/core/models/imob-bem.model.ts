@@ -30,6 +30,7 @@ export interface ImobBem {
   categoriaId: number; categoriaNome: string;
   localId: number; localNome: string;
   responsavelId?: number | null; responsavelNome?: string | null;
+  departamentoId?: number | null; departamentoNome?: string | null;
   dataAquisicao?: string | null;
   valorAquisicao?: number | null;
   valorResidual?: number | null;
@@ -38,6 +39,8 @@ export interface ImobBem {
   dadosCompletos: boolean;
   status: ImobBemStatus;
   fornecedorNome?: string | null;
+  /** Fornecedor do cadastro da empresa (v1/fornecedores), quando escolhido dele. */
+  fornecedorId?: number | null;
   numeroDocumentoAquisicao?: string | null;
   numeroSerie?: string | null;
   observacao?: string | null;
@@ -46,15 +49,28 @@ export interface ImobBem {
 
 export interface SalvarImobBem {
   plaqueta: string; descricao: string;
-  categoriaId: number; localId: number; responsavelId?: number | null;
+  categoriaId: number; localId: number; responsavelId?: number | null; departamentoId?: number | null;
   dataAquisicao?: string | null; valorAquisicao?: number | null;
   valorResidual?: number; vidaUtilMeses?: number;
-  fornecedorNome?: string; numeroDocumentoAquisicao?: string; numeroSerie?: string; observacao?: string;
+  fornecedorId?: number; fornecedorNome?: string; numeroDocumentoAquisicao?: string; numeroSerie?: string; observacao?: string;
 }
+
+export type ImobBemOrdenarPor = 'plaqueta' | 'dataAquisicao' | 'valorAquisicao';
+export type ImobBemDirecao = 'asc' | 'desc';
+
+export const ROTULO_ORDENAR_POR: Record<ImobBemOrdenarPor, string> = {
+  plaqueta: 'Plaqueta',
+  dataAquisicao: 'Data de compra',
+  valorAquisicao: 'Valor de aquisição'
+};
 
 export interface ImobBemFiltro {
   busca?: string; localId?: number; incluirSublocais?: boolean; categoriaId?: number;
-  responsavelId?: number; status?: ImobBemStatus; dadosCompletos?: boolean; page?: number; pageSize?: number;
+  responsavelId?: number; departamentoId?: number; status?: ImobBemStatus; dadosCompletos?: boolean;
+  /** Data de aquisição (yyyy-MM-dd), limites inclusivos. */
+  compraDe?: string; compraAte?: string;
+  ordenarPor?: ImobBemOrdenarPor; direcao?: ImobBemDirecao;
+  page?: number; pageSize?: number;
 }
 
 export interface ImobBemHistorico {

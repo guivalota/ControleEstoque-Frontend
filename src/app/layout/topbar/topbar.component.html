@@ -13,9 +13,11 @@
     </span>
   </div>
   <div class="d-flex align-items-center gap-2">
-    <span class="badge d-none d-sm-inline" [class]="roleBadgeClass(auth.currentUser()?.role)">
-      {{ roleLabel(auth.currentUser()?.role) }}
-    </span>
+    @if (selo(); as perfil) {
+      <span class="badge d-none d-sm-inline" [class]="roleBadgeClass(perfil)">
+        {{ roleLabel(perfil) }}
+      </span>
+    }
 
     <button
       class="btn btn-sm btn-outline-secondary"

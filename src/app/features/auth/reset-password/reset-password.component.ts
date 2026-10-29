@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, Validati
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ThemeService } from '../../../core/services/theme.service';
+import { lerErroApi } from '../../../core/utils/erros-api';
 
 function passwordStrength(control: AbstractControl): ValidationErrors | null {
   const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
@@ -59,7 +60,8 @@ export class ResetPasswordComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(err.error?.message ?? 'Não foi possível redefinir a senha. O link pode ter expirado.');
+        const e = lerErroApi(err, 'Não foi possível redefinir a senha. O link pode ter expirado.');
+        this.error.set(e.mensagem || Object.values(e.campos).join(' ') || 'Não foi possível redefinir a senha.');
         this.loading.set(false);
       }
     });

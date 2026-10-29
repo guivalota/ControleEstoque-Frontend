@@ -5,7 +5,7 @@ import { Modal } from 'bootstrap';
 import { ImobCategoriaService } from '../../../core/services/imob-categoria.service';
 import { PermissaoService } from '../../../core/services/permissao.service';
 import { ImobCategoria } from '../../../core/models/imob-categoria.model';
-import { aplicarErroNoForm, lerErroApi } from '../../../core/utils/erros-api';
+import { aplicarErroNoForm, lerErroApi, textoDoErro } from '../../../core/utils/erros-api';
 import { duasCasas, inteiro } from '../../../core/utils/validadores';
 import { formatarPercentual, formatarVidaUtil } from '../../../core/utils/imob-formato';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
@@ -52,9 +52,14 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
   saving = signal(false);
   saveError = signal('');
   agindo = signal<number | null>(null);
+  carregandoPadrao = signal(false);
   bloqueio = signal<Bloqueio | null>(null);
 
+  /** Carregar categorias padrão: só admin (perfil efetivo na empresa ativa). */
+  podeCarregarPadrao = () => this.permissao.perfil() === 'admin';
+
   form = this.fb.group({
+    codigo: ['', [Validators.maxLength(50)]],
     nome: ['', [Validators.required, Validators.maxLength(255)]],
     vidaUtilMeses: [null as number | null, [Validators.required, Validators.min(1), Validators.max(1200), inteiro]],
     valorResidualPercentual: [null as number | null, [Validators.required, Validators.min(0), Validators.max(100), duasCasas]],
@@ -99,6 +104,29 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
     });
   }
 
+  async carregarPadrao() {
+    const ok = await this.confirmDialog().abrir({
+      titulo: 'Carregar categorias padrão',
+      mensagem: 'Cria as categorias padrão que ainda não existem (MOV, MAQ e HW). As categorias existentes não são alteradas.',
+      confirmar: 'Carregar'
+    });
+    if (!ok) return;
+    this.carregandoPadrao.set(true);
+    this.erro.set('');
+    this.feedback.set('');
+    this.service.carregarPadrao().subscribe({
+      next: res => {
+        this.carregandoPadrao.set(false);
+        this.feedback.set(`Categorias padrão: ${res.criadas} ${res.criadas === 1 ? 'criada' : 'criadas'}, ${res.jaExistentes} já ${res.jaExistentes === 1 ? 'existente' : 'existentes'}.`);
+        this.carregar(1);
+      },
+      error: err => {
+        this.carregandoPadrao.set(false);
+        this.erro.set(textoDoErro(lerErroApi(err, 'Erro ao carregar categorias padrão.'), 'Erro ao carregar categorias padrão.'));
+      }
+    });
+  }
+
   limparFiltros() {
     this.busca = '';
     this.ativoFiltro = '';
@@ -112,7 +140,7 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
 
   openCreate() {
     this.editingId.set(null);
-    this.form.reset({ nome: '', vidaUtilMeses: null, valorResidualPercentual: null, metodoDepreciacao: 'linear', ativo: true });
+    this.form.reset({ codigo: '', nome: '', vidaUtilMeses: null, valorResidualPercentual: null, metodoDepreciacao: 'linear', ativo: true });
     this.saveError.set('');
     this.getModal().show();
   }
@@ -120,6 +148,7 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
   openEdit(c: ImobCategoria) {
     this.editingId.set(c.id);
     this.form.reset({
+      codigo: c.codigo ?? '',
       nome: c.nome,
       vidaUtilMeses: c.vidaUtilMeses,
       valorResidualPercentual: c.valorResidualPercentual,
@@ -137,6 +166,7 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
 
     const v = this.form.getRawValue();
     const corpo = {
+      ...(v.codigo?.trim() ? { codigo: v.codigo.trim() } : {}),
       nome: v.nome!.trim(),
       vidaUtilMeses: v.vidaUtilMeses!,
       valorResidualPercentual: v.valorResidualPercentual!,
@@ -159,6 +189,7 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
           vidaUtilMeses: ['vida útil', 'vida util'],
           valorResidualPercentual: ['residual'],
           metodoDepreciacao: ['método', 'metodo'],
+          codigo: ['código', 'codigo'],
           nome: ['nome']
         }));
         this.saving.set(false);
@@ -196,6 +227,7 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
     if (!c) return;
     this.agindo.set(c.id);
     this.service.atualizar(c.id, {
+      ...(c.codigo?.trim() ? { codigo: c.codigo.trim() } : {}),
       nome: c.nome,
       vidaUtilMeses: c.vidaUtilMeses,
       valorResidualPercentual: c.valorResidualPercentual,
@@ -219,12 +251,12 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
     return !!this.bloqueio()?.mensagem.toLowerCase().includes('bens');
   }
 
-  erroCampo(nome: 'nome' | 'vidaUtilMeses' | 'valorResidualPercentual'): string {
+  erroCampo(nome: 'codigo' | 'nome' | 'vidaUtilMeses' | 'valorResidualPercentual'): string {
     const c = this.form.controls[nome];
     if (c.errors?.['servidor']) return c.errors['servidor'];
     if (!c.touched) return '';
     if (c.errors?.['required']) return 'Campo obrigatório.';
-    if (c.errors?.['maxlength']) return 'Máximo de 255 caracteres.';
+    if (c.errors?.['maxlength']) return nome === 'codigo' ? 'Máximo de 50 caracteres.' : 'Máximo de 255 caracteres.';
     if (nome === 'vidaUtilMeses') {
       if (c.errors?.['min'] || c.errors?.['max']) return 'Informe de 1 a 1200 meses.';
       if (c.errors?.['inteiro']) return 'Informe um número inteiro de meses.';

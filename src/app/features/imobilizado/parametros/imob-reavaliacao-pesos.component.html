@@ -1,0 +1,149 @@
+<div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+      <h6 class="fw-bold mb-0">Pesos da reavaliação</h6>
+      <div class="text-muted small">Cada alteração cria uma nova versão imutável; a anterior fica no histórico.</div>
+    </div>
+    @if (!podeEditar()) {
+      <span class="badge bg-secondary-subtle text-secondary">Somente leitura</span>
+    }
+  </div>
+
+  @if (feedback()) {
+    <div class="alert alert-success alert-dismissible py-2" role="status">
+      {{ feedback() }}
+      <button type="button" class="btn-close" aria-label="Fechar" (click)="feedback.set('')"></button>
+    </div>
+  }
+  @if (erro()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
+      <span>{{ erro() }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="carregar()">Tentar novamente</button>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Carregando...</div>
+  } @else {
+  @if (vigente(); as v) {
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">Versão vigente <span class="badge bg-success-subtle text-success ms-1">v{{ v.versao }}</span></h6>
+          <span class="text-muted small">
+            {{ formatarDataHora(v.criadoEm) }}@if (v.criadoPorNome) { · {{ v.criadoPorNome }} }
+          </span>
+        </div>
+        <dl class="row mb-0 text-center g-2" aria-label="Pesos vigentes">
+          <div class="col-6 col-md-3"><dt class="small text-muted fw-normal">Peso EC</dt><dd class="fs-5 fw-semibold mb-0" id="vigPesoEc">{{ formatarNumero(v.pesoEc) }}</dd></div>
+          <div class="col-6 col-md-3"><dt class="small text-muted fw-normal">Peso VF</dt><dd class="fs-5 fw-semibold mb-0" id="vigPesoVf">{{ formatarNumero(v.pesoVf) }}</dd></div>
+          <div class="col-6 col-md-3"><dt class="small text-muted fw-normal">Peso VP</dt><dd class="fs-5 fw-semibold mb-0" id="vigPesoVp">{{ formatarNumero(v.pesoVp) }}</dd></div>
+          <div class="col-6 col-md-3"><dt class="small text-muted fw-normal">Divisor</dt><dd class="fs-5 fw-semibold mb-0" id="vigDivisor">{{ formatarNumero(v.divisor) }}</dd></div>
+        </dl>
+        @if (v.motivo) { <div class="small text-muted mt-2">Motivo: {{ v.motivo }}</div> }
+      </div>
+    </div>
+
+    @if (podeEditar()) {
+      <form class="card border-0 shadow-sm mb-4" [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <div class="card-body">
+          <h6 class="mb-3">Nova versão</h6>
+          @if (saveError()) {
+            <div class="alert alert-danger py-2" role="alert">{{ saveError() }}</div>
+          }
+          <div class="row g-3">
+            <div class="col-6 col-md-3">
+              <label for="pesoEc" class="form-label">Peso EC</label>
+              <input id="pesoEc" type="number" step="any" class="form-control" formControlName="pesoEc" [class.is-invalid]="erroCampo('pesoEc')">
+              <div class="invalid-feedback">{{ erroCampo('pesoEc') }}</div>
+            </div>
+            <div class="col-6 col-md-3">
+              <label for="pesoVf" class="form-label">Peso VF</label>
+              <input id="pesoVf" type="number" step="any" class="form-control" formControlName="pesoVf" [class.is-invalid]="erroCampo('pesoVf')">
+              <div class="invalid-feedback">{{ erroCampo('pesoVf') }}</div>
+            </div>
+            <div class="col-6 col-md-3">
+              <label for="pesoVp" class="form-label">Peso VP</label>
+              <input id="pesoVp" type="number" step="any" class="form-control" formControlName="pesoVp" [class.is-invalid]="erroCampo('pesoVp')">
+              <div class="invalid-feedback">{{ erroCampo('pesoVp') }}</div>
+            </div>
+            <div class="col-6 col-md-3">
+              <label for="divisor" class="form-label">Divisor</label>
+              <input id="divisor" type="number" step="any" class="form-control" formControlName="divisor" [class.is-invalid]="erroCampo('divisor')">
+              <div class="invalid-feedback">{{ erroCampo('divisor') }}</div>
+            </div>
+            <div class="col-12">
+              <label for="pesoMotivo" class="form-label">Motivo</label>
+              <textarea id="pesoMotivo" rows="2" maxlength="500" class="form-control" formControlName="motivo"
+                        placeholder="Por que os pesos mudaram (opcional, até 500 caracteres)" [class.is-invalid]="erroCampo('motivo')"></textarea>
+              <div class="invalid-feedback">{{ erroCampo('motivo') }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer bg-transparent d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-outline-secondary" (click)="carregar()" [disabled]="saving()">Descartar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            @if (saving()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            Criar nova versão
+          </button>
+        </div>
+      </form>
+    }
+  }
+  }
+
+  <h6 class="fw-bold mb-2">Histórico de versões</h6>
+  @if (histErro()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
+      <span>{{ histErro() }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="carregarHistorico(histPage())">Tentar novamente</button>
+    </div>
+  }
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (histLoading()) {
+        <div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Carregando...</div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Versão</th>
+                <th>Quando / quem</th>
+                <th>Pesos</th>
+                <th>O que mudou</th>
+                <th class="pe-3">Motivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (h of historico(); track h.id) {
+                <tr>
+                  <td class="ps-3 text-nowrap">
+                    v{{ h.versao }}
+                    @if (h.vigente) { <span class="badge bg-success-subtle text-success ms-1">vigente</span> }
+                  </td>
+                  <td class="small text-nowrap">{{ formatarDataHora(h.criadoEm) }}<br>{{ h.criadoPorNome || '—' }}</td>
+                  <td class="small text-nowrap">
+                    EC {{ formatarNumero(h.pesoEc) }} · VF {{ formatarNumero(h.pesoVf) }} · VP {{ formatarNumero(h.pesoVp) }} · ÷ {{ formatarNumero(h.divisor) }}
+                  </td>
+                  <td class="small">
+                    @for (a of h.alteracoes; track a.campo) {
+                      <div>{{ rotuloCampo(a.campo) }}: <span class="text-decoration-line-through text-muted">{{ formatarNumero(a.anterior) }}</span> → <strong>{{ formatarNumero(a.novo) }}</strong></div>
+                    } @empty {
+                      <span class="text-muted">{{ h.versao === 1 ? 'Versão inicial' : '—' }}</span>
+                    }
+                  </td>
+                  <td class="small pe-3">{{ h.motivo || '—' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="text-center text-muted py-4">Nenhuma versão encontrada</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacao [page]="histPage()" [pageSize]="histPageSize" [total]="histTotal()" [disabled]="histLoading()"
+                       (mudar)="carregarHistorico($event)" />
+      }
+    </div>
+  </div>
+</div>

@@ -11,6 +11,8 @@ export interface TokenResponse {
   accessToken: string;
   refreshToken: string;
   expiresIn?: number;
+  /** Senha provisória: o usuário precisa definir uma nova antes de usar o sistema. */
+  precisaTrocarSenha?: boolean;
 }
 
 export interface ForgotPasswordRequest {

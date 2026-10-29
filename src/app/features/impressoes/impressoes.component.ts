@@ -3,7 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ImpressaoService } from '../../core/services/impressao.service';
-import { UserService } from '../../core/services/user.service';
+import { UsuarioEmpresaService } from '../../core/services/usuario-empresa.service';
+import { UsuarioEmpresa } from '../../core/models/usuario-empresa.model';
 import { Impressao } from '../../core/models/impressao.model';
 
 const PAGE_SIZE = 50;
@@ -20,9 +21,10 @@ const TIPO_LABELS: Record<string, string> = {
 })
 export class ImpressoesComponent implements OnInit {
   private impressaoService = inject(ImpressaoService);
-  private userService = inject(UserService);
+  private usuarioEmpresaService = inject(UsuarioEmpresaService);
 
-  usuarios = this.userService.users;
+  /** Todos os usuários da empresa, inclusive inativos (filtro histórico por quem imprimiu). */
+  usuarios = signal<UsuarioEmpresa[]>([]);
   historico = signal<Impressao[]>([]);
   loading = signal(false);
   erro = signal('');
@@ -38,7 +40,7 @@ export class ImpressoesComponent implements OnInit {
   filterDataFim = '';
 
   ngOnInit() {
-    this.userService.getAll().subscribe();
+    this.usuarioEmpresaService.listarTodos().subscribe({ next: l => this.usuarios.set(l), error: () => this.usuarios.set([]) });
     this.carregar(1);
   }
 

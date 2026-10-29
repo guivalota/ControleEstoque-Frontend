@@ -9,7 +9,46 @@
       </div>
     }
     <main class="flex-grow-1 p-2 p-sm-3 p-md-4 bg-body-tertiary overflow-auto">
-      <router-outlet />
+      @if (empresa.aviso() && !naImobilizado()) {
+        <div class="alert alert-warning alert-dismissible" role="alert">
+          <i class="bi bi-exclamation-triangle me-2"></i>{{ empresa.aviso() }}
+          <button type="button" class="btn-close" aria-label="Fechar aviso" (click)="empresa.aviso.set('')"></button>
+        </div>
+      }
+      @switch (bloqueio()) {
+        @case ('erro') {
+          <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+            <span>Não foi possível carregar suas empresas.</span>
+            <button type="button" class="btn btn-sm btn-outline-danger" (click)="empresa.carregar().subscribe()">Tentar novamente</button>
+          </div>
+        }
+        @case ('carregando') {
+          <div class="text-center py-5 text-muted">
+            <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+          </div>
+        }
+        @case ('semAcesso') {
+          <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+              <i class="bi bi-building-lock fs-1 text-muted"></i>
+              @if (empresa.bloqueadaMsg()) {
+                <p class="mt-3 mb-0 fw-medium text-danger">{{ empresa.bloqueadaMsg() }}</p>
+              } @else {
+                <p class="mt-3 mb-1 fw-medium">Você ainda não tem acesso a nenhuma empresa.</p>
+                <p class="mb-0 text-muted">Sua empresa está bloqueada ou você não tem vínculo ativo. Fale com o administrador.</p>
+              }
+              <button type="button" class="btn btn-outline-danger btn-sm mt-3" (click)="auth.logout()">
+                <i class="bi bi-box-arrow-right me-1"></i>Sair
+              </button>
+            </div>
+          </div>
+        }
+        @default {
+          @for (chave of [chaveEmpresa()]; track chave) {
+            <router-outlet />
+          }
+        }
+      }
     </main>
   </div>
 </div>

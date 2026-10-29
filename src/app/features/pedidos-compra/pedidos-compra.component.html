@@ -29,7 +29,7 @@
             [value]="filterCriadoPor()"
             (change)="filterCriadoPor.set($any($event.target).value)">
             <option value="">Todos</option>
-            @for (u of usuarios(); track u.id) {
+            @for (u of usuariosFiltro(); track u.id) {
               <option [value]="u.id">{{ u.nome }}</option>
             }
           </select>
@@ -40,7 +40,7 @@
             [value]="filterDestinadoA()"
             (change)="filterDestinadoA.set($any($event.target).value)">
             <option value="">Todos</option>
-            @for (u of usuarios(); track u.id) {
+            @for (u of usuariosFiltro(); track u.id) {
               <option [value]="u.id">{{ u.nome }}</option>
             }
           </select>

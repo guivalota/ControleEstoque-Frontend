@@ -17,19 +17,37 @@ export class AuthService {
 
   currentUser = this._currentUser.asReadonly();
 
+  private _precisaTrocarSenha = signal(false);
+  /** Aviso para a tela de login (ex.: refresh recusado porque a empresa foi bloqueada). Consumido uma vez. */
+  avisoLogin = signal('');
+  /** Senha provisória pendente (vem do corpo do login/refresh ou do 403 { precisaTrocarSenha: true }; não está no JWT). */
+  precisaTrocarSenha = this._precisaTrocarSenha.asReadonly();
+
   isAuthenticated = computed(() => {
     const user = this._currentUser();
     if (!user) return false;
     return user.exp * 1000 > Date.now();
   });
 
+  /** Conta de super administrador: nunca acessa dados de empresa. */
+  isSuperAdmin = computed(() => {
+    return this._currentUser()?.role === 'superadmin';
+  });
+
+  /** Tela inicial depois de autenticado, conforme a pendência de senha e o tipo de conta. */
+  destinoInicial(): string {
+    if (this._precisaTrocarSenha()) return '/definir-senha';
+    return this.isSuperAdmin() ? '/plataforma' : '/dashboard';
+  }
+
+  /** Usado pelo interceptor ao receber 403 `{ precisaTrocarSenha: true }`. */
+  marcarTrocaSenhaPendente(pendente = true) {
+    this._precisaTrocarSenha.set(pendente);
+  }
+
   login(req: LoginRequest) {
     return this.http.post<TokenResponse>(`${environment.apiUrl}/v1/auth/login`, req).pipe(
-      tap(res => {
-        localStorage.setItem(this.TOKEN_KEY, res.accessToken);
-        localStorage.setItem(this.REFRESH_KEY, res.refreshToken);
-        this._currentUser.set(this.decodeToken(res.accessToken));
-      })
+      tap(res => this.guardarSessao(res))
     );
   }
 
@@ -41,7 +59,19 @@ export class AuthService {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_KEY);
     this._currentUser.set(null);
+    this._precisaTrocarSenha.set(false);
     this.router.navigate(['/login']);
+  }
+
+  /**
+   * Encerra só a sessão local, sem chamar a API: usado quando o back já revogou os refresh tokens
+   * (troca de senha em PUT v1/users/me). Não navega; o chamador decide o destino.
+   */
+  encerrarSessaoLocal() {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.REFRESH_KEY);
+    this._currentUser.set(null);
+    this._precisaTrocarSenha.set(false);
   }
 
   private refreshInProgress$: Observable<TokenResponse> | null = null;
@@ -55,11 +85,7 @@ export class AuthService {
     // em vez de cada uma consumir o refresh token e derrubar a sessão das demais.
     if (!this.refreshInProgress$) {
       this.refreshInProgress$ = this.http.post<TokenResponse>(`${environment.apiUrl}/v1/auth/refresh`, { refreshToken }).pipe(
-        tap(res => {
-          localStorage.setItem(this.TOKEN_KEY, res.accessToken);
-          localStorage.setItem(this.REFRESH_KEY, res.refreshToken);
-          this._currentUser.set(this.decodeToken(res.accessToken));
-        }),
+        tap(res => this.guardarSessao(res)),
         finalize(() => this.refreshInProgress$ = null),
         shareReplay(1)
       );
@@ -83,6 +109,13 @@ export class AuthService {
   patchCurrentUser(patch: { nome?: string; email?: string }) {
     const current = this._currentUser();
     if (current) this._currentUser.set({ ...current, ...patch });
+  }
+
+  private guardarSessao(res: TokenResponse) {
+    localStorage.setItem(this.TOKEN_KEY, res.accessToken);
+    localStorage.setItem(this.REFRESH_KEY, res.refreshToken);
+    this._currentUser.set(this.decodeToken(res.accessToken));
+    this._precisaTrocarSenha.set(res.precisaTrocarSenha ?? false);
   }
 
   private decodeToken(token: string | null): JwtPayload | null {

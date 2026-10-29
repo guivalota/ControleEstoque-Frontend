@@ -5,7 +5,8 @@ import { Router } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { PedidoCompraService } from '../../core/services/pedido-compra.service';
 import { ProdutoService } from '../../core/services/produto.service';
-import { UserService } from '../../core/services/user.service';
+import { UsuarioEmpresaService } from '../../core/services/usuario-empresa.service';
+import { UsuarioEmpresa } from '../../core/models/usuario-empresa.model';
 import { PermissaoService } from '../../core/services/permissao.service';
 import { PedidoCompra, PedidoStatus } from '../../core/models/pedido-compra.model';
 
@@ -22,7 +23,7 @@ export class PedidosCompraComponent implements OnInit, OnDestroy {
   private pedidoService = inject(PedidoCompraService);
   private router = inject(Router);
   produtoService = inject(ProdutoService);
-  userService = inject(UserService);
+  private usuarioEmpresaService = inject(UsuarioEmpresaService);
   permissao = inject(PermissaoService);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
@@ -41,7 +42,10 @@ export class PedidosCompraComponent implements OnInit, OnDestroy {
   filterDestinadoA = signal('');
 
   produtos = this.produtoService.produtos;
-  usuarios = this.userService.users;
+  /** Ativos: opções de "Destinado a" no formulário. */
+  usuarios = signal<UsuarioEmpresa[]>([]);
+  /** Todos (inclusive inativos): filtros históricos por criador/destinatário. */
+  usuariosFiltro = signal<UsuarioEmpresa[]>([]);
 
   form = this.fb.group({
     descricao: ['', [Validators.required, Validators.maxLength(255)]],
@@ -65,7 +69,8 @@ export class PedidosCompraComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.produtoService.getAll().subscribe();
-    this.userService.getAll().subscribe();
+    this.usuarioEmpresaService.listarTodos({ ativo: true }).subscribe({ next: l => this.usuarios.set(l), error: () => this.usuarios.set([]) });
+    this.usuarioEmpresaService.listarTodos().subscribe({ next: l => this.usuariosFiltro.set(l), error: () => this.usuariosFiltro.set([]) });
     this.carregar(1);
   }
 

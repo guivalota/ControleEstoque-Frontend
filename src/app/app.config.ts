@@ -5,11 +5,13 @@ import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { empresaInterceptor } from './core/interceptors/empresa.interceptor';
 import { tokenRefreshInterceptor } from './core/interceptors/token-refresh.interceptor';
+import { senhaProvisoriaInterceptor } from './core/interceptors/senha-provisoria.interceptor';
+import { moduloInterceptor } from './core/interceptors/modulo.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor, empresaInterceptor, tokenRefreshInterceptor]))
+    provideHttpClient(withInterceptors([authInterceptor, empresaInterceptor, tokenRefreshInterceptor, senhaProvisoriaInterceptor, moduloInterceptor]))
   ]
 };

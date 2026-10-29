@@ -8,6 +8,11 @@
     </div>
   </div>
 
+  <div class="alert alert-warning py-2 small" role="note" data-testid="aviso-contador">
+    As regras de depreciação são a proposta técnica do sistema e só valem para uso contábil real após validação de um contador.
+    <a routerLink="/imobilizado/depreciacao/ajuda">Ver a ajuda</a>.
+  </div>
+
   @if (erro()) { <div class="alert alert-danger py-2" role="alert">{{ erro() }}</div> }
 
   @if (loading()) {
@@ -80,7 +85,7 @@
     <div class="card border-0 shadow-sm mb-3">
       <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
         <span class="fw-semibold">Últimos fechamentos</span>
-        @if (p.mesesEncerradosSemFechamento > 0 && permissao.imobCanDelete()) {
+        @if (p.mesesEncerradosSemFechamento > 0 && permissao.imobCanFecharDepreciacao()) {
           <a routerLink="/imobilizado/depreciacao/fechamento" class="btn btn-sm btn-primary">
             Fechar {{ p.proximaCompetenciaAFechar ? formatarMes(p.proximaCompetenciaAFechar) : 'período' }}
           </a>

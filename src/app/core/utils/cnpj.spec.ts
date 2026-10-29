@@ -1,5 +1,5 @@
 import { FormControl } from '@angular/forms';
-import { cnpjValidator, cnpjValido, formatarCnpj, mascararCnpj } from './cnpj';
+import { cnpjValidator, cnpjValido, formatarCnpj, mascararCnpj, normalizarCnpj } from './cnpj';
 
 describe('cnpj utils', () => {
   describe('cnpjValido', () => {
@@ -30,9 +30,38 @@ describe('cnpj utils', () => {
       expect(mascararCnpj('11222333000181')).toBe('11.222.333/0001-81');
     });
 
-    it('ignora não dígitos e limita a 14 dígitos', () => {
-      expect(mascararCnpj('ab11.222x333/0001-81999')).toBe('11.222.333/0001-81');
+    it('ignora pontuação, limita a 14 caracteres e põe em maiúsculas', () => {
+      expect(mascararCnpj('11.222.333/0001-81999')).toBe('11.222.333/0001-81');
+      expect(mascararCnpj('12abc34501de35')).toBe('12.ABC.345/01DE-35');
       expect(mascararCnpj(null)).toBe('');
+    });
+
+    it('aceita letras nas 12 primeiras posições mas só dígitos nas 2 últimas', () => {
+      expect(mascararCnpj('12ABC34501DEAB')).toBe('12.ABC.345/01DE');
+      expect(mascararCnpj('12ABC34501DE3X5')).toBe('12.ABC.345/01DE-35');
+    });
+  });
+
+  describe('alfanumérico', () => {
+    it('valida o exemplo oficial da Receita (12.ABC.345/01DE-35), com e sem máscara/minúsculas', () => {
+      expect(cnpjValido('12ABC34501DE35')).toBeTrue();
+      expect(cnpjValido('12.ABC.345/01DE-35')).toBeTrue();
+      expect(cnpjValido('12abc34501de35')).toBeTrue();
+    });
+
+    it('rejeita dígito verificador errado, letras nos dígitos verificadores e curto', () => {
+      expect(cnpjValido('12ABC34501DE36')).toBeFalse();
+      expect(cnpjValido('12ABC34501DEAB')).toBeFalse();
+      expect(cnpjValido('12ABC34501DE3')).toBeFalse();
+    });
+
+    it('normalizarCnpj remove pontuação e põe em maiúsculas', () => {
+      expect(normalizarCnpj('12.abc.345/01de-35')).toBe('12ABC34501DE35');
+      expect(normalizarCnpj(undefined)).toBe('');
+    });
+
+    it('formatarCnpj formata alfanumérico', () => {
+      expect(formatarCnpj('12abc34501de35')).toBe('12.ABC.345/01DE-35');
     });
   });
 
