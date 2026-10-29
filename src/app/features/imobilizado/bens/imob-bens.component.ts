@@ -7,6 +7,8 @@ import { ImobBemService } from '../../../core/services/imob-bem.service';
 import { ImobCategoriaService } from '../../../core/services/imob-categoria.service';
 import { ImobLocalService } from '../../../core/services/imob-local.service';
 import { ImobDepartamentoService } from '../../../core/services/imob-departamento.service';
+import { ImobGrupoService } from '../../../core/services/imob-grupo.service';
+import { ImobGrupo } from '../../../core/models/imob-grupo.model';
 import { ImobDepartamento } from '../../../core/models/imob-departamento.model';
 import { PermissaoService } from '../../../core/services/permissao.service';
 import {
@@ -55,6 +57,7 @@ export class ImobBensComponent implements OnInit {
   private categoriaService = inject(ImobCategoriaService);
   private localService = inject(ImobLocalService);
   private departamentoService = inject(ImobDepartamentoService);
+  private grupoService = inject(ImobGrupoService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   permissao = inject(PermissaoService);
@@ -81,6 +84,7 @@ export class ImobBensComponent implements OnInit {
 
   categorias = signal<ImobCategoria[]>([]);
   departamentos = signal<ImobDepartamento[]>([]);
+  grupos = signal<ImobGrupo[]>([]);
   erroPeriodo = signal('');
   arvore = signal<ImobLocalArvore[]>([]);
 
@@ -101,6 +105,7 @@ export class ImobBensComponent implements OnInit {
     categoriaId: [null as number | null],
     responsavelId: [null as number | null],
     departamentoId: [null as number | null],
+    grupoId: [null as number | null],
     compraDe: [''],
     compraAte: [''],
     ordenarPor: ['' as ImobBemOrdenarPor | ''],
@@ -118,7 +123,7 @@ export class ImobBensComponent implements OnInit {
     // selects e seletores aplicam na hora; a busca por texto só ao enviar o formulário
     const c = this.filtros.controls;
     merge(c.localId.valueChanges, c.incluirSublocais.valueChanges, c.categoriaId.valueChanges,
-      c.responsavelId.valueChanges, c.departamentoId.valueChanges, c.compraDe.valueChanges, c.compraAte.valueChanges,
+      c.responsavelId.valueChanges, c.departamentoId.valueChanges, c.grupoId.valueChanges, c.compraDe.valueChanges, c.compraAte.valueChanges,
       c.ordenarPor.valueChanges, c.direcao.valueChanges, c.status.valueChanges, c.pendentes.valueChanges)
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.aplicar(1));
@@ -127,6 +132,10 @@ export class ImobBensComponent implements OnInit {
   ngOnInit() {
     this.categoriaService.listar({ pageSize: 100 }).subscribe({
       next: res => this.categorias.set(res.items),
+      error: () => undefined
+    });
+    this.grupoService.listar({ pageSize: 100 }).subscribe({
+      next: res => this.grupos.set(res.items),
       error: () => undefined
     });
     this.departamentoService.listar({ pageSize: 100 }).subscribe({
@@ -154,6 +163,7 @@ export class ImobBensComponent implements OnInit {
       categoriaId: idDaQuery(params, 'categoriaId') ?? undefined,
       responsavelId: idDaQuery(params, 'responsavelId') ?? undefined,
       departamentoId: idDaQuery(params, 'departamentoId') ?? undefined,
+      grupoId: idDaQuery(params, 'grupoId') ?? undefined,
       compraDe: dataDaQuery(params, 'compraDe'),
       compraAte: dataDaQuery(params, 'compraAte'),
       ordenarPor: ordenarPor ?? undefined,
@@ -170,6 +180,7 @@ export class ImobBensComponent implements OnInit {
       categoriaId: filtro.categoriaId ?? null,
       responsavelId: filtro.responsavelId ?? null,
       departamentoId: filtro.departamentoId ?? null,
+      grupoId: filtro.grupoId ?? null,
       compraDe: filtro.compraDe ?? '',
       compraAte: filtro.compraAte ?? '',
       ordenarPor: filtro.ordenarPor === 'plaqueta' ? '' : filtro.ordenarPor ?? '',
@@ -189,6 +200,7 @@ export class ImobBensComponent implements OnInit {
       categoriaId: v.categoriaId,
       responsavelId: v.responsavelId,
       departamentoId: v.departamentoId,
+      grupoId: v.grupoId,
       compraDe: v.compraDe || null,
       compraAte: v.compraAte || null,
       ordenarPor: v.ordenarPor || (v.direcao === 'desc' ? 'plaqueta' : null),
@@ -223,7 +235,7 @@ export class ImobBensComponent implements OnInit {
 
   limparFiltros() {
     this.filtros.reset({
-      busca: '', localId: null, incluirSublocais: true, categoriaId: null, responsavelId: null, departamentoId: null,
+      busca: '', localId: null, incluirSublocais: true, categoriaId: null, responsavelId: null, departamentoId: null, grupoId: null,
       compraDe: '', compraAte: '', ordenarPor: '', direcao: 'asc', status: '', pendentes: false
     }, { emitEvent: false });
     this.erroPeriodo.set('');

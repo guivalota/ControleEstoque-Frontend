@@ -3,6 +3,8 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Modal } from 'bootstrap';
 import { ImobCategoriaService } from '../../../core/services/imob-categoria.service';
+import { ImobGrupoService } from '../../../core/services/imob-grupo.service';
+import { ImobGrupo } from '../../../core/models/imob-grupo.model';
 import { PermissaoService } from '../../../core/services/permissao.service';
 import { ImobCategoria } from '../../../core/models/imob-categoria.model';
 import { aplicarErroNoForm, lerErroApi, textoDoErro } from '../../../core/utils/erros-api';
@@ -28,6 +30,8 @@ interface Bloqueio {
 export class ImobCategoriasComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private service = inject(ImobCategoriaService);
+  private grupoService = inject(ImobGrupoService);
+  grupos = signal<ImobGrupo[]>([]);
   permissao = inject(PermissaoService);
 
   private modalEl = viewChild.required<ElementRef<HTMLElement>>('modalEl');
@@ -64,6 +68,7 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
     vidaUtilMeses: [null as number | null, [Validators.required, Validators.min(1), Validators.max(1200), inteiro]],
     valorResidualPercentual: [null as number | null, [Validators.required, Validators.min(0), Validators.max(100), duasCasas]],
     metodoDepreciacao: ['linear' as const],
+    grupoId: [null as number | null],
     ativo: [true]
   });
 
@@ -75,6 +80,7 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
   };
 
   ngOnInit() {
+    this.grupoService.listar({ pageSize: 100 }).subscribe({ next: r => this.grupos.set(r.items), error: () => undefined });
     this.carregar(1);
   }
 
@@ -140,7 +146,7 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
 
   openCreate() {
     this.editingId.set(null);
-    this.form.reset({ codigo: '', nome: '', vidaUtilMeses: null, valorResidualPercentual: null, metodoDepreciacao: 'linear', ativo: true });
+    this.form.reset({ codigo: '', nome: '', vidaUtilMeses: null, valorResidualPercentual: null, metodoDepreciacao: 'linear', grupoId: null, ativo: true });
     this.saveError.set('');
     this.getModal().show();
   }
@@ -153,6 +159,7 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
       vidaUtilMeses: c.vidaUtilMeses,
       valorResidualPercentual: c.valorResidualPercentual,
       metodoDepreciacao: c.metodoDepreciacao,
+      grupoId: c.grupoId ?? null,
       ativo: c.ativo
     });
     this.saveError.set('');
@@ -170,7 +177,8 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
       nome: v.nome!.trim(),
       vidaUtilMeses: v.vidaUtilMeses!,
       valorResidualPercentual: v.valorResidualPercentual!,
-      metodoDepreciacao: v.metodoDepreciacao ?? 'linear' as const
+      metodoDepreciacao: v.metodoDepreciacao ?? 'linear' as const,
+      ...(v.grupoId ? { grupoId: v.grupoId } : {})
     };
     const id = this.editingId();
     const op = id !== null
@@ -190,6 +198,7 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
           valorResidualPercentual: ['residual'],
           metodoDepreciacao: ['método', 'metodo'],
           codigo: ['código', 'codigo'],
+          grupoId: ['grupo'],
           nome: ['nome']
         }));
         this.saving.set(false);
@@ -232,6 +241,7 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
       vidaUtilMeses: c.vidaUtilMeses,
       valorResidualPercentual: c.valorResidualPercentual,
       metodoDepreciacao: c.metodoDepreciacao,
+      ...(c.grupoId ? { grupoId: c.grupoId } : {}),
       ativo: false
     }).subscribe({
       next: () => {

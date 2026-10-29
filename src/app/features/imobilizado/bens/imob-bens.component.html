@@ -90,6 +90,13 @@
           @for (d of departamentos(); track d.id) { <option [ngValue]="d.id">{{ d.codigo }} — {{ d.nome }}{{ d.ativo ? '' : ' (inativo)' }}</option> }
         </select>
       </div>
+      <div class="col-6 col-md-4">
+        <label for="bemGrupo" class="form-label small mb-1">Grupo</label>
+        <select id="bemGrupo" class="form-select form-select-sm" formControlName="grupoId">
+          <option [ngValue]="null">Todos</option>
+          @for (g of grupos(); track g.id) { <option [ngValue]="g.id">{{ g.nome }}{{ g.ativo ? '' : ' (inativo)' }}</option> }
+        </select>
+      </div>
       <div class="col-6 col-md-2">
         <label for="bemCompraDe" class="form-label small mb-1">Compra de</label>
         <input id="bemCompraDe" type="date" class="form-control form-control-sm" formControlName="compraDe"
@@ -160,6 +167,7 @@
                 </th>
                 <th>Descrição</th>
                 <th>Local</th>
+                <th>Grupo</th>
                 <th>Departamento</th>
                 <th>Responsável</th>
                 <th class="text-end">Valor</th>
@@ -179,6 +187,7 @@
                     @if (!b.dadosCompletos) { <span class="badge bg-warning-subtle text-warning-emphasis ms-1">Dados incompletos</span> }
                   </td>
                   <td>{{ b.localNome }}</td>
+                  <td>{{ b.grupoNome || "—" }}</td>
                   <td>{{ b.departamentoNome || '—' }}</td>
                   <td>{{ b.responsavelNome || '—' }}</td>
                   <td class="text-end text-nowrap">{{ formatarMoeda(b.valorAquisicao) }}</td>
@@ -200,7 +209,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="8" class="text-center text-muted py-4">
+                  <td colspan="9" class="text-center text-muted py-4">
                     <i class="bi bi-inbox me-2"></i>{{ temFiltro() ? 'Nenhum bem encontrado com os filtros atuais' : 'Nenhum bem cadastrado' }}
                   </td>
                 </tr>

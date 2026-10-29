@@ -16,6 +16,7 @@ import { RouterLink } from '@angular/router';
           <a routerLink="/imobilizado/depreciacao" class="btn btn-sm btn-outline-primary">Depreciação</a>
           <a routerLink="/imobilizado/locais" class="btn btn-sm btn-outline-secondary">Locais</a>
           <a routerLink="/imobilizado/categorias" class="btn btn-sm btn-outline-secondary">Categorias</a>
+          <a routerLink="/imobilizado/grupos" class="btn btn-sm btn-outline-secondary">Grupos</a>
           <a routerLink="/imobilizado/departamentos" class="btn btn-sm btn-outline-secondary">Departamentos</a>
           <a routerLink="/imobilizado/responsaveis" class="btn btn-sm btn-outline-secondary">Responsáveis</a>
           <a routerLink="/imobilizado/reavaliacao/estados-conservacao" class="btn btn-sm btn-outline-secondary">Estados de conservação</a>

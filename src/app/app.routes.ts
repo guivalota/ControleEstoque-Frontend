@@ -231,6 +231,10 @@ export const routes: Routes = [
             loadComponent: () => import('./features/imobilizado/categorias/imob-categorias.component').then(m => m.ImobCategoriasComponent)
           },
           {
+            path: 'grupos',
+            loadComponent: () => import('./features/imobilizado/grupos/imob-grupos.component').then(m => m.ImobGruposComponent)
+          },
+          {
             path: 'departamentos',
             loadComponent: () => import('./features/imobilizado/departamentos/imob-departamentos.component').then(m => m.ImobDepartamentosComponent)
           },

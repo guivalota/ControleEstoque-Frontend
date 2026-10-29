@@ -31,6 +31,8 @@ export interface ImobBem {
   localId: number; localNome: string;
   responsavelId?: number | null; responsavelNome?: string | null;
   departamentoId?: number | null; departamentoNome?: string | null;
+  /** Somente leitura: herdado da categoria. */
+  grupoId?: number | null; grupoNome?: string | null;
   dataAquisicao?: string | null;
   valorAquisicao?: number | null;
   valorResidual?: number | null;
@@ -66,7 +68,7 @@ export const ROTULO_ORDENAR_POR: Record<ImobBemOrdenarPor, string> = {
 
 export interface ImobBemFiltro {
   busca?: string; localId?: number; incluirSublocais?: boolean; categoriaId?: number;
-  responsavelId?: number; departamentoId?: number; status?: ImobBemStatus; dadosCompletos?: boolean;
+  responsavelId?: number; departamentoId?: number; grupoId?: number; status?: ImobBemStatus; dadosCompletos?: boolean;
   /** Data de aquisição (yyyy-MM-dd), limites inclusivos. */
   compraDe?: string; compraAte?: string;
   ordenarPor?: ImobBemOrdenarPor; direcao?: ImobBemDirecao;

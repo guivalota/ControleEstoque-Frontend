@@ -71,6 +71,7 @@
               <tr>
                 <th class="ps-3">Código</th>
                 <th>Nome</th>
+                <th>Grupo</th>
                 <th>Vida útil</th>
                 <th title="12 ÷ vida útil em meses × 100 (calculada pelo servidor)">Depreciação anual</th>
                 <th title="Apenas referência: não preenche o valor residual do bem (valor residual vazio = zero)">Residual (referência)</th>
@@ -84,6 +85,7 @@
                 <tr>
                   <td class="ps-3 text-nowrap">{{ c.codigo || '—' }}</td>
                   <td>{{ c.nome }}</td>
+                  <td>{{ c.grupoNome || "—" }}</td>
                   <td class="text-nowrap">{{ formatarVidaUtil(c.vidaUtilMeses) }}</td>
                   <td class="text-nowrap">{{ c.depreciacaoAnualPercentual === null || c.depreciacaoAnualPercentual === undefined ? '—' : formatarPercentual(c.depreciacaoAnualPercentual) + ' ao ano' }}</td>
                   <td class="text-nowrap">{{ formatarPercentual(c.valorResidualPercentual) }} <span class="text-muted small">(ref.)</span></td>
@@ -112,7 +114,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="8" class="text-center text-muted py-4">
+                  <td colspan="9" class="text-center text-muted py-4">
                     <i class="bi bi-inbox me-2"></i>Nenhuma categoria encontrada
                   </td>
                 </tr>
@@ -145,6 +147,15 @@
                  [class.is-invalid]="erroCampo('codigo')">
           <div class="invalid-feedback">{{ erroCampo('codigo') }}</div>
           <div class="form-text">Opcional e único na empresa (ex.: MOV, MAQ, HW).</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="catGrupo" class="form-label">Grupo</label>
+          <select id="catGrupo" class="form-select" formControlName="grupoId">
+            <option [ngValue]="null">Sem grupo</option>
+            @for (g of grupos(); track g.id) { <option [ngValue]="g.id">{{ g.nome }}{{ g.ativo ? '' : ' (inativo)' }}</option> }
+          </select>
+          <div class="form-text">Agrupa categorias nos relatórios e na consulta de bens (ex.: Móveis, Equipamentos de informática).</div>
         </div>
 
         <div class="mb-3">

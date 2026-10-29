@@ -9,6 +9,7 @@ import { ImobCategoria } from '../../../core/models/imob-categoria.model';
 import { provideAuthFake } from '../../../testing/auth-fake';
 
 const BASE = '/api/v1/imobilizado/categorias';
+const GRUPOS = '/api/v1/imobilizado/grupos';
 
 const cat = (id: number, nome: string, vida = 120, residual = 10, ativo = true, codigo: string | null = null): ImobCategoria => ({
   id, codigo, depreciacaoAnualPercentual: Math.round(1200 / vida * 100) / 100, nome, vidaUtilMeses: vida, valorResidualPercentual: residual, metodoDepreciacao: 'linear', ativo,
@@ -36,6 +37,7 @@ describe('ImobCategoriasComponent', () => {
     fixture = TestBed.createComponent(ImobCategoriasComponent);
     comp = fixture.componentInstance;
     fixture.detectChanges();
+    ctrl.expectOne(r => r.url === GRUPOS).flush({ items: [{ id: 1, codigo: 'MOV', nome: 'Móveis', ativo: true, criadoEm: '2026-10-01T00:00:00Z' }], page: 1, pageSize: 100, total: 1 });
     const req = listagem();
     expect(req.request.params.get('page')).toBe('1');
     expect(req.request.params.get('pageSize')).toBe('50');
@@ -164,6 +166,33 @@ describe('ImobCategoriasComponent', () => {
       expect('codigo' in put.request.body).toBeFalse();
       put.flush(cat(5, 'Máquinas'));
       responder([]);
+    });
+
+    it('grupo: lista os grupos no select e envia o grupoId escolhido; "sem grupo" não vai no corpo', () => {
+      comp.openCreate();
+      fixture.detectChanges();
+      const opcoes = Array.from(el().querySelectorAll<HTMLOptionElement>('#catGrupo option')).map(o => o.textContent!.trim());
+      expect(opcoes).toEqual(['Sem grupo', 'Móveis']);
+
+      preencher({ grupoId: 1 });
+      comp.save();
+      const post = ctrl.expectOne(r => r.method === 'POST' && r.url === BASE);
+      expect(post.request.body.grupoId).toBe(1);
+      post.flush(cat(9, 'Veículos', 60, 20), { status: 201, statusText: 'Created' });
+      responder([]);
+
+      comp.openCreate();
+      preencher({});
+      comp.save();
+      const semGrupo = ctrl.expectOne(r => r.method === 'POST' && r.url === BASE);
+      expect('grupoId' in semGrupo.request.body).toBeFalse();
+      semGrupo.flush(cat(10, 'Outra', 60, 20), { status: 201, statusText: 'Created' });
+      responder([]);
+    });
+
+    it('grupo: ao editar mostra o grupo atual e a lista mostra o nome do grupo', () => {
+      comp.openEdit({ ...cat(5, 'Máquinas', 120, 10, true, 'MAQ'), grupoId: 1, grupoNome: 'Móveis' });
+      expect(comp.form.value.grupoId).toBe(1);
     });
 
     it('limita o código a 50 caracteres', () => {

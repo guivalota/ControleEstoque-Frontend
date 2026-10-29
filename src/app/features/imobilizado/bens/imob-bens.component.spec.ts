@@ -13,6 +13,7 @@ const BENS = '/api/v1/imobilizado/bens';
 const CATEGORIAS = '/api/v1/imobilizado/categorias';
 const ARVORE = '/api/v1/imobilizado/locais/arvore';
 const DEPARTAMENTOS = '/api/v1/imobilizado/departamentos';
+const GRUPOS = '/api/v1/imobilizado/grupos';
 
 const bem = (id: number, extra: Partial<ImobBem> = {}): ImobBem => ({
   id, plaqueta: `NB-000${id}`, descricao: `Notebook ${id}`, categoriaId: 3, categoriaNome: 'Informática',
@@ -53,6 +54,9 @@ describe('ImobBensComponent', () => {
       items: [categoria(3, 'Informática'), categoria(4, 'Móveis', false)], page: 1, pageSize: 100, total: 2
     });
     ctrl.expectOne(ARVORE).flush([]);
+    ctrl.expectOne(r => r.url === GRUPOS).flush({
+      items: [{ id: 3, codigo: 'MOV', nome: 'Móveis', ativo: true, criadoEm: '' }], page: 1, pageSize: 100, total: 1
+    });
     ctrl.expectOne(r => r.url === DEPARTAMENTOS).flush({
       items: [{ id: 2, codigo: 'TI', nome: 'Tecnologia', ativo: true, criadoEm: '' }], page: 1, pageSize: 100, total: 1
     });
@@ -128,6 +132,7 @@ describe('ImobBensComponent', () => {
       responder([]);
       ctrl.expectOne(r => r.url === CATEGORIAS).flush({ items: [], page: 1, pageSize: 100, total: 0 });
       ctrl.expectOne(ARVORE).flush([]);
+      ctrl.expectOne(r => r.url === GRUPOS).flush({ items: [], page: 1, pageSize: 100, total: 0 });
       ctrl.expectOne(r => r.url === DEPARTAMENTOS).flush({ items: [], page: 1, pageSize: 100, total: 0 });
     });
 
@@ -138,6 +143,15 @@ describe('ImobBensComponent', () => {
       const linhas = el().querySelectorAll('tbody tr');
       expect(linhas[0].textContent).toContain('Tecnologia');
       expect(linhas[1].textContent).not.toContain('Tecnologia');
+    });
+
+    it('mostra a coluna Grupo (herdado da categoria) com o nome ou traço', async () => {
+      await montar('admin', {}, [bem(1, { grupoId: 3, grupoNome: 'Móveis' }), bem(2)]);
+      const cabecalhos = Array.from(el().querySelectorAll('thead th')).map(t => t.textContent?.trim());
+      expect(cabecalhos).toContain('Grupo');
+      const linhas = el().querySelectorAll('tbody tr');
+      expect(linhas[0].textContent).toContain('Móveis');
+      expect(linhas[1].textContent).not.toContain('Móveis');
     });
   });
 
@@ -202,6 +216,15 @@ describe('ImobBensComponent', () => {
       expect(router.url).toContain('departamentoId=2');
       const req = listagem();
       expect(req.request.params.get('departamentoId')).toBe('2');
+      responder([], req);
+    });
+
+    it('escolher grupo atualiza a URL e recarrega', async () => {
+      await montar();
+      await navegando(() => comp.filtros.controls.grupoId.setValue(3));
+      expect(router.url).toContain('grupoId=3');
+      const req = listagem();
+      expect(req.request.params.get('grupoId')).toBe('3');
       responder([], req);
     });
 

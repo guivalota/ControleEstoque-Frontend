@@ -10,6 +10,8 @@ export interface ImobCategoria {
   metodoDepreciacao: 'linear';
   ativo: boolean;
   criadoEm: string;
+  grupoId?: number | null;
+  grupoNome?: string | null;
 }
 
 export interface CriarImobCategoria {
@@ -19,6 +21,8 @@ export interface CriarImobCategoria {
   vidaUtilMeses: number;
   valorResidualPercentual: number;
   metodoDepreciacao?: 'linear';
+  /** Grupo (opcional); o bem herda o grupo pela categoria. Na edição, omitir limpa o grupo. */
+  grupoId?: number | null;
 }
 export interface AtualizarImobCategoria extends CriarImobCategoria { ativo: boolean; }
 
