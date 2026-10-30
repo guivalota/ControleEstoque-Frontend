@@ -64,7 +64,7 @@ describe('ImobBemDetalheComponent', () => {
   it('campos vazios aparecem como "—"', () => {
     montar();
     carregar(bem({ responsavelId: null, responsavelNome: null }));
-    expect(el().querySelectorAll('dd')[2].textContent).toBe('—');
+    expect(texto()).toContain('Responsável—');
     expect(texto()).toContain('Número de série—');
   });
 
