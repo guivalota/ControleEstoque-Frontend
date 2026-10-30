@@ -27,6 +27,9 @@ export const tokenRefreshInterceptor: HttpInterceptorFn = (req, next) => {
           return next(retried);
         }),
         catchError(refreshErr => {
+          if (refreshErr?.status === 403 && refreshErr?.error?.codigo === 'empresa_bloqueada') {
+            authService.avisoLogin.set(refreshErr.error.error || 'Empresa bloqueada. Fale com o administrador.');
+          }
           authService.logout();
           return throwError(() => refreshErr);
         })

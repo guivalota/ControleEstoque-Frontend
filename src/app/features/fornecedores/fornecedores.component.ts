@@ -6,6 +6,7 @@ import { FornecedorService } from '../../core/services/fornecedor.service';
 import { ImpressaoService } from '../../core/services/impressao.service';
 import { PermissaoService } from '../../core/services/permissao.service';
 import { CepService } from '../../core/services/cep.service';
+import { cnpjValidator, cnpjValido, mascararCnpj, normalizarCnpj } from '../../core/utils/cnpj';
 import { Fornecedor, CreateFornecedorRequest, UpdateFornecedorRequest } from '../../core/models/fornecedor.model';
 
 @Component({
@@ -44,7 +45,7 @@ export class FornecedoresComponent implements OnInit, OnDestroy {
   cepMsg = signal('');
 
   form = this.fb.group({
-    cnpj: ['', [Validators.required, Validators.pattern(/^\d{14}$/)]],
+    cnpj: ['', [Validators.required, cnpjValidator]],
     razaoSocial: ['', [Validators.required, Validators.maxLength(255)]],
     nomeFantasia: ['' as string | null],
     email: ['' as string | null, Validators.email],
@@ -116,7 +117,7 @@ export class FornecedoresComponent implements OnInit, OnDestroy {
 
   openEdit(f: Fornecedor) {
     this.editingId.set(f.id);
-    this.form.patchValue(f);
+    this.form.patchValue({ ...f, cnpj: mascararCnpj(f.cnpj) });
     this.f('cnpj').disable();
     this.saveError.set('');
     this.cnpjMsg.set('');
@@ -155,9 +156,16 @@ export class FornecedoresComponent implements OnInit, OnDestroy {
     if (cep.length === 8) this.buscarCep();
   }
 
+  /** Máscara 00.000.000/0000-00 com letras permitidas (CNPJ alfanumérico). */
+  onCnpjInput() {
+    const c = this.f('cnpj');
+    const m = mascararCnpj(c.value);
+    if (m !== c.value) c.setValue(m, { emitEvent: false });
+  }
+
   consultarCnpj() {
-    const cnpj = this.f('cnpj').value?.replace(/\D/g, '') ?? '';
-    if (cnpj.length !== 14) { this.cnpjMsg.set('CNPJ deve ter 14 dígitos.'); return; }
+    const cnpj = normalizarCnpj(this.f('cnpj').value);
+    if (!cnpjValido(cnpj)) { this.cnpjMsg.set('CNPJ inválido (14 caracteres, números ou letras).'); return; }
     this.consultandoCnpj.set(true);
     this.cnpjMsg.set('');
     this.fornecedorService.consultarCnpj(cnpj).subscribe({
@@ -178,7 +186,7 @@ export class FornecedoresComponent implements OnInit, OnDestroy {
     this.saving.set(true);
     this.saveError.set('');
 
-    const val = this.form.getRawValue();
+    const val = { ...this.form.getRawValue(), cnpj: normalizarCnpj(this.form.getRawValue().cnpj) };
     const id = this.editingId();
 
     const op = id

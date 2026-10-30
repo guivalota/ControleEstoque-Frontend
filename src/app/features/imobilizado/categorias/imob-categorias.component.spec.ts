@@ -9,9 +9,10 @@ import { ImobCategoria } from '../../../core/models/imob-categoria.model';
 import { provideAuthFake } from '../../../testing/auth-fake';
 
 const BASE = '/api/v1/imobilizado/categorias';
+const GRUPOS = '/api/v1/imobilizado/grupos';
 
-const cat = (id: number, nome: string, vida = 120, residual = 10, ativo = true): ImobCategoria => ({
-  id, nome, vidaUtilMeses: vida, valorResidualPercentual: residual, metodoDepreciacao: 'linear', ativo,
+const cat = (id: number, nome: string, vida = 120, residual = 10, ativo = true, codigo: string | null = null): ImobCategoria => ({
+  id, codigo, depreciacaoAnualPercentual: Math.round(1200 / vida * 100) / 100, nome, vidaUtilMeses: vida, valorResidualPercentual: residual, metodoDepreciacao: 'linear', ativo,
   criadoEm: '2026-10-22T14:03:11Z'
 });
 
@@ -36,6 +37,7 @@ describe('ImobCategoriasComponent', () => {
     fixture = TestBed.createComponent(ImobCategoriasComponent);
     comp = fixture.componentInstance;
     fixture.detectChanges();
+    ctrl.expectOne(r => r.url === GRUPOS).flush({ items: [{ id: 1, codigo: 'MOV', nome: 'Móveis', ativo: true, criadoEm: '2026-10-01T00:00:00Z' }], page: 1, pageSize: 100, total: 1 });
     const req = listagem();
     expect(req.request.params.get('page')).toBe('1');
     expect(req.request.params.get('pageSize')).toBe('50');
@@ -65,6 +67,14 @@ describe('ImobCategoriasComponent', () => {
       responder([], req);
       fixture.detectChanges();
       expect(el().textContent).toContain('Nenhuma categoria encontrada');
+    });
+
+    it('mostra código, depreciação anual derivada e o residual como referência', () => {
+      const linhas = el().querySelectorAll('tbody tr');
+      expect(linhas[0].textContent).toContain('10% ao ano');
+      expect(linhas[1].textContent).toContain('20% ao ano');
+      expect(linhas[0].textContent).toContain('(ref.)');
+      expect(Array.from(el().querySelectorAll('thead th')).map(t => t.textContent?.trim())).toContain('Residual (referência)');
     });
 
     it('limpar filtros recarrega sem parâmetros de filtro', () => {
@@ -140,6 +150,67 @@ describe('ImobCategoriasComponent', () => {
       responder([]);
     });
 
+    it('envia o código aparado e o mostra ao editar; vazio não vai no corpo', () => {
+      preencher({ codigo: ' MOV ' });
+      comp.save();
+      const post = ctrl.expectOne(r => r.method === 'POST' && r.url === BASE);
+      expect(post.request.body.codigo).toBe('MOV');
+      post.flush(cat(9, 'Veículos', 60, 20, true, 'MOV'), { status: 201, statusText: 'Created' });
+      responder([]);
+
+      comp.openEdit(cat(5, 'Máquinas', 120, 10, true, 'MAQ'));
+      expect(comp.form.value.codigo).toBe('MAQ');
+      comp.form.patchValue({ codigo: '  ' });
+      comp.save();
+      const put = ctrl.expectOne(r => r.method === 'PUT' && r.url === `${BASE}/5`);
+      expect('codigo' in put.request.body).toBeFalse();
+      put.flush(cat(5, 'Máquinas'));
+      responder([]);
+    });
+
+    it('grupo: lista os grupos no select e envia o grupoId escolhido; "sem grupo" não vai no corpo', () => {
+      comp.openCreate();
+      fixture.detectChanges();
+      const opcoes = Array.from(el().querySelectorAll<HTMLOptionElement>('#catGrupo option')).map(o => o.textContent!.trim());
+      expect(opcoes).toEqual(['Sem grupo', 'Móveis']);
+
+      preencher({ grupoId: 1 });
+      comp.save();
+      const post = ctrl.expectOne(r => r.method === 'POST' && r.url === BASE);
+      expect(post.request.body.grupoId).toBe(1);
+      post.flush(cat(9, 'Veículos', 60, 20), { status: 201, statusText: 'Created' });
+      responder([]);
+
+      comp.openCreate();
+      preencher({});
+      comp.save();
+      const semGrupo = ctrl.expectOne(r => r.method === 'POST' && r.url === BASE);
+      expect('grupoId' in semGrupo.request.body).toBeFalse();
+      semGrupo.flush(cat(10, 'Outra', 60, 20), { status: 201, statusText: 'Created' });
+      responder([]);
+    });
+
+    it('grupo: ao editar mostra o grupo atual e a lista mostra o nome do grupo', () => {
+      comp.openEdit({ ...cat(5, 'Máquinas', 120, 10, true, 'MAQ'), grupoId: 1, grupoNome: 'Móveis' });
+      expect(comp.form.value.grupoId).toBe(1);
+    });
+
+    it('limita o código a 50 caracteres', () => {
+      preencher({ codigo: 'x'.repeat(51) });
+      comp.save();
+      expect(comp.erroCampo('codigo')).toBe('Máximo de 50 caracteres.');
+      ctrl.expectNone(r => r.method === 'POST');
+    });
+
+    it('código duplicado ({ error }) vai para o campo código', () => {
+      preencher({ codigo: 'MOV' });
+      comp.save();
+      ctrl.expectOne(r => r.method === 'POST').flush(
+        { error: "Já existe uma categoria com o código 'MOV'." }, { status: 400, statusText: 'Bad Request' });
+      expect(comp.erroCampo('codigo')).toContain('Já existe');
+      expect(comp.saveError()).toBe('');
+    });
+
     it('editar envia o corpo completo com ativo', () => {
       comp.openEdit(cat(2, 'Veículos', 60, 20));
       comp.form.patchValue({ ativo: false });
@@ -170,6 +241,49 @@ describe('ImobCategoriasComponent', () => {
       expect(comp.erroCampo('vidaUtilMeses')).toBe('Deve estar entre 1 e 1200.');
     });
 
+  });
+
+  describe('categorias padrão', () => {
+    it('admin vê o botão; confirma, chama POST categorias/padrao e mostra criadas e já existentes', async () => {
+      montar('admin');
+      expect(el().textContent).toContain('Carregar categorias padrão');
+      spyOn(ConfirmDialogComponent.prototype, 'abrir').and.resolveTo(true);
+      await comp.carregarPadrao();
+      const post = ctrl.expectOne(r => r.method === 'POST' && r.url === `${BASE}/padrao`);
+      post.flush({ criadas: 2, jaExistentes: 1, categorias: [cat(7, 'Hardwares', 60, 10, true, 'HW')] });
+      expect(comp.feedback()).toBe('Categorias padrão: 2 criadas, 1 já existente.');
+      responder([]);
+    });
+
+    it('repetir mostra zero criadas', async () => {
+      montar('admin');
+      spyOn(ConfirmDialogComponent.prototype, 'abrir').and.resolveTo(true);
+      await comp.carregarPadrao();
+      ctrl.expectOne(r => r.method === 'POST').flush({ criadas: 0, jaExistentes: 3, categorias: [] });
+      expect(comp.feedback()).toBe('Categorias padrão: 0 criadas, 3 já existentes.');
+      responder([]);
+    });
+
+    it('cancelar a confirmação não chama a API', async () => {
+      montar('admin');
+      spyOn(ConfirmDialogComponent.prototype, 'abrir').and.resolveTo(false);
+      await comp.carregarPadrao();
+      ctrl.expectNone(r => r.method === 'POST');
+    });
+
+    it('403 do servidor aparece como erro', async () => {
+      montar('admin');
+      spyOn(ConfirmDialogComponent.prototype, 'abrir').and.resolveTo(true);
+      await comp.carregarPadrao();
+      ctrl.expectOne(r => r.method === 'POST').flush({ error: 'Apenas administradores.' }, { status: 403, statusText: 'Forbidden' });
+      expect(comp.erro()).toBe('Apenas administradores.');
+      expect(comp.carregandoPadrao()).toBeFalse();
+    });
+
+    it('operador e leitura não veem o botão', () => {
+      montar('operador');
+      expect(el().textContent).not.toContain('Carregar categorias padrão');
+    });
   });
 
   describe('exclusão', () => {

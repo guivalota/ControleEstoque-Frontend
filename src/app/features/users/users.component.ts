@@ -1,117 +1,77 @@
-import { Component, inject, OnInit, signal, ViewChild, ElementRef, OnDestroy } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { TitleCasePipe } from '@angular/common';
-import { Modal } from 'bootstrap';
-import { UserService } from '../../core/services/user.service';
-import { PermissaoService } from '../../core/services/permissao.service';
-import { User, CreateUserRequest, UpdateUserRequest, UserRole } from '../../core/models/user.model';
+import { UsuarioEmpresaService } from '../../core/services/usuario-empresa.service';
+import { UsuarioEmpresa } from '../../core/models/usuario-empresa.model';
+import { UserRole } from '../../core/models/user.model';
 
+const PAGE_SIZE = 50;
+
+/**
+ * Usuários da empresa ativa: somente leitura (`GET v1/empresa-ativa/usuarios`).
+ * O CRUD de contas de empresa pertence à tela de equipe (E05); o CRUD global de `v1/users` é do painel do SA (E03).
+ */
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [ReactiveFormsModule, TitleCasePipe],
+  imports: [FormsModule, TitleCasePipe],
   templateUrl: './users.component.html'
 })
-export class UsersComponent implements OnInit, OnDestroy {
-  private fb = inject(FormBuilder);
-  userService = inject(UserService);
-  permissao = inject(PermissaoService);
+export class UsersComponent implements OnInit {
+  private service = inject(UsuarioEmpresaService);
 
-  @ViewChild('modalEl') modalEl!: ElementRef;
-  private modal!: Modal;
+  usuarios = signal<UsuarioEmpresa[]>([]);
+  loading = signal(false);
+  erro = signal('');
+  total = signal(0);
+  page = signal(1);
+  readonly pageSize = PAGE_SIZE;
 
-  users = this.userService.users;
-  loading = this.userService.loading;
-
-  editingId = signal<string | null>(null);
-  saving = signal(false);
-  saveError = signal('');
-
-  readonly roles: UserRole[] = ['admin', 'operador', 'leitura'];
-
-  form = this.fb.group({
-    nome: ['', [Validators.required, Validators.maxLength(255)]],
-    email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]],
-    senha: ['', [Validators.minLength(8)]],
-    role: ['operador' as UserRole, Validators.required],
-    ativo: [true]
-  });
+  busca = '';
+  /** '' = todos, 'true' = ativos, 'false' = inativos. */
+  filtroAtivo = '';
 
   ngOnInit() {
-    this.userService.getAll().subscribe();
+    this.carregar(1);
   }
 
-  ngOnDestroy() {
-    this.modal?.dispose();
-  }
-
-  private getModal(): Modal {
-    if (!this.modal) this.modal = new Modal(this.modalEl.nativeElement);
-    return this.modal;
-  }
-
-  openCreate() {
-    this.editingId.set(null);
-    this.form.reset({ role: 'operador', ativo: true });
-    this.f('senha').setValidators([Validators.required, Validators.minLength(8)]);
-    this.f('senha').updateValueAndValidity();
-    this.saveError.set('');
-    this.getModal().show();
-  }
-
-  openEdit(u: User) {
-    this.editingId.set(u.id);
-    this.form.patchValue({ ...u, senha: '' });
-    this.f('senha').setValidators([Validators.minLength(8)]);
-    this.f('senha').updateValueAndValidity();
-    this.saveError.set('');
-    this.getModal().show();
-  }
-
-  save() {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    this.saving.set(true);
-    this.saveError.set('');
-
-    const val = this.form.value;
-    const id = this.editingId();
-
-    let op;
-    if (id) {
-      const req: UpdateUserRequest = {
-        nome: val.nome,
-        email: val.email,
-        role: val.role as UserRole,
-        ativo: val.ativo
-      };
-      if (val.senha) req.senha = val.senha;
-      op = this.userService.update(id, req);
-    } else {
-      op = this.userService.create(val as CreateUserRequest);
-    }
-
-    op.subscribe({
-      next: () => { this.saving.set(false); this.getModal().hide(); },
-      error: (err) => {
-        this.saveError.set(err.error?.message ?? 'Erro ao salvar usuário.');
-        this.saving.set(false);
+  carregar(page = 1) {
+    this.loading.set(true);
+    this.erro.set('');
+    this.service.listar({
+      busca: this.busca,
+      ativo: this.filtroAtivo === '' ? undefined : this.filtroAtivo === 'true',
+      page,
+      pageSize: this.pageSize
+    }).subscribe({
+      next: res => {
+        this.usuarios.set(res.items);
+        this.total.set(res.total);
+        this.page.set(page);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.erro.set('Erro ao carregar os usuários da empresa.');
+        this.loading.set(false);
       }
     });
   }
 
-  delete(u: User) {
-    if (!confirm(`Excluir o usuário "${u.nome}"?`)) return;
-    this.userService.delete(u.id).subscribe();
+  limpar() {
+    this.busca = '';
+    this.filtroAtivo = '';
+    this.carregar(1);
   }
+
+  hasNextPage() { return this.page() * this.pageSize < this.total(); }
 
   roleBadge(role: UserRole): string {
     const map: Record<UserRole, string> = {
       admin: 'bg-danger',
+      contador: 'bg-info',
       operador: 'bg-primary',
       leitura: 'bg-secondary'
     };
     return map[role] ?? 'bg-secondary';
   }
-
-  f(name: string) { return this.form.get(name)!; }
 }

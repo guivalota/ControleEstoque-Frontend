@@ -42,3 +42,12 @@ export function formatarDataHora(iso: string | null | undefined): string {
   if (!d || Number.isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(d).replace(',', '');
 }
+
+const NUMERO = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 4 });
+
+/** 12,5 — número com separador brasileiro e até 4 casas (pesos, notas, faixas); null/NaN vira "—". */
+export function formatarNumero(valor: number | string | null | undefined): string {
+  if (valor === null || valor === undefined || valor === '') return '—';
+  const n = typeof valor === 'number' ? valor : Number(valor);
+  return Number.isFinite(n) ? NUMERO.format(n) : String(valor);
+}

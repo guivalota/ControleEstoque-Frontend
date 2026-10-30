@@ -11,6 +11,7 @@ import { NfeService } from '../../core/services/nfe.service';
 import { PermissaoService } from '../../core/services/permissao.service';
 import { PedidoCompraService } from '../../core/services/pedido-compra.service';
 import { PedidoCompra } from '../../core/models/pedido-compra.model';
+import { cnpjValidator, mascararCnpj, normalizarCnpj } from '../../core/utils/cnpj';
 import { NotaFiscal, TipoNotaFiscal } from '../../core/models/nota-fiscal.model';
 import { AnaliseNfeItem, AnaliseNfeResponse, ResolucaoItem } from '../../core/models/nfe.model';
 
@@ -84,7 +85,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
     tipo: ['entrada' as TipoNotaFiscal, Validators.required],
     fornecedorId: [null as number | null],
     fornecedorNome: ['', [Validators.required, Validators.maxLength(255)]],
-    fornecedorCnpj: ['', [Validators.required, Validators.pattern(/^\d{14}$/)]],
+    fornecedorCnpj: ['', [Validators.required, cnpjValidator]],
     dataEmissao: ['', Validators.required],
     observacao: ['' as string | null],
     itens: this.fb.array([this.criarItemGroup()])
@@ -156,11 +157,17 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
     });
   }
 
+  onCnpjInput() {
+    const c = this.f('fornecedorCnpj');
+    const m = mascararCnpj(c.value);
+    if (m !== c.value) c.setValue(m, { emitEvent: false });
+  }
+
   selecionarFornecedor(id: number | null) {
     this.form.patchValue({ fornecedorId: id });
     if (!id) return;
     const f = this.fornecedores().find(f => f.id === id);
-    if (f) this.form.patchValue({ fornecedorNome: f.razaoSocial, fornecedorCnpj: f.cnpj });
+    if (f) this.form.patchValue({ fornecedorNome: f.razaoSocial, fornecedorCnpj: mascararCnpj(f.cnpj) });
   }
 
   importarXml(event: Event) {
@@ -359,7 +366,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
     this.saveError.set('');
 
     const val = this.form.value;
-    const req = { ...val, valorTotal: this.valorTotalComputado(), itens: val.itens } as any;
+    const req = { ...val, fornecedorCnpj: normalizarCnpj(val.fornecedorCnpj), valorTotal: this.valorTotalComputado(), itens: val.itens } as any;
 
     this.nfService.create(req).subscribe({
       next: () => { this.saving.set(false); this.getModal().hide(); this.buscarNotas(1); },

@@ -1,17 +1,25 @@
 <div>
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h6 class="fw-bold mb-0">Categorias de bem</h6>
-    @if (permissao.imobCanCreate()) {
-      <button type="button" class="btn btn-primary btn-sm" (click)="openCreate()">
-        <i class="bi bi-plus-lg me-1"></i>Nova categoria
-      </button>
-    }
+    <div class="d-flex gap-2">
+      @if (podeCarregarPadrao()) {
+        <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="carregandoPadrao()" (click)="carregarPadrao()">
+          @if (carregandoPadrao()) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-magic me-1"></i> }
+          Carregar categorias padrão
+        </button>
+      }
+      @if (permissao.imobCanEditCategorias()) {
+        <button type="button" class="btn btn-primary btn-sm" (click)="openCreate()">
+          <i class="bi bi-plus-lg me-1"></i>Nova categoria
+        </button>
+      }
+    </div>
   </div>
 
   <form class="row g-2 align-items-end mb-3" (ngSubmit)="carregar(1)">
     <div class="col-12 col-md-5">
       <label for="catBusca" class="form-label small mb-1">Buscar</label>
-      <input id="catBusca" name="busca" class="form-control form-control-sm" placeholder="Nome da categoria"
+      <input id="catBusca" name="busca" class="form-control form-control-sm" placeholder="Código ou nome da categoria"
              [(ngModel)]="busca">
     </div>
     <div class="col-6 col-md-3">
@@ -61,9 +69,12 @@
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th class="ps-3">Nome</th>
+                <th class="ps-3">Código</th>
+                <th>Nome</th>
+                <th>Grupo</th>
                 <th>Vida útil</th>
-                <th>Residual</th>
+                <th title="12 ÷ vida útil em meses × 100 (calculada pelo servidor)">Depreciação anual</th>
+                <th title="Apenas referência: não preenche o valor residual do bem (valor residual vazio = zero)">Residual (referência)</th>
                 <th>Método</th>
                 <th>Situação</th>
                 <th class="text-end pe-3">Ações</th>
@@ -72,9 +83,12 @@
             <tbody>
               @for (c of categorias(); track c.id) {
                 <tr>
-                  <td class="ps-3">{{ c.nome }}</td>
+                  <td class="ps-3 text-nowrap">{{ c.codigo || '—' }}</td>
+                  <td>{{ c.nome }}</td>
+                  <td>{{ c.grupoNome || "—" }}</td>
                   <td class="text-nowrap">{{ formatarVidaUtil(c.vidaUtilMeses) }}</td>
-                  <td>{{ formatarPercentual(c.valorResidualPercentual) }}</td>
+                  <td class="text-nowrap">{{ c.depreciacaoAnualPercentual === null || c.depreciacaoAnualPercentual === undefined ? '—' : formatarPercentual(c.depreciacaoAnualPercentual) + ' ao ano' }}</td>
+                  <td class="text-nowrap">{{ formatarPercentual(c.valorResidualPercentual) }} <span class="text-muted small">(ref.)</span></td>
                   <td class="text-capitalize">{{ c.metodoDepreciacao }}</td>
                   <td>
                     @if (c.ativo) {
@@ -84,7 +98,7 @@
                     }
                   </td>
                   <td class="text-end pe-3 text-nowrap">
-                    @if (permissao.imobCanEdit()) {
+                    @if (permissao.imobCanEditCategorias()) {
                       <button type="button" class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(c)"
                               title="Editar" [attr.aria-label]="'Editar ' + c.nome">
                         <i class="bi bi-pencil"></i>
@@ -100,7 +114,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="6" class="text-center text-muted py-4">
+                  <td colspan="9" class="text-center text-muted py-4">
                     <i class="bi bi-inbox me-2"></i>Nenhuma categoria encontrada
                   </td>
                 </tr>
@@ -128,6 +142,23 @@
         }
 
         <div class="mb-3">
+          <label for="catCodigo" class="form-label">Código</label>
+          <input id="catCodigo" class="form-control" formControlName="codigo" maxlength="50"
+                 [class.is-invalid]="erroCampo('codigo')">
+          <div class="invalid-feedback">{{ erroCampo('codigo') }}</div>
+          <div class="form-text">Opcional e único na empresa (ex.: MOV, MAQ, HW).</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="catGrupo" class="form-label">Grupo</label>
+          <select id="catGrupo" class="form-select" formControlName="grupoId">
+            <option [ngValue]="null">Sem grupo</option>
+            @for (g of grupos(); track g.id) { <option [ngValue]="g.id">{{ g.nome }}{{ g.ativo ? '' : ' (inativo)' }}</option> }
+          </select>
+          <div class="form-text">Agrupa categorias nos relatórios e na consulta de bens (ex.: Móveis, Equipamentos de informática).</div>
+        </div>
+
+        <div class="mb-3">
           <label for="catNome" class="form-label">Nome *</label>
           <input id="catNome" class="form-control" formControlName="nome" maxlength="255"
                  [class.is-invalid]="erroCampo('nome')">
@@ -143,15 +174,17 @@
             @if (dicaVidaUtil() && !erroCampo('vidaUtilMeses')) {
               <div class="form-text">{{ dicaVidaUtil() }}</div>
             }
+            <div class="form-text">A depreciação anual é calculada pelo servidor (12 ÷ meses).</div>
           </div>
           <div class="col-6">
-            <label for="catResidual" class="form-label">Valor residual (%) *</label>
+            <label for="catResidual" class="form-label">Residual de referência (%) *</label>
             <div class="input-group has-validation">
               <input id="catResidual" class="form-control" type="number" min="0" max="100" step="0.01"
                      formControlName="valorResidualPercentual" [class.is-invalid]="erroCampo('valorResidualPercentual')">
               <span class="input-group-text">%</span>
               <div class="invalid-feedback">{{ erroCampo('valorResidualPercentual') }}</div>
             </div>
+            <div class="form-text">Referência: não preenche o valor residual do bem.</div>
           </div>
         </div>
 

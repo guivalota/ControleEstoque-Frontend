@@ -196,8 +196,8 @@ export interface ComparacaoRevisoes {
 
 // --- Relatórios (4.3) ---
 
-export type AgruparRazao = 'bem' | 'categoria' | 'local' | 'responsavel' | 'status';
-export type DimensaoRelatorio = 'categoria' | 'local' | 'responsavel' | 'status';
+export type AgruparRazao = 'bem' | 'categoria' | 'grupo' | 'local' | 'responsavel' | 'status';
+export type DimensaoRelatorio = 'categoria' | 'grupo' | 'local' | 'responsavel' | 'status';
 
 export interface LinhaRazao {
   chaveId?: number | null;

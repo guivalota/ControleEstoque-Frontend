@@ -6,7 +6,8 @@ import { Modal } from 'bootstrap';
 import { PedidoCompraService } from '../../../core/services/pedido-compra.service';
 import { ImpressaoService } from '../../../core/services/impressao.service';
 import { ProdutoService } from '../../../core/services/produto.service';
-import { UserService } from '../../../core/services/user.service';
+import { UsuarioEmpresaService } from '../../../core/services/usuario-empresa.service';
+import { UsuarioEmpresa } from '../../../core/models/usuario-empresa.model';
 import { PermissaoService } from '../../../core/services/permissao.service';
 import { PedidoCompra, PedidoCompraItem } from '../../../core/models/pedido-compra.model';
 
@@ -23,7 +24,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   produtoService = inject(ProdutoService);
-  userService = inject(UserService);
+  private usuarioEmpresaService = inject(UsuarioEmpresaService);
   permissao = inject(PermissaoService);
 
   @ViewChild('editModalEl') editModalEl!: ElementRef;
@@ -40,7 +41,8 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   impressaoErro = signal('');
 
   produtos = this.produtoService.produtos;
-  usuarios = this.userService.users;
+  /** Usuários ativos da empresa (opções de "Destinado a"). */
+  usuarios = signal<UsuarioEmpresa[]>([]);
 
   editForm = this.fb.group({
     descricao: ['', [Validators.required, Validators.maxLength(255)]],
@@ -59,7 +61,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.pedidoId = Number(this.route.snapshot.paramMap.get('id'));
     this.produtoService.getAll().subscribe();
-    this.userService.getAll().subscribe();
+    this.usuarioEmpresaService.listarTodos({ ativo: true }).subscribe({ next: l => this.usuarios.set(l), error: () => this.usuarios.set([]) });
     this.carregar();
   }
 

@@ -38,3 +38,12 @@
     color: #fff !important;
   }
 }
+
+.sidebar-logo {
+  max-height: 32px;
+  max-width: 120px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 4px;
+  padding: 2px;
+}

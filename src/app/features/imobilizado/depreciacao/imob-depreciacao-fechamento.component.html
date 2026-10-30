@@ -28,12 +28,12 @@
       </div>
     }
 
-    @if (podeFechar() && !mesPrevia()) {
+    @if (podePrevia() && !mesPrevia()) {
       <div class="card border-0 shadow-sm mb-3">
         <div class="card-body d-flex flex-wrap align-items-end gap-2">
           @if (proximoMes(); as m) {
             <button type="button" class="btn btn-primary" (click)="abrirPrevia(m)">
-              <i class="bi bi-lock me-1"></i>Fechar {{ formatarMes(m) }}
+              <i class="bi bi-lock me-1"></i>{{ podeFechar() ? 'Fechar' : 'Prévia de' }} {{ formatarMes(m) }}
             </button>
           } @else {
             <div>

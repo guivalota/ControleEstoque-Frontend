@@ -12,6 +12,8 @@ import { provideAuthFake } from '../../../testing/auth-fake';
 const BENS = '/api/v1/imobilizado/bens';
 const CATEGORIAS = '/api/v1/imobilizado/categorias';
 const ARVORE = '/api/v1/imobilizado/locais/arvore';
+const DEPARTAMENTOS = '/api/v1/imobilizado/departamentos';
+const GRUPOS = '/api/v1/imobilizado/grupos';
 
 const bem = (id: number, extra: Partial<ImobBem> = {}): ImobBem => ({
   id, plaqueta: `NB-000${id}`, descricao: `Notebook ${id}`, categoriaId: 3, categoriaNome: 'Informática',
@@ -52,6 +54,12 @@ describe('ImobBensComponent', () => {
       items: [categoria(3, 'Informática'), categoria(4, 'Móveis', false)], page: 1, pageSize: 100, total: 2
     });
     ctrl.expectOne(ARVORE).flush([]);
+    ctrl.expectOne(r => r.url === GRUPOS).flush({
+      items: [{ id: 3, codigo: 'MOV', nome: 'Móveis', ativo: true, criadoEm: '' }], page: 1, pageSize: 100, total: 1
+    });
+    ctrl.expectOne(r => r.url === DEPARTAMENTOS).flush({
+      items: [{ id: 2, codigo: 'TI', nome: 'Tecnologia', ativo: true, criadoEm: '' }], page: 1, pageSize: 100, total: 1
+    });
     if (query['responsavelId']) {
       ctrl.expectOne(r => r.url === `/api/v1/imobilizado/responsaveis/${query['responsavelId']}`)
         .flush({ id: Number(query['responsavelId']), nome: 'Ana Souza', matricula: 'M100', ativo: true, criadoEm: '' });
@@ -124,6 +132,26 @@ describe('ImobBensComponent', () => {
       responder([]);
       ctrl.expectOne(r => r.url === CATEGORIAS).flush({ items: [], page: 1, pageSize: 100, total: 0 });
       ctrl.expectOne(ARVORE).flush([]);
+      ctrl.expectOne(r => r.url === GRUPOS).flush({ items: [], page: 1, pageSize: 100, total: 0 });
+      ctrl.expectOne(r => r.url === DEPARTAMENTOS).flush({ items: [], page: 1, pageSize: 100, total: 0 });
+    });
+
+    it('mostra a coluna Departamento com o nome ou traço', async () => {
+      await montar('admin', {}, [bem(1, { departamentoId: 2, departamentoNome: 'Tecnologia' }), bem(2)]);
+      const cabecalhos = Array.from(el().querySelectorAll('thead th')).map(t => t.textContent?.trim());
+      expect(cabecalhos).toContain('Departamento');
+      const linhas = el().querySelectorAll('tbody tr');
+      expect(linhas[0].textContent).toContain('Tecnologia');
+      expect(linhas[1].textContent).not.toContain('Tecnologia');
+    });
+
+    it('mostra a coluna Grupo (herdado da categoria) com o nome ou traço', async () => {
+      await montar('admin', {}, [bem(1, { grupoId: 3, grupoNome: 'Móveis' }), bem(2)]);
+      const cabecalhos = Array.from(el().querySelectorAll('thead th')).map(t => t.textContent?.trim());
+      expect(cabecalhos).toContain('Grupo');
+      const linhas = el().querySelectorAll('tbody tr');
+      expect(linhas[0].textContent).toContain('Móveis');
+      expect(linhas[1].textContent).not.toContain('Móveis');
     });
   });
 
@@ -160,8 +188,92 @@ describe('ImobBensComponent', () => {
       responder([], req);
     });
 
+    it('lê departamento, período de compra e ordenação da URL e os envia à API', async () => {
+      const req = await montar('admin', {
+        departamentoId: 2, compraDe: '2024-01-01', compraAte: '2024-12-31', ordenarPor: 'valorAquisicao', direcao: 'desc'
+      });
+      const p = req.request.params;
+      expect(p.get('departamentoId')).toBe('2');
+      expect(p.get('compraDe')).toBe('2024-01-01');
+      expect(p.get('compraAte')).toBe('2024-12-31');
+      expect(p.get('ordenarPor')).toBe('valorAquisicao');
+      expect(p.get('direcao')).toBe('desc');
+      expect(comp.filtros.value.departamentoId).toBe(2);
+      expect(comp.filtros.value.compraDe).toBe('2024-01-01');
+      expect(comp.filtros.value.ordenarPor).toBe('valorAquisicao');
+      expect(comp.filtros.value.direcao).toBe('desc');
+    });
+
+    it('só ordenar não conta como filtro ativo', async () => {
+      await montar('admin', { ordenarPor: 'dataAquisicao' }, []);
+      expect(comp.temFiltro()).toBeFalse();
+      expect(el().textContent).toContain('Nenhum bem cadastrado');
+    });
+
+    it('escolher departamento atualiza a URL e recarrega', async () => {
+      await montar();
+      await navegando(() => comp.filtros.controls.departamentoId.setValue(2));
+      expect(router.url).toContain('departamentoId=2');
+      const req = listagem();
+      expect(req.request.params.get('departamentoId')).toBe('2');
+      responder([], req);
+    });
+
+    it('escolher grupo atualiza a URL e recarrega', async () => {
+      await montar();
+      await navegando(() => comp.filtros.controls.grupoId.setValue(3));
+      expect(router.url).toContain('grupoId=3');
+      const req = listagem();
+      expect(req.request.params.get('grupoId')).toBe('3');
+      responder([], req);
+    });
+
+    it('escolher a ordenação coloca ordenarPor e direcao na URL; plaqueta crescente (padrão) não vai', async () => {
+      await montar();
+      await navegando(() => comp.filtros.controls.ordenarPor.setValue('dataAquisicao'));
+      expect(router.url).toContain('ordenarPor=dataAquisicao');
+      expect(router.url).not.toContain('direcao=');
+      responder([], listagem());
+      await navegando(() => comp.filtros.controls.direcao.setValue('desc'));
+      expect(router.url).toContain('direcao=desc');
+      const req = listagem();
+      expect(req.request.params.get('ordenarPor')).toBe('dataAquisicao');
+      expect(req.request.params.get('direcao')).toBe('desc');
+      responder([], req);
+    });
+
+    it('plaqueta decrescente envia ordenarPor=plaqueta&direcao=desc', async () => {
+      await montar();
+      await navegando(() => comp.filtros.controls.direcao.setValue('desc'));
+      const req = listagem();
+      expect(req.request.params.get('ordenarPor')).toBe('plaqueta');
+      expect(req.request.params.get('direcao')).toBe('desc');
+      responder([], req);
+    });
+
+    it('compra de depois de compra até não é enviada e mostra o aviso', async () => {
+      await montar();
+      comp.filtros.patchValue({ compraDe: '2024-12-31', compraAte: '2024-01-01' }, { emitEvent: false });
+      comp.aplicar(1);
+      fixture.detectChanges();
+      expect(comp.erroPeriodo()).toContain('não pode ser posterior');
+      expect(el().textContent).toContain('não pode ser posterior');
+      ctrl.expectNone(r => r.url === BENS);
+    });
+
+    it('limpar zera os novos filtros', async () => {
+      await montar('admin', { departamentoId: 2, compraDe: '2024-01-01', ordenarPor: 'valorAquisicao' });
+      await navegando(() => comp.limparFiltros());
+      const req = listagem();
+      for (const k of ['departamentoId', 'compraDe', 'compraAte', 'ordenarPor', 'direcao']) expect(req.request.params.has(k)).toBeFalse();
+      responder([], req);
+    });
+
     it('valores inválidos na URL são ignorados', async () => {
-      const req = await montar('admin', { localId: 'abc', categoriaId: '-1', status: 'xyz', incluirSublocais: 'false' });
+      const req = await montar('admin', {
+        localId: 'abc', categoriaId: '-1', status: 'xyz', incluirSublocais: 'false', departamentoId: '0',
+        compraDe: '10/10/2024', ordenarPor: 'nome', direcao: 'desc'
+      });
       expect(req.request.params.keys().sort()).toEqual(['page', 'pageSize']);
     });
 

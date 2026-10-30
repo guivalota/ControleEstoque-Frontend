@@ -69,6 +69,17 @@
             @if (erroCampo('localId')) { <div class="invalid-feedback d-block">{{ erroCampo('localId') }}</div> }
           </div>
           <div class="col-12 col-md-4">
+            <label for="bemDepartamentoForm" class="form-label">Departamento</label>
+            <select id="bemDepartamentoForm" class="form-select" formControlName="departamentoId"
+                    [class.is-invalid]="erroCampo('departamentoId')">
+              <option [ngValue]="null">(Nenhum)</option>
+              @for (d of departamentosOpcoes(); track d.id) {
+                <option [ngValue]="d.id">{{ d.codigo }} — {{ d.nome }}{{ d.ativo ? '' : ' (inativo)' }}</option>
+              }
+            </select>
+            <div class="invalid-feedback">{{ erroCampo('departamentoId') }}</div>
+          </div>
+          <div class="col-12 col-md-4">
             <label for="bemResponsavelForm" class="form-label">Responsável</label>
             <app-autocomplete-responsavel inputId="bemResponsavelForm" formControlName="responsavelId"
                                           [invalido]="!!erroCampo('responsavelId')" />
@@ -93,10 +104,10 @@
           <div class="col-6 col-md-3">
             <label for="bemResidual" class="form-label">Valor residual (R$)</label>
             <input id="bemResidual" type="number" min="0" step="0.01" class="form-control" formControlName="valorResidual"
-                   (input)="marcarResidualTocado()" [class.is-invalid]="erroCampo('valorResidual')">
+                   [class.is-invalid]="erroCampo('valorResidual')">
             <div class="invalid-feedback">{{ erroCampo('valorResidual') }}</div>
-            @if (mostrarSugestao('residual') && !erroCampo('valorResidual')) {
-              <div class="form-text">Sugerido pela categoria ({{ formatarPercentual(categoriaSelecionada()!.valorResidualPercentual) }} da aquisição). Você pode editar.</div>
+            @if (!erroCampo('valorResidual')) {
+              <div class="form-text">{{ edicao ? 'Vazio mantém o valor atual; informe 0 para zerar.' : 'Opcional: vazio = zero.' }} Deve ser menor que o valor de aquisição.</div>
             }
           </div>
           <div class="col-6 col-md-3">
@@ -104,14 +115,21 @@
             <input id="bemVida" type="number" min="1" max="1200" step="1" class="form-control" formControlName="vidaUtilMeses"
                    (input)="marcarVidaTocada()" [class.is-invalid]="erroCampo('vidaUtilMeses')">
             <div class="invalid-feedback">{{ erroCampo('vidaUtilMeses') }}</div>
-            @if (mostrarSugestao('vida') && !erroCampo('vidaUtilMeses')) {
+            @if (mostrarSugestaoVida() && !erroCampo('vidaUtilMeses')) {
               <div class="form-text">Sugerida pela categoria ({{ formatarVidaUtil(categoriaSelecionada()!.vidaUtilMeses) }}). Você pode editar.</div>
             }
           </div>
           <div class="col-12 col-md-6">
             <label for="bemFornecedor" class="form-label">Fornecedor</label>
+            @if (fornecedores().length) {
+              <select id="bemFornecedorCadastro" class="form-select form-select-sm mb-1" aria-label="Fornecedor do cadastro"
+                      [value]="form.controls.fornecedorId.value ?? ''" (change)="escolherFornecedor($any($event.target).value)">
+                <option value="">Digitar manualmente (sem vínculo com o cadastro)</option>
+                @for (f of fornecedores(); track f.id) { <option [value]="f.id" [selected]="f.id === form.controls.fornecedorId.value">{{ f.razaoSocial }}</option> }
+              </select>
+            }
             <input id="bemFornecedor" class="form-control" formControlName="fornecedorNome" maxlength="255"
-                   [class.is-invalid]="erroCampo('fornecedorNome')">
+                   (input)="aoDigitarFornecedor()" [class.is-invalid]="erroCampo('fornecedorNome')">
             <div class="invalid-feedback">{{ erroCampo('fornecedorNome') }}</div>
           </div>
           <div class="col-12 col-md-6">

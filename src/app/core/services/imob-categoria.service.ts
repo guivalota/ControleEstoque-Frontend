@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { AtualizarImobCategoria, CriarImobCategoria, ImobCategoria, ImobCategoriaFiltro } from '../models/imob-categoria.model';
+import { AtualizarImobCategoria, CriarImobCategoria, ImobCategoria, ImobCategoriaFiltro, ImobCategoriasPadraoResultado } from '../models/imob-categoria.model';
 import { PagedResult } from '../models/paged-result.model';
 import { montarParams } from '../utils/http-params';
 
@@ -20,6 +20,11 @@ export class ImobCategoriaService {
 
   atualizar(id: number, req: AtualizarImobCategoria) {
     return this.http.put<ImobCategoria>(`${this.url}/${id}`, req);
+  }
+
+  /** Só admin; idempotente: cria apenas as categorias padrão que faltam. */
+  carregarPadrao() {
+    return this.http.post<ImobCategoriasPadraoResultado>(`${this.url}/padrao`, {});
   }
 
   excluir(id: number) {
