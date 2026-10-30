@@ -83,14 +83,15 @@ describe('ImobBensComponent', () => {
   afterEach(() => ctrl.verify());
 
   describe('lista', () => {
-    it('carrega a página 1 sem filtros e mostra valor em BRL, status e responsável ausente', async () => {
+    it('carrega a página 1 sem filtros e mostra valor em BRL e status, sem o responsável (só no detalhe)', async () => {
       const req = await montar();
       expect(req.request.params.get('page')).toBe('1');
       expect(req.request.params.get('pageSize')).toBe('50');
       expect(req.request.params.keys().sort()).toEqual(['page', 'pageSize']);
       expect(el().textContent).toContain('NB-0001');
       expect(el().textContent).toContain('Sala 101');
-      expect(el().textContent).toContain('Ana Souza');
+      expect(el().textContent).not.toContain('Ana Souza');
+      expect(Array.from(el().querySelectorAll('thead th')).map(t => t.textContent?.trim())).not.toContain('Responsável');
       expect(el().textContent).toContain('Ativo');
       expect(el().textContent?.replace(/\s/g, ' ')).toContain('R$ 4.500,00');
       expect(el().textContent).toContain('—');

@@ -14,7 +14,13 @@ const categoria = (id: number, nome: string, vida: number, pct: number, ativo = 
   criadoEm: '2026-10-22T14:03:11Z'
 });
 
-const CATEGORIAS = [categoria(3, 'Informática', 60, 10), categoria(4, 'Móveis', 120, 20), categoria(9, 'Antiga', 24, 5, false)];
+const CATEGORIAS = [
+  { ...categoria(3, 'Informática', 60, 10), grupoId: 1 }, { ...categoria(4, 'Móveis', 120, 20), grupoId: 2 }, categoria(9, 'Antiga', 24, 5, false)
+];
+const GRUPOS = [
+  { id: 1, codigo: 'INF', nome: 'Equipamentos de informática', ativo: true, criadoEm: '' },
+  { id: 2, codigo: 'MOV', nome: 'Móveis e utensílios', ativo: true, criadoEm: '' }
+];
 
 const DEPARTAMENTOS = [
   { id: 2, codigo: 'TI', nome: 'Tecnologia', ativo: true, criadoEm: '' },
@@ -58,6 +64,7 @@ describe('ImobBemFormComponent', () => {
     depoisDeCriar?.();
     fixture.detectChanges();
     ctrl.expectOne(r => r.url === '/api/v1/imobilizado/categorias').flush({ items: categorias, page: 1, pageSize: 100, total: categorias.length });
+    ctrl.expectOne(r => r.url === '/api/v1/imobilizado/grupos').flush({ items: GRUPOS, page: 1, pageSize: 100, total: GRUPOS.length });
     ctrl.expectOne(r => r.url === '/api/v1/imobilizado/departamentos').flush({
       items: DEPARTAMENTOS, page: 1, pageSize: 100, total: DEPARTAMENTOS.length
     });
@@ -106,6 +113,33 @@ describe('ImobBemFormComponent', () => {
       comp.form.controls.valorResidual.setValue(100);
       comp.form.controls.valorResidual.markAsTouched();
       expect(comp.erroCampo('valorResidual')).toBe('Informe o valor de aquisição para definir o residual.');
+    });
+
+    it('grupo filtra as categorias, escolher a categoria mostra o grupo e o grupo não vai no corpo', () => {
+      const nomes = () => Array.from(el().querySelectorAll('#bemCategoriaForm option')).map(o => o.textContent?.trim());
+      expect(Array.from(el().querySelectorAll('#bemGrupoForm option')).map(o => o.textContent?.trim()))
+        .toEqual(['Todos os grupos', 'Equipamentos de informática', 'Móveis e utensílios']);
+      expect(nomes()).toContain('Informática');
+      expect(nomes()).toContain('Móveis');
+
+      comp.form.patchValue({ grupoId: 2 });
+      fixture.detectChanges();
+      expect(nomes()).toContain('Móveis');
+      expect(nomes()).not.toContain('Informática');
+
+      // categoria de outro grupo: limpa a categoria; categoria do grupo: sincroniza o grupo
+      comp.form.patchValue({ categoriaId: 4 });
+      comp.form.patchValue({ grupoId: 1 });
+      expect(comp.form.value.categoriaId).toBeNull();
+      comp.form.patchValue({ categoriaId: 3 });
+      expect(comp.form.value.grupoId).toBe(1);
+
+      comp.form.patchValue({ plaqueta: 'G-1', descricao: 'Item', localId: 7 });
+      comp.save();
+      const post = ctrl.expectOne(r => r.method === 'POST' && r.url === BENS);
+      expect(post.request.body.categoriaId).toBe(3);
+      expect('grupoId' in post.request.body).toBeFalse();
+      post.flush(bem({ id: 90 }), { status: 201, statusText: 'Created' });
     });
 
     it('só lista categorias ativas', () => {

@@ -169,7 +169,6 @@
                 <th>Local</th>
                 <th>Grupo</th>
                 <th>Departamento</th>
-                <th>Responsável</th>
                 <th class="text-end">Valor</th>
                 <th>Status</th>
                 <th class="text-end pe-3">Ações</th>
@@ -189,7 +188,6 @@
                   <td>{{ b.localNome }}</td>
                   <td>{{ b.grupoNome || "—" }}</td>
                   <td>{{ b.departamentoNome || '—' }}</td>
-                  <td>{{ b.responsavelNome || '—' }}</td>
                   <td class="text-end text-nowrap">{{ formatarMoeda(b.valorAquisicao) }}</td>
                   <td><span class="badge" [class]="classeStatus[b.status]">{{ rotuloStatus[b.status] }}</span></td>
                   <td class="text-end pe-3 text-nowrap">
@@ -209,7 +207,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="9" class="text-center text-muted py-4">
+                  <td colspan="8" class="text-center text-muted py-4">
                     <i class="bi bi-inbox me-2"></i>{{ temFiltro() ? 'Nenhum bem encontrado com os filtros atuais' : 'Nenhum bem cadastrado' }}
                   </td>
                 </tr>

@@ -52,6 +52,16 @@
         <h6 class="text-muted text-uppercase small fw-semibold mb-3">Classificação</h6>
         <div class="row g-3 mb-4">
           <div class="col-12 col-md-4">
+            <label for="bemGrupoForm" class="form-label">Grupo</label>
+            <select id="bemGrupoForm" class="form-select" formControlName="grupoId">
+              <option [ngValue]="null">Todos os grupos</option>
+              @for (g of gruposOpcoes(); track g.id) {
+                <option [ngValue]="g.id">{{ g.nome }}{{ g.ativo ? '' : ' (inativo)' }}</option>
+              }
+            </select>
+            <div class="form-text">Filtra as categorias; o grupo do bem vem da categoria.</div>
+          </div>
+          <div class="col-12 col-md-4">
             <label for="bemCategoriaForm" class="form-label">Categoria *</label>
             <select id="bemCategoriaForm" class="form-select" formControlName="categoriaId"
                     [class.is-invalid]="erroCampo('categoriaId')">

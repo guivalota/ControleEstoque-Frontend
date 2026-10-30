@@ -6,6 +6,8 @@ import { ImobBemService } from '../../../core/services/imob-bem.service';
 import { ImobCategoriaService } from '../../../core/services/imob-categoria.service';
 import { ImobLocalService } from '../../../core/services/imob-local.service';
 import { ImobDepartamentoService } from '../../../core/services/imob-departamento.service';
+import { ImobGrupoService } from '../../../core/services/imob-grupo.service';
+import { ImobGrupo } from '../../../core/models/imob-grupo.model';
 import { ImobDepartamento } from '../../../core/models/imob-departamento.model';
 import { FornecedorService } from '../../../core/services/fornecedor.service';
 import { Fornecedor } from '../../../core/models/fornecedor.model';
@@ -48,6 +50,7 @@ export class ImobBemFormComponent implements OnInit {
   private categoriaService = inject(ImobCategoriaService);
   private localService = inject(ImobLocalService);
   private departamentoService = inject(ImobDepartamentoService);
+  private grupoService = inject(ImobGrupoService);
   private fornecedorService = inject(FornecedorService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -59,6 +62,7 @@ export class ImobBemFormComponent implements OnInit {
 
   bem = signal<ImobBem | null>(null);
   categorias = signal<ImobCategoria[]>([]);
+  grupos = signal<ImobGrupo[]>([]);
   departamentos = signal<ImobDepartamento[]>([]);
   /** Fornecedores ativos do cadastro da empresa (opcional: o nome também pode ser digitado, PEND-065). */
   fornecedores = signal<Fornecedor[]>([]);
@@ -75,6 +79,8 @@ export class ImobBemFormComponent implements OnInit {
   form = this.fb.group({
     plaqueta: ['', [Validators.required, Validators.maxLength(50)]],
     descricao: ['', [Validators.required, Validators.maxLength(500)]],
+    /** Só filtra as categorias (o bem herda o grupo da categoria); não vai no corpo da requisição. */
+    grupoId: [null as number | null],
     categoriaId: [null as number | null, [Validators.required]],
     localId: [null as number | null, [Validators.required]],
     responsavelId: [null as number | null],
@@ -93,10 +99,19 @@ export class ImobBemFormComponent implements OnInit {
   private categoriaId = toSignal(this.form.controls.categoriaId.valueChanges, { initialValue: null });
   categoriaSelecionada = computed(() => this.categorias().find(c => c.id === this.categoriaId()) ?? null);
 
+  private grupoFiltro = toSignal(this.form.controls.grupoId.valueChanges, { initialValue: null as number | null });
+
+  /** Grupos ativos; na edição, o grupo atual do bem continua listado mesmo se inativo. */
+  gruposOpcoes = computed(() => {
+    const atual = this.bem()?.grupoId;
+    return this.grupos().filter(g => g.ativo || g.id === atual);
+  });
+
   /** Categorias ativas; na edição, a categoria atual do bem continua listada mesmo se inativa. */
   categoriasOpcoes = computed(() => {
     const atual = this.bem()?.categoriaId;
-    return this.categorias().filter(c => c.ativo || c.id === atual);
+    const grupo = this.grupoFiltro();
+    return this.categorias().filter(c => (c.ativo || c.id === atual) && (grupo === null || c.grupoId === grupo));
   });
 
   /** Departamentos ativos; na edição, o departamento atual do bem continua listado mesmo se inativo. */
@@ -112,7 +127,12 @@ export class ImobBemFormComponent implements OnInit {
   });
 
   constructor() {
-    this.form.controls.categoriaId.valueChanges.subscribe(() => this.aplicarSugestoes());
+    this.form.controls.categoriaId.valueChanges.subscribe(() => { this.aplicarSugestoes(); this.sincronizarGrupo(); });
+    // Trocar o grupo para outro que não contém a categoria escolhida limpa a categoria
+    this.form.controls.grupoId.valueChanges.subscribe(g => {
+      const cat = this.categoriaSelecionada();
+      if (g !== null && cat && cat.grupoId !== g) this.form.controls.categoriaId.setValue(null);
+    });
     this.form.controls.valorAquisicao.valueChanges.subscribe(() => {
       // sem valor de aquisição não há residual (o servidor também o limpa)
       if (typeof this.form.controls.valorAquisicao.value !== 'number') {
@@ -122,7 +142,19 @@ export class ImobBemFormComponent implements OnInit {
     });
   }
 
+  /** Escolher a categoria mostra o grupo dela no seletor de grupo. */
+  private sincronizarGrupo() {
+    const cat = this.categoriaSelecionada();
+    if (cat && cat.grupoId !== undefined && cat.grupoId !== null && cat.grupoId !== this.form.controls.grupoId.value) {
+      this.form.controls.grupoId.setValue(cat.grupoId);
+    }
+  }
+
   ngOnInit() {
+    this.grupoService.listar({ pageSize: 100 }).subscribe({
+      next: res => this.grupos.set(res.items),
+      error: () => this.grupos.set([]) // o filtro por grupo é opcional
+    });
     this.categoriaService.listar({ pageSize: 100 }).subscribe({
       next: res => { this.categorias.set(res.items); this.aplicarSugestoes(); },
       error: () => this.erroCarga.set('Não foi possível carregar as categorias.')
@@ -152,6 +184,7 @@ export class ImobBemFormComponent implements OnInit {
             fornecedorId: bem.fornecedorId ?? null, fornecedorNome: bem.fornecedorNome ?? '', numeroDocumentoAquisicao: bem.numeroDocumentoAquisicao ?? '',
             numeroSerie: bem.numeroSerie ?? '', observacao: bem.observacao ?? ''
           }, { emitEvent: false });
+          this.form.controls.grupoId.setValue(bem.grupoId ?? null);
           if (this.bloqueado()) this.form.disable({ emitEvent: false });
           this.loading.set(false);
         },

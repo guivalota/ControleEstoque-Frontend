@@ -78,6 +78,7 @@
         <p class="fs-5 mb-4">{{ b.descricao }}</p>
         <dl class="row mb-0">
           <dt class="col-sm-3">Categoria</dt><dd class="col-sm-9">{{ b.categoriaNome }}</dd>
+          <dt class="col-sm-3">Grupo</dt><dd class="col-sm-9">{{ b.grupoNome || "—" }}</dd>
           <dt class="col-sm-3">Local</dt><dd class="col-sm-9">{{ b.localNome }}</dd>
           <dt class="col-sm-3">Responsável</dt><dd class="col-sm-9">{{ b.responsavelNome || '—' }}</dd>
           <dt class="col-sm-3">Data de aquisição</dt><dd class="col-sm-9">{{ formatarData(b.dataAquisicao) }}</dd>
