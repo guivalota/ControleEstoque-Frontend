@@ -38,15 +38,10 @@ describe('ImobilizadoShellComponent', () => {
     expect(texto()).toContain('Você ainda não tem acesso a nenhuma empresa');
   });
 
-  it('mostra a empresa ativa com CNPJ formatado e o botão Trocar com 2+ empresas', () => {
+  it('mostra a empresa ativa com CNPJ formatado e nunca oferece Trocar', () => {
     estado([empresa(1, 'Alfa'), empresa(2)], 1);
     expect(texto()).toContain('Alfa');
     expect(texto()).toContain('11.222.333/0001-81');
-    expect(texto()).toContain('Trocar');
-  });
-
-  it('com 1 empresa não oferece Trocar', () => {
-    estado([empresa(1)], 1);
     expect(texto()).not.toContain('Trocar');
   });
 
@@ -79,44 +74,24 @@ describe('ImobilizadoShellComponent — papéis e administração', () => {
     return { fixture, svc, texto: () => (fixture.nativeElement as HTMLElement).textContent ?? '' };
   }
 
-  it('admin vê o link Empresas', () => {
-    const { fixture, svc, texto } = criar('admin');
-    svc.empresas.set([empresa(1)]);
-    svc.id.set(1);
-    svc.carregado.set(true);
-    fixture.detectChanges();
-    expect(texto()).toContain('Empresas');
-  });
-
-  for (const role of ['operador', 'leitura']) {
-    it(`${role} não vê o link Empresas nem o atalho de administração`, () => {
+  for (const role of ['admin', 'operador', 'leitura']) {
+    it(`${role}: sem links para /imobilizado/empresas (rota removida; só o super admin administra)`, () => {
       const { fixture, svc, texto } = criar(role);
+      svc.empresas.set([empresa(1)]);
+      svc.id.set(1);
       svc.carregado.set(true);
       fixture.detectChanges();
-      expect(texto()).toContain('Você ainda não tem acesso');
+      expect((fixture.nativeElement as HTMLElement).querySelector('a[href="/imobilizado/empresas"]')).toBeNull();
       expect(texto()).not.toContain('Administrar empresas');
-      expect(texto()).not.toContain('Empresas');
     });
   }
 
-  it('admin sem empresas vê o atalho para administrar empresas', () => {
+  it('sem empresas: orienta falar com o administrador ', () => {
     const { fixture, svc, texto } = criar('admin');
     svc.carregado.set(true);
     fixture.detectChanges();
-    expect(texto()).toContain('Administrar empresas');
-  });
-
-  it('em tela de administração não mostra "sem acesso" e não abre o seletor obrigatório', () => {
-    const { fixture, svc, texto } = criar('admin');
-    svc.empresas.set([empresa(1), empresa(2)]);
-    svc.carregado.set(true);
-    expect(svc.seletorAberto()).toBeTrue();
-    svc.emAdministracao.set(true);
-    fixture.detectChanges();
-    expect(svc.seletorAberto()).toBeFalse();
-
-    svc.empresas.set([]);
-    fixture.detectChanges();
-    expect(texto()).not.toContain('Você ainda não tem acesso');
+    expect(texto()).toContain('Você ainda não tem acesso');
+    expect(texto()).toContain('Fale com o administrador');
+    expect((fixture.nativeElement as HTMLElement).querySelector('a[href="/imobilizado/empresas"]')).toBeNull();
   });
 });

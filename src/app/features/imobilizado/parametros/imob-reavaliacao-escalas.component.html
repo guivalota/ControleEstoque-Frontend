@@ -1,0 +1,254 @@
+<div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+      <h6 class="fw-bold mb-0">Escalas VP e VF</h6>
+      <div class="text-muted small">
+        Faixas semiabertas [de, até): o valor "de" entra na faixa, o "até" já pertence à seguinte. Cada alteração cria uma nova versão.
+      </div>
+    </div>
+    @if (!podeEditar()) {
+      <span class="badge bg-secondary-subtle text-secondary">Somente leitura</span>
+    }
+  </div>
+
+  <ul class="nav nav-tabs mb-3" role="tablist">
+    @for (t of tipos; track t) {
+      <li class="nav-item" role="presentation">
+        <button type="button" class="nav-link" role="tab" [class.active]="tipo() === t" [attr.aria-selected]="tipo() === t"
+                (click)="trocarTipo(t)">
+          {{ rotulos[t].titulo }}
+        </button>
+      </li>
+    }
+  </ul>
+
+  @if (feedback()) {
+    <div class="alert alert-success alert-dismissible py-2" role="status">
+      {{ feedback() }}
+      <button type="button" class="btn-close" aria-label="Fechar" (click)="feedback.set('')"></button>
+    </div>
+  }
+  @if (erro()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
+      <span>{{ erro() }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="carregar()">Tentar novamente</button>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Carregando...</div>
+  } @else {
+    @if (vigente(); as v) {
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">
+              {{ rotulos[tipo()].titulo }} — versão vigente
+              <span class="badge bg-success-subtle text-success ms-1">v{{ v.versao }}</span>
+            </h6>
+            <span class="text-muted small">
+              {{ formatarDataHora(v.criadoEm) }}@if (v.criadoPorNome) { · {{ v.criadoPorNome }} }
+            </span>
+          </div>
+          <div class="small text-muted mb-2">Entrada: {{ rotulos[tipo()].entrada }} → nota de 0 a 10.</div>
+
+          <h6 class="small text-uppercase text-muted mt-3">Testar valor</h6>
+          <form class="row g-2 align-items-end" (ngSubmit)="testar()">
+            <div class="col-8 col-md-4">
+              <label for="escValorTeste" class="form-label small mb-1">Valor ({{ rotulos[tipo()].entrada }})</label>
+              <input id="escValorTeste" type="number" step="any" class="form-control form-control-sm" [formControl]="valorTeste">
+            </div>
+            <div class="col-auto">
+              <button type="submit" class="btn btn-sm btn-outline-primary" [disabled]="testando()">
+                @if (testando()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Testar
+              </button>
+            </div>
+          </form>
+          @if (erroTeste()) { <div class="text-danger small mt-2" role="alert">{{ erroTeste() }}</div> }
+          @if (resultadoTeste(); as r) {
+            <div class="mt-2" role="status" id="resultadoTeste">
+              Valor <strong>{{ formatarNumero(r.valor) }}</strong> → nota <strong>{{ formatarNumero(r.nota) }}</strong>
+              <span class="text-muted small">(versão {{ r.versao }} vigente)</span>
+              @if (notaRascunho() !== undefined) {
+                <div class="small">
+                  No rascunho do editor:
+                  @if (notaRascunho() === null) { <span class="text-danger">nenhuma faixa contém o valor</span> }
+                  @else { nota <strong>{{ formatarNumero(notaRascunho()) }}</strong> }
+                  <span class="text-muted">(ainda não salvo)</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">{{ podeEditar() ? 'Editor de faixas' : 'Faixas da versão vigente' }}</h6>
+          @if (podeEditar()) {
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="encaixarFaixas()"
+                      title="Faz o início de cada faixa igual ao término da anterior">
+                <i class="bi bi-arrows-collapse me-1"></i>Encaixar faixas
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="linhas.length >= maxFaixas" (click)="adicionarFaixa()">
+                <i class="bi bi-plus-lg me-1"></i>Adicionar faixa
+              </button>
+            </div>
+          }
+        </div>
+
+        @if (podeEditar()) {
+          @if (validacao().valida) {
+            <div class="alert alert-success py-2 small" role="status" id="escalaContinua">
+              <i class="bi bi-check-circle me-1"></i>Escala contínua: todo valor a partir de 0 tem exatamente uma nota.
+            </div>
+          } @else {
+            <div class="alert alert-warning py-2 small" role="alert" id="escalaInvalida">
+              <i class="bi bi-exclamation-triangle me-1"></i>A escala tem problemas (destacados nas linhas).
+              @for (g of validacao().geral; track g) { <div>{{ g }}</div> }
+            </div>
+          }
+        }
+
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-2" style="width: 4rem">#</th>
+                <th>De (inclusive)</th>
+                <th>Até (exclusive)</th>
+                <th>Nota (0 a 10)</th>
+                @if (podeEditar()) { <th class="text-end pe-2">&nbsp;</th> }
+              </tr>
+            </thead>
+            <tbody>
+              @for (linha of linhas.controls; track linha; let i = $index) {
+                @let erros = validacao().porLinha[i];
+                <tr [class.table-danger]="erros.length > 0" [attr.data-linha]="i">
+                  <td class="ps-2">{{ i + 1 }}</td>
+                  @if (podeEditar()) {
+                    <td [formGroup]="linha">
+                      <input type="number" step="any" class="form-control form-control-sm" formControlName="de"
+                             [attr.aria-label]="'Início da faixa ' + (i + 1)" [class.is-invalid]="erros.length > 0">
+                    </td>
+                    <td [formGroup]="linha">
+                      <input type="number" step="any" class="form-control form-control-sm" formControlName="ate"
+                             placeholder="sem limite" [attr.aria-label]="'Término da faixa ' + (i + 1)" [class.is-invalid]="erros.length > 0">
+                    </td>
+                    <td [formGroup]="linha">
+                      <input type="number" step="any" min="0" max="10" class="form-control form-control-sm" formControlName="nota"
+                             [attr.aria-label]="'Nota da faixa ' + (i + 1)" [class.is-invalid]="erros.length > 0">
+                    </td>
+                    <td class="text-end pe-2">
+                      <button type="button" class="btn btn-sm btn-outline-danger" (click)="removerFaixa(i)"
+                              [attr.aria-label]="'Remover faixa ' + (i + 1)"><i class="bi bi-trash"></i></button>
+                    </td>
+                  } @else {
+                    <td>{{ formatarNumero(linha.value.de) }}</td>
+                    <td>{{ linha.value.ate === null ? 'sem limite' : formatarNumero(linha.value.ate) }}</td>
+                    <td>{{ formatarNumero(linha.value.nota) }}</td>
+                  }
+                </tr>
+                @if (erros.length) {
+                  <tr class="table-danger" [attr.data-erros]="i">
+                    <td></td>
+                    <td colspan="4" class="small text-danger pt-0">
+                      @for (e of erros; track e) { <div><i class="bi bi-x-circle me-1"></i>{{ e }}</div> }
+                    </td>
+                  </tr>
+                }
+              } @empty {
+                <tr><td colspan="5" class="text-center text-muted py-3">Nenhuma faixa</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (podeEditar()) {
+          <div class="mt-3">
+            <label for="escMotivo" class="form-label">Motivo</label>
+            <textarea id="escMotivo" rows="2" maxlength="500" class="form-control" [formControl]="motivo"
+                      placeholder="Por que a escala mudou (opcional, até 500 caracteres)"></textarea>
+          </div>
+        }
+      </div>
+      @if (podeEditar()) {
+        <div class="card-footer bg-transparent">
+          @if (saveError()) { <div class="alert alert-danger py-2" role="alert">{{ saveError() }}</div> }
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-outline-secondary" [disabled]="saving() || !alterada()" (click)="descartar()">Descartar</button>
+            <button type="button" class="btn btn-primary" [disabled]="saving() || !validacao().valida || !alterada()" (click)="salvar()">
+              @if (saving()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              Salvar nova versão
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <h6 class="fw-bold mb-2">Histórico de versões</h6>
+  @if (histErro()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
+      <span>{{ histErro() }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="carregarHistorico(histPage())">Tentar novamente</button>
+    </div>
+  }
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (histLoading()) {
+        <div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Carregando...</div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Versão</th>
+                <th>Quando / quem</th>
+                <th>Faixas</th>
+                <th>Motivo</th>
+                @if (podeEditar()) { <th class="pe-3">&nbsp;</th> }
+              </tr>
+            </thead>
+            <tbody>
+              @for (h of historico(); track h.id) {
+                <tr>
+                  <td class="ps-3 text-nowrap">
+                    v{{ h.versao }}
+                    @if (h.vigente) { <span class="badge bg-success-subtle text-success ms-1">vigente</span> }
+                  </td>
+                  <td class="small text-nowrap">{{ formatarDataHora(h.criadoEm) }}<br>{{ h.criadoPorNome || '—' }}</td>
+                  <td class="small">
+                    <details>
+                      <summary>{{ h.faixas.length }} {{ h.faixas.length === 1 ? 'faixa' : 'faixas' }}</summary>
+                      @for (f of h.faixas; track f.ordem ?? $index) {
+                        <div class="text-nowrap">{{ intervalo(f) }} → nota {{ formatarNumero(f.nota) }}</div>
+                      }
+                    </details>
+                  </td>
+                  <td class="small">{{ h.motivo || '—' }}</td>
+                  @if (podeEditar()) {
+                    <td class="pe-3 text-end">
+                      @if (!h.vigente) {
+                        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="usarComoBase(h)"
+                                [attr.aria-label]="'Usar a versão ' + h.versao + ' como base'">Usar como base</button>
+                      }
+                    </td>
+                  }
+                </tr>
+              } @empty {
+                <tr><td [attr.colspan]="podeEditar() ? 5 : 4" class="text-center text-muted py-4">Nenhuma versão encontrada</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacao [page]="histPage()" [pageSize]="histPageSize" [total]="histTotal()" [disabled]="histLoading()"
+                       (mudar)="carregarHistorico($event)" />
+      }
+    </div>
+  </div>
+</div>

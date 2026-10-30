@@ -31,6 +31,16 @@ export function lerErroApi(err: unknown, fallback: string): ErroApi {
   return { mensagem: fallback, campos: {} };
 }
 
+/** Texto único para exibir: a mensagem geral ou, se só houver erros de campo, os campos juntos; nunca vazio. */
+export function textoDoErro(erro: ErroApi, fallback: string): string {
+  return erro.mensagem || Object.values(erro.campos).filter(Boolean).join(' ') || fallback;
+}
+
+/** UUID no formato 8-4-4-4-12 (hex). */
+export function ehUuid(valor: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valor);
+}
+
 /**
  * Aplica um erro da API a um formulário: erros por campo viram `servidor` no controle e,
  * para `{ error }`, o campo cujo termo aparece na mensagem recebe o erro (o primeiro da lista

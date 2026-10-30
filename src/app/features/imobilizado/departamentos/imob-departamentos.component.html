@@ -1,0 +1,159 @@
+<div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="fw-bold mb-0">Departamentos</h6>
+    @if (permissao.imobCanCreate()) {
+      <button type="button" class="btn btn-primary btn-sm" (click)="openCreate()">
+        <i class="bi bi-plus-lg me-1"></i>Novo departamento
+      </button>
+    }
+  </div>
+
+  <form class="row g-2 align-items-end mb-3" (ngSubmit)="carregar(1)">
+    <div class="col-12 col-md-5">
+      <label for="depBusca" class="form-label small mb-1">Buscar</label>
+      <input id="depBusca" name="busca" class="form-control form-control-sm" placeholder="Código ou nome"
+             [(ngModel)]="busca">
+    </div>
+    <div class="col-6 col-md-3">
+      <label for="depAtivo" class="form-label small mb-1">Situação</label>
+      <select id="depAtivo" name="ativo" class="form-select form-select-sm" [(ngModel)]="ativoFiltro" (ngModelChange)="carregar(1)">
+        <option value="">Todos</option>
+        <option value="true">Somente ativos</option>
+        <option value="false">Somente inativos</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-sm btn-outline-primary me-1">Buscar</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="limparFiltros()">Limpar</button>
+    </div>
+  </form>
+
+  @if (feedback()) {
+    <div class="alert alert-success alert-dismissible py-2" role="status">
+      {{ feedback() }}
+      <button type="button" class="btn-close" aria-label="Fechar" (click)="feedback.set('')"></button>
+    </div>
+  }
+  @if (erro()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
+      <span>{{ erro() }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="carregar()">Tentar novamente</button>
+    </div>
+  }
+  @if (bloqueio(); as b) {
+    <app-bloqueio-exclusao
+      [mensagem]="b.mensagem"
+      [permiteDesativar]="b.departamento.ativo"
+      [filtroBens]="bloqueioTemBens() ? { departamentoId: b.departamento.id } : null"
+      [desativando]="agindo() === b.departamento.id"
+      (desativar)="desativar()"
+      (fechar)="bloqueio.set(null)" />
+  }
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Código</th>
+                <th>Nome</th>
+                <th>Situação</th>
+                <th class="text-end pe-3">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of departamentos(); track d.id) {
+                <tr>
+                  <td class="ps-3 text-nowrap">{{ d.codigo }}</td>
+                  <td>{{ d.nome }}</td>
+                  <td>
+                    @if (d.ativo) {
+                      <span class="badge bg-success-subtle text-success">Ativo</span>
+                    } @else {
+                      <span class="badge bg-secondary-subtle text-secondary">Inativo</span>
+                    }
+                  </td>
+                  <td class="text-end pe-3 text-nowrap">
+                    @if (permissao.imobCanEdit()) {
+                      <button type="button" class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(d)"
+                              title="Editar" [attr.aria-label]="'Editar ' + d.nome">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                    }
+                    @if (permissao.imobCanDelete()) {
+                      <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="agindo() === d.id"
+                              (click)="excluir(d)" title="Excluir" [attr.aria-label]="'Excluir ' + d.nome">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox me-2"></i>Nenhum departamento encontrado
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacao [page]="page()" [pageSize]="pageSize" [total]="total()" [disabled]="loading()"
+                       (mudar)="carregar($event)" />
+      }
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" #modalEl tabindex="-1" aria-labelledby="depModalTitulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <div class="modal-header">
+        <h5 class="modal-title" id="depModalTitulo">{{ editingId() !== null ? 'Editar departamento' : 'Novo departamento' }}</h5>
+        <button type="button" class="btn-close" aria-label="Fechar" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        @if (saveError()) {
+          <div class="alert alert-danger py-2" role="alert">{{ saveError() }}</div>
+        }
+
+        <div class="mb-3">
+          <label for="depCodigo" class="form-label">Código *</label>
+          <input id="depCodigo" class="form-control" formControlName="codigo" maxlength="50"
+                 [class.is-invalid]="erroCampo('codigo')">
+          <div class="invalid-feedback">{{ erroCampo('codigo') }}</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="depNome" class="form-label">Nome *</label>
+          <input id="depNome" class="form-control" formControlName="nome" maxlength="255"
+                 [class.is-invalid]="erroCampo('nome')">
+          <div class="invalid-feedback">{{ erroCampo('nome') }}</div>
+          <div class="form-text">Código e nome são únicos na empresa, sem diferenciar maiúsculas.</div>
+        </div>
+
+        @if (editingId() !== null) {
+          <div class="form-check form-switch">
+            <input id="depAtivoForm" class="form-check-input" type="checkbox" role="switch" formControlName="ativo">
+            <label for="depAtivoForm" class="form-check-label">Departamento ativo</label>
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<app-confirm-dialog />

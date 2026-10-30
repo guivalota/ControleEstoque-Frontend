@@ -10,7 +10,7 @@ const URL_INV = '/api/v1/imobilizado/inventarios';
 
 const inv = (id: number, extra: Partial<ImobInventarioResumo> = {}): ImobInventarioResumo => ({
   id, nome: `Inventário ${id}`, status: 'rascunho', dataInicio: null, dataFim: null, criadoPorId: 'u1',
-  criadoPorNome: 'Maria', criadoEm: '2026-10-20T09:00:00Z', totalLocais: 2, totalEsperados: 0, ...extra
+  criadoPorNome: 'Maria', criadoEm: '2026-10-20T09:00:00Z', totalLocais: 2, totalEsperados: 0, reavaliacao: false, ...extra
 });
 
 describe('ImobInventariosComponent', () => {

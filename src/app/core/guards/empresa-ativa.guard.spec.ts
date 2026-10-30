@@ -10,7 +10,6 @@ describe('guards da área Imobilizado', () => {
   let empresa: EmpresaAtivaService;
 
   beforeEach(() => {
-    localStorage.removeItem('imob.empresaId');
     TestBed.configureTestingModule({
       providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()]
     });

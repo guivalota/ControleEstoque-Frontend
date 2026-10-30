@@ -83,6 +83,47 @@
         <app-autocomplete-responsavel inputId="bemResponsavel" formControlName="responsavelId"
                                       [somenteAtivos]="false" placeholder="Todos" />
       </div>
+      <div class="col-6 col-md-4">
+        <label for="bemDepartamento" class="form-label small mb-1">Departamento</label>
+        <select id="bemDepartamento" class="form-select form-select-sm" formControlName="departamentoId">
+          <option [ngValue]="null">Todos</option>
+          @for (d of departamentos(); track d.id) { <option [ngValue]="d.id">{{ d.codigo }} — {{ d.nome }}{{ d.ativo ? '' : ' (inativo)' }}</option> }
+        </select>
+      </div>
+      <div class="col-6 col-md-4">
+        <label for="bemGrupo" class="form-label small mb-1">Grupo</label>
+        <select id="bemGrupo" class="form-select form-select-sm" formControlName="grupoId">
+          <option [ngValue]="null">Todos</option>
+          @for (g of grupos(); track g.id) { <option [ngValue]="g.id">{{ g.nome }}{{ g.ativo ? '' : ' (inativo)' }}</option> }
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="bemCompraDe" class="form-label small mb-1">Compra de</label>
+        <input id="bemCompraDe" type="date" class="form-control form-control-sm" formControlName="compraDe"
+               [class.is-invalid]="!!erroPeriodo()">
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="bemCompraAte" class="form-label small mb-1">Compra até</label>
+        <input id="bemCompraAte" type="date" class="form-control form-control-sm" formControlName="compraAte"
+               [class.is-invalid]="!!erroPeriodo()">
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="bemOrdenarPor" class="form-label small mb-1">Ordenar por</label>
+        <select id="bemOrdenarPor" class="form-select form-select-sm" formControlName="ordenarPor">
+          <option value="">Plaqueta</option>
+          @for (o of ordenacoes; track o) { @if (o !== 'plaqueta') { <option [value]="o">{{ rotuloOrdenar[o] }}</option> } }
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="bemDirecao" class="form-label small mb-1">Direção</label>
+        <select id="bemDirecao" class="form-select form-select-sm" formControlName="direcao">
+          <option value="asc">Crescente</option>
+          <option value="desc">Decrescente</option>
+        </select>
+      </div>
+      @if (erroPeriodo()) {
+        <div class="col-12"><span class="text-danger small" role="alert">{{ erroPeriodo() }}</span></div>
+      }
       <div class="col-12 col-md-3 text-md-end">
         <button type="submit" class="btn btn-sm btn-outline-primary me-1">Filtrar</button>
         <button type="button" class="btn btn-sm btn-outline-secondary" (click)="limparFiltros()">Limpar</button>
@@ -126,6 +167,8 @@
                 </th>
                 <th>Descrição</th>
                 <th>Local</th>
+                <th>Grupo</th>
+                <th>Departamento</th>
                 <th>Responsável</th>
                 <th class="text-end">Valor</th>
                 <th>Status</th>
@@ -144,6 +187,8 @@
                     @if (!b.dadosCompletos) { <span class="badge bg-warning-subtle text-warning-emphasis ms-1">Dados incompletos</span> }
                   </td>
                   <td>{{ b.localNome }}</td>
+                  <td>{{ b.grupoNome || "—" }}</td>
+                  <td>{{ b.departamentoNome || '—' }}</td>
                   <td>{{ b.responsavelNome || '—' }}</td>
                   <td class="text-end text-nowrap">{{ formatarMoeda(b.valorAquisicao) }}</td>
                   <td><span class="badge" [class]="classeStatus[b.status]">{{ rotuloStatus[b.status] }}</span></td>
@@ -164,7 +209,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="7" class="text-center text-muted py-4">
+                  <td colspan="9" class="text-center text-muted py-4">
                     <i class="bi bi-inbox me-2"></i>{{ temFiltro() ? 'Nenhum bem encontrado com os filtros atuais' : 'Nenhum bem cadastrado' }}
                   </td>
                 </tr>

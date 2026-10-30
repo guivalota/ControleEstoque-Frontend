@@ -6,9 +6,14 @@ import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import { ImobBemService } from '../../../core/services/imob-bem.service';
 import { ImobCategoriaService } from '../../../core/services/imob-categoria.service';
 import { ImobLocalService } from '../../../core/services/imob-local.service';
+import { ImobDepartamentoService } from '../../../core/services/imob-departamento.service';
+import { ImobGrupoService } from '../../../core/services/imob-grupo.service';
+import { ImobGrupo } from '../../../core/models/imob-grupo.model';
+import { ImobDepartamento } from '../../../core/models/imob-departamento.model';
 import { PermissaoService } from '../../../core/services/permissao.service';
 import {
-  CLASSE_STATUS_BEM, ImobBem, ImobBemFiltro, ImobBemStatus, ROTULO_STATUS_BEM, STATUS_BEM, bemEditavel
+  CLASSE_STATUS_BEM, ImobBem, ImobBemDirecao, ImobBemFiltro, ImobBemOrdenarPor, ImobBemStatus, ROTULO_ORDENAR_POR,
+  ROTULO_STATUS_BEM, STATUS_BEM, bemEditavel
 } from '../../../core/models/imob-bem.model';
 import { ImobCategoria } from '../../../core/models/imob-categoria.model';
 import { ImobLocalArvore } from '../../../core/models/imob-local.model';
@@ -22,6 +27,14 @@ import { SeletorLocalComponent } from '../shared/seletor-local.component';
 import { AutocompleteResponsavelComponent } from '../shared/autocomplete-responsavel.component';
 
 const PAGE_SIZE = 50;
+
+const ORDENACOES: ImobBemOrdenarPor[] = ['plaqueta', 'dataAquisicao', 'valorAquisicao'];
+
+/** Lê uma data yyyy-MM-dd da query string; ignora valores inválidos. */
+function dataDaQuery(params: ParamMap, chave: string): string | undefined {
+  const v = params.get(chave);
+  return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined;
+}
 
 /** Lê um id positivo da query string; ignora valores inválidos. */
 function idDaQuery(params: ParamMap, chave: string): number | null {
@@ -43,6 +56,8 @@ export class ImobBensComponent implements OnInit {
   private service = inject(ImobBemService);
   private categoriaService = inject(ImobCategoriaService);
   private localService = inject(ImobLocalService);
+  private departamentoService = inject(ImobDepartamentoService);
+  private grupoService = inject(ImobGrupoService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   permissao = inject(PermissaoService);
@@ -52,6 +67,8 @@ export class ImobBensComponent implements OnInit {
 
   readonly pageSize = PAGE_SIZE;
   readonly statusLista = STATUS_BEM;
+  readonly ordenacoes = ORDENACOES;
+  rotuloOrdenar = ROTULO_ORDENAR_POR;
   rotuloStatus = ROTULO_STATUS_BEM;
   classeStatus = CLASSE_STATUS_BEM;
   formatarMoeda = formatarMoeda;
@@ -66,6 +83,9 @@ export class ImobBensComponent implements OnInit {
   agindo = signal<number | null>(null);
 
   categorias = signal<ImobCategoria[]>([]);
+  departamentos = signal<ImobDepartamento[]>([]);
+  grupos = signal<ImobGrupo[]>([]);
+  erroPeriodo = signal('');
   arvore = signal<ImobLocalArvore[]>([]);
 
   /** Bens marcados para etiqueta; vale entre páginas e zera quando o filtro muda. */
@@ -84,6 +104,12 @@ export class ImobBensComponent implements OnInit {
     incluirSublocais: [true],
     categoriaId: [null as number | null],
     responsavelId: [null as number | null],
+    departamentoId: [null as number | null],
+    grupoId: [null as number | null],
+    compraDe: [''],
+    compraAte: [''],
+    ordenarPor: ['' as ImobBemOrdenarPor | ''],
+    direcao: ['asc' as ImobBemDirecao],
     status: ['' as ImobBemStatus | ''],
     pendentes: [false]
   });
@@ -97,7 +123,8 @@ export class ImobBensComponent implements OnInit {
     // selects e seletores aplicam na hora; a busca por texto só ao enviar o formulário
     const c = this.filtros.controls;
     merge(c.localId.valueChanges, c.incluirSublocais.valueChanges, c.categoriaId.valueChanges,
-      c.responsavelId.valueChanges, c.status.valueChanges, c.pendentes.valueChanges)
+      c.responsavelId.valueChanges, c.departamentoId.valueChanges, c.grupoId.valueChanges, c.compraDe.valueChanges, c.compraAte.valueChanges,
+      c.ordenarPor.valueChanges, c.direcao.valueChanges, c.status.valueChanges, c.pendentes.valueChanges)
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.aplicar(1));
   }
@@ -105,6 +132,14 @@ export class ImobBensComponent implements OnInit {
   ngOnInit() {
     this.categoriaService.listar({ pageSize: 100 }).subscribe({
       next: res => this.categorias.set(res.items),
+      error: () => undefined
+    });
+    this.grupoService.listar({ pageSize: 100 }).subscribe({
+      next: res => this.grupos.set(res.items),
+      error: () => undefined
+    });
+    this.departamentoService.listar({ pageSize: 100 }).subscribe({
+      next: res => this.departamentos.set(res.items),
       error: () => undefined
     });
     this.localService.arvore().subscribe({
@@ -118,12 +153,21 @@ export class ImobBensComponent implements OnInit {
   private aplicarDaUrl(params: ParamMap) {
     const status = params.get('status') as ImobBemStatus | null;
     const localId = idDaQuery(params, 'localId');
+    const ordenar = params.get('ordenarPor') as ImobBemOrdenarPor | null;
+    // plaqueta crescente é o padrão do servidor: não vai para a URL
+    const ordenarPor = ordenar && ORDENACOES.includes(ordenar) && (ordenar !== 'plaqueta' || params.get('direcao') === 'desc') ? ordenar : null;
     const filtro: ImobBemFiltro = {
       busca: params.get('busca')?.trim() || undefined,
       localId: localId ?? undefined,
       incluirSublocais: localId !== null && params.get('incluirSublocais') === 'false' ? false : undefined,
       categoriaId: idDaQuery(params, 'categoriaId') ?? undefined,
       responsavelId: idDaQuery(params, 'responsavelId') ?? undefined,
+      departamentoId: idDaQuery(params, 'departamentoId') ?? undefined,
+      grupoId: idDaQuery(params, 'grupoId') ?? undefined,
+      compraDe: dataDaQuery(params, 'compraDe'),
+      compraAte: dataDaQuery(params, 'compraAte'),
+      ordenarPor: ordenarPor ?? undefined,
+      direcao: ordenarPor && params.get('direcao') === 'desc' ? 'desc' : undefined,
       status: status && STATUS_BEM.includes(status) ? status : undefined,
       dadosCompletos: params.get('dadosCompletos') === 'false' ? false : undefined
     };
@@ -135,6 +179,12 @@ export class ImobBensComponent implements OnInit {
       incluirSublocais: filtro.incluirSublocais !== false,
       categoriaId: filtro.categoriaId ?? null,
       responsavelId: filtro.responsavelId ?? null,
+      departamentoId: filtro.departamentoId ?? null,
+      grupoId: filtro.grupoId ?? null,
+      compraDe: filtro.compraDe ?? '',
+      compraAte: filtro.compraAte ?? '',
+      ordenarPor: filtro.ordenarPor === 'plaqueta' ? '' : filtro.ordenarPor ?? '',
+      direcao: filtro.direcao ?? 'asc',
       status: filtro.status ?? '',
       pendentes: filtro.dadosCompletos === false
     }, { emitEvent: false });
@@ -149,6 +199,12 @@ export class ImobBensComponent implements OnInit {
       incluirSublocais: v.localId !== null && !v.incluirSublocais ? 'false' : null,
       categoriaId: v.categoriaId,
       responsavelId: v.responsavelId,
+      departamentoId: v.departamentoId,
+      grupoId: v.grupoId,
+      compraDe: v.compraDe || null,
+      compraAte: v.compraAte || null,
+      ordenarPor: v.ordenarPor || (v.direcao === 'desc' ? 'plaqueta' : null),
+      direcao: v.direcao === 'desc' ? 'desc' : null,
       status: v.status || null,
       dadosCompletos: v.pendentes ? 'false' : null,
       page: page > 1 ? page : null
@@ -157,6 +213,12 @@ export class ImobBensComponent implements OnInit {
 
   /** Aplica os filtros do formulário: a URL é a fonte da verdade e dispara a (re)carga. */
   aplicar(page = 1) {
+    const { compraDe, compraAte } = this.filtros.getRawValue();
+    if (compraDe && compraAte && compraDe > compraAte) {
+      this.erroPeriodo.set('A data inicial da compra não pode ser posterior à final.');
+      return;
+    }
+    this.erroPeriodo.set('');
     const novos = this.queryParamsDoFormulario(page);
     const atuais = this.route.snapshot.queryParamMap;
     const iguais = Object.entries(novos).every(([k, v]) => (v === null ? null : String(v)) === atuais.get(k));
@@ -172,13 +234,18 @@ export class ImobBensComponent implements OnInit {
   }
 
   limparFiltros() {
-    this.filtros.reset({ busca: '', localId: null, incluirSublocais: true, categoriaId: null, responsavelId: null, status: '', pendentes: false },
-      { emitEvent: false });
+    this.filtros.reset({
+      busca: '', localId: null, incluirSublocais: true, categoriaId: null, responsavelId: null, departamentoId: null, grupoId: null,
+      compraDe: '', compraAte: '', ordenarPor: '', direcao: 'asc', status: '', pendentes: false
+    }, { emitEvent: false });
+    this.erroPeriodo.set('');
     this.aplicar(1);
   }
 
   temFiltro(): boolean {
-    return Object.values(this.filtroAtivo).some(v => v !== undefined);
+    const { ordenarPor, direcao, ...filtros } = this.filtroAtivo;
+    void ordenarPor; void direcao;
+    return Object.values(filtros).some(v => v !== undefined);
   }
 
   // ---- dados ----

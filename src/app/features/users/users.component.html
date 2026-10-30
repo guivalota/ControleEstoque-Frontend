@@ -1,15 +1,42 @@
 <div>
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h5 class="fw-bold mb-0">Usuários</h5>
-    @if (permissao.canManageUsers()) {
-      <button class="btn btn-primary btn-sm" (click)="openCreate()">
-        <i class="bi bi-person-plus me-1"></i>Novo Usuário
-      </button>
-    }
+    <h5 class="fw-bold mb-0">Usuários da empresa</h5>
+    <span class="text-muted small">
+      <i class="bi bi-people me-1"></i>Gerenciar equipe: em breve
+    </span>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+      <form class="row g-2 align-items-end" (ngSubmit)="carregar(1)">
+        <div class="col-md-5">
+          <label class="form-label form-label-sm fw-medium mb-1" for="usuariosBusca">Buscar</label>
+          <input id="usuariosBusca" type="search" class="form-control form-control-sm" name="busca"
+            placeholder="Nome ou e-mail" [(ngModel)]="busca" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label form-label-sm fw-medium mb-1" for="usuariosAtivo">Status</label>
+          <select id="usuariosAtivo" class="form-select form-select-sm" name="ativo" [(ngModel)]="filtroAtivo">
+            <option value="">Todos</option>
+            <option value="true">Ativos</option>
+            <option value="false">Inativos</option>
+          </select>
+        </div>
+        <div class="col-md-4 d-flex gap-2">
+          <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Buscar</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="limpar()">Limpar</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
+      @if (erro()) {
+        <div class="alert alert-danger m-3 py-2 small">
+          <i class="bi bi-exclamation-triangle me-1"></i>{{ erro() }}
+        </div>
+      }
       @if (loading()) {
         <div class="text-center py-5 text-muted">
           <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
@@ -21,19 +48,18 @@
               <tr>
                 <th class="ps-3">Nome</th>
                 <th>Email</th>
-                <th>Perfil</th>
+                <th>Perfil na empresa</th>
                 <th>Status</th>
-                <th class="text-end pe-3">Ações</th>
               </tr>
             </thead>
             <tbody>
-              @for (u of users(); track u.id) {
+              @for (u of usuarios(); track u.id) {
                 <tr>
                   <td class="ps-3 fw-medium">{{ u.nome }}</td>
                   <td class="text-muted small">{{ u.email }}</td>
                   <td>
-                    <span class="badge" [class]="roleBadge(u.role)">
-                      {{ u.role | titlecase }}
+                    <span class="badge" [class]="roleBadge(u.perfilEfetivo)">
+                      {{ u.perfilEfetivo | titlecase }}
                     </span>
                   </td>
                   <td>
@@ -43,99 +69,32 @@
                       <span class="badge bg-secondary-subtle text-secondary">Inativo</span>
                     }
                   </td>
-                  <td class="text-end pe-3">
-                    @if (permissao.canManageUsers()) {
-                      <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(u)" title="Editar">
-                        <i class="bi bi-pencil"></i>
-                      </button>
-                      <button class="btn btn-sm btn-outline-danger" (click)="delete(u)" title="Excluir">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    }
-                  </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="5" class="text-center text-muted py-4">
-                    <i class="bi bi-inbox me-2"></i>Nenhum usuário cadastrado
+                  <td colspan="4" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox me-2"></i>Nenhum usuário encontrado
                   </td>
                 </tr>
               }
             </tbody>
           </table>
         </div>
-      }
-    </div>
-  </div>
-</div>
 
-<!-- Modal Usuário -->
-<div class="modal fade" #modalEl tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h6 class="modal-title fw-semibold">
-          {{ editingId() ? 'Editar Usuário' : 'Novo Usuário' }}
-        </h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <form [formGroup]="form">
-          <div class="row g-3">
-            <div class="col-12">
-              <label class="form-label fw-medium">Nome <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" formControlName="nome"
-                [class.is-invalid]="f('nome').invalid && f('nome').touched" />
-              <div class="invalid-feedback">Nome obrigatório (máx. 255 chars).</div>
-            </div>
-            <div class="col-12">
-              <label class="form-label fw-medium">Email <span class="text-danger">*</span></label>
-              <input type="email" class="form-control" formControlName="email"
-                [class.is-invalid]="f('email').invalid && f('email').touched" />
-              <div class="invalid-feedback">Email inválido.</div>
-            </div>
-            <div class="col-md-7">
-              <label class="form-label fw-medium">
-                Senha {{ editingId() ? '(deixe vazio para manter)' : '' }}
-                @if (!editingId()) { <span class="text-danger">*</span> }
-              </label>
-              <input type="password" class="form-control" formControlName="senha"
-                [class.is-invalid]="f('senha').invalid && f('senha').touched" />
-              <div class="invalid-feedback">Mínimo 8 caracteres.</div>
-            </div>
-            <div class="col-md-5">
-              <label class="form-label fw-medium">Perfil <span class="text-danger">*</span></label>
-              <select class="form-select" formControlName="role"
-                [class.is-invalid]="f('role').invalid && f('role').touched">
-                @for (r of roles; track r) {
-                  <option [value]="r">{{ r | titlecase }}</option>
-                }
-              </select>
-            </div>
-            @if (editingId()) {
-              <div class="col-12">
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" formControlName="ativo" id="userAtivo" />
-                  <label class="form-check-label" for="userAtivo">Usuário ativo</label>
-                </div>
-              </div>
-            }
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+          <span class="text-muted small">Página {{ page() }} — {{ usuarios().length }} de {{ total() }}</span>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary"
+              [disabled]="page() === 1 || loading()" (click)="carregar(page() - 1)">
+              <i class="bi bi-chevron-left"></i> Anterior
+            </button>
+            <button class="btn btn-sm btn-outline-secondary"
+              [disabled]="!hasNextPage() || loading()" (click)="carregar(page() + 1)">
+              Próxima <i class="bi bi-chevron-right"></i>
+            </button>
           </div>
-
-          @if (saveError()) {
-            <div class="alert alert-danger py-2 small mt-3">
-              <i class="bi bi-exclamation-triangle me-1"></i>{{ saveError() }}
-            </div>
-          }
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving()">
-          @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
-          Salvar
-        </button>
-      </div>
+        </div>
+      }
     </div>
   </div>
 </div>

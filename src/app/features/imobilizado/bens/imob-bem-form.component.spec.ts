@@ -16,6 +16,12 @@ const categoria = (id: number, nome: string, vida: number, pct: number, ativo = 
 
 const CATEGORIAS = [categoria(3, 'Informática', 60, 10), categoria(4, 'Móveis', 120, 20), categoria(9, 'Antiga', 24, 5, false)];
 
+const DEPARTAMENTOS = [
+  { id: 2, codigo: 'TI', nome: 'Tecnologia', ativo: true, criadoEm: '' },
+  { id: 3, codigo: 'ADM', nome: 'Administrativo', ativo: true, criadoEm: '' },
+  { id: 8, codigo: 'OLD', nome: 'Extinto', ativo: false, criadoEm: '' }
+];
+
 const bem = (extra: Partial<ImobBem> = {}): ImobBem => ({
   id: 42, plaqueta: 'NB-0001', descricao: 'Notebook Dell', categoriaId: 3, categoriaNome: 'Informática',
   localId: 7, localNome: 'Sala 101', responsavelId: 12, responsavelNome: 'Ana Souza',
@@ -52,6 +58,12 @@ describe('ImobBemFormComponent', () => {
     depoisDeCriar?.();
     fixture.detectChanges();
     ctrl.expectOne(r => r.url === '/api/v1/imobilizado/categorias').flush({ items: categorias, page: 1, pageSize: 100, total: categorias.length });
+    ctrl.expectOne(r => r.url === '/api/v1/imobilizado/departamentos').flush({
+      items: DEPARTAMENTOS, page: 1, pageSize: 100, total: DEPARTAMENTOS.length
+    });
+    ctrl.expectOne(r => r.url === '/api/v1/fornecedores').flush({
+      items: [{ id: 5, cnpj: '11222333000181', razaoSocial: 'Dell Computadores', ativo: true, criadoEm: '' }], page: 1, pageSize: 100, total: 1
+    });
     ctrl.expectOne('/api/v1/imobilizado/locais/arvore').flush([
       { id: 7, nome: 'Sala 101', codigo: null, localPaiId: null, ativo: true, filhos: [] }
     ]);
@@ -102,26 +114,25 @@ describe('ImobBemFormComponent', () => {
       expect(opcoes).not.toContain('Antiga (inativa)');
     });
 
-    it('ao escolher a categoria pré-preenche vida útil e residual (percentual sobre a aquisição)', () => {
+    it('ao escolher a categoria sugere só a vida útil; o residual NÃO vem do percentual da categoria (D-036)', () => {
       comp.form.patchValue({ categoriaId: 3 });
       expect(comp.form.value.vidaUtilMeses).toBe(60);
-      expect(comp.form.value.valorResidual).toBeNull();
-
       comp.form.patchValue({ valorAquisicao: 4500 });
-      expect(comp.form.value.valorResidual).toBe(450);
-
-      comp.form.patchValue({ valorAquisicao: 1234.56 });
-      expect(comp.form.value.valorResidual).toBe(123.46);
+      expect(comp.form.value.valorResidual).toBeNull();
 
       comp.form.patchValue({ categoriaId: 4 });
       expect(comp.form.value.vidaUtilMeses).toBe(120);
-      expect(comp.form.value.valorResidual).toBe(246.91);
+      expect(comp.form.value.valorResidual).toBeNull();
       fixture.detectChanges();
       expect(el().textContent).toContain('Sugerida pela categoria');
-      expect(el().textContent).toContain('Sugerido pela categoria');
+      expect(el().textContent).not.toContain('Sugerido pela categoria');
     });
 
-    it('intocados, vida útil e residual são omitidos para o servidor usar os da categoria', () => {
+    it('mostra a ajuda "vazio = zero" no residual', () => {
+      expect(el().textContent).toContain('vazio = zero');
+    });
+
+    it('vida útil intocada e residual vazio são omitidos (servidor usa a categoria e zero)', () => {
       preencherCadastro();
       comp.save();
       const post = ctrl.expectOne(r => r.method === 'POST' && r.url === BENS);
@@ -140,7 +151,7 @@ describe('ImobBemFormComponent', () => {
       fixture.detectChanges();
       digitar('bemVida', '48');
       digitar('bemResidual', '300');
-      expect(comp.mostrarSugestao('vida')).toBeFalse();
+      expect(comp.mostrarSugestaoVida()).toBeFalse();
 
       comp.form.patchValue({ categoriaId: 4, valorAquisicao: 9000 });
       expect(comp.form.value.vidaUtilMeses).toBe(48);
@@ -163,16 +174,36 @@ describe('ImobBemFormComponent', () => {
       expect(body.observacao).toBeUndefined();
     });
 
+    it('fornecedor do cadastro envia fornecedorId e copia a razão social; digitar à mão desfaz o vínculo', () => {
+      preencherCadastro();
+      comp.escolherFornecedor('5');
+      expect(comp.form.controls.fornecedorNome.value).toBe('Dell Computadores');
+      comp.save();
+      const body = ctrl.expectOne(r => r.method === 'POST').request.body;
+      expect(body.fornecedorId).toBe(5);
+      expect(body.fornecedorNome).toBe('Dell Computadores');
+    });
+
+    it('digitar o nome do fornecedor limpa o fornecedorId', () => {
+      preencherCadastro();
+      comp.escolherFornecedor('5');
+      digitar('bemFornecedor', 'Outro');
+      comp.save();
+      const body = ctrl.expectOne(r => r.method === 'POST').request.body;
+      expect(body.fornecedorId).toBeUndefined();
+      expect(body.fornecedorNome).toBe('Outro');
+    });
+
     it('valida residual maior que a aquisição, mesmo quando a aquisição muda depois', () => {
       preencherCadastro();
       digitar('bemResidual', '5000');
       comp.form.controls.valorResidual.markAsTouched();
-      expect(comp.erroCampo('valorResidual')).toContain('não pode ser maior');
+      expect(comp.erroCampo('valorResidual')).toContain('deve ser menor');
       comp.form.patchValue({ valorAquisicao: 6000 });
       expect(comp.erroCampo('valorResidual')).toBe('');
       comp.form.patchValue({ valorAquisicao: 100 });
       comp.form.controls.valorResidual.markAsTouched();
-      expect(comp.erroCampo('valorResidual')).toContain('não pode ser maior');
+      expect(comp.erroCampo('valorResidual')).toContain('deve ser menor');
       comp.save();
       ctrl.expectNone(r => r.method === 'POST');
     });
@@ -242,6 +273,60 @@ describe('ImobBemFormComponent', () => {
       expect(comp.erroCampo('vidaUtilMeses')).toBe('Fora do intervalo.');
     });
 
+    it('residual igual ao valor de aquisição é rejeitado; zero é aceito', () => {
+      preencherCadastro();
+      comp.form.patchValue({ valorResidual: 4500 });
+      comp.form.controls.valorResidual.markAsTouched();
+      expect(comp.erroCampo('valorResidual')).toContain('deve ser menor');
+      comp.form.patchValue({ valorResidual: 0 });
+      expect(comp.form.controls.valorResidual.valid).toBeTrue();
+    });
+
+    it('departamento é opcional e só lista os ativos', () => {
+      const opcoes = Array.from(el().querySelectorAll('#bemDepartamentoForm option')).map(o => o.textContent?.trim());
+      expect(opcoes).toContain('TI — Tecnologia');
+      expect(opcoes).not.toContain('OLD — Extinto (inativo)');
+      preencherCadastro();
+      comp.save();
+      const post = ctrl.expectOne(r => r.method === 'POST');
+      expect(post.request.body.departamentoId).toBeNull();
+      post.flush(bem(), { status: 201, statusText: 'Created' });
+    });
+
+    it('envia o departamentoId escolhido', () => {
+      preencherCadastro();
+      comp.form.patchValue({ departamentoId: 2 });
+      comp.save();
+      const post = ctrl.expectOne(r => r.method === 'POST');
+      expect(post.request.body.departamentoId).toBe(2);
+      post.flush(bem({ departamentoId: 2, departamentoNome: 'Tecnologia' }), { status: 201, statusText: 'Created' });
+    });
+
+    it('erro de departamento inativo cai no campo departamento', () => {
+      preencherCadastro();
+      comp.form.patchValue({ departamentoId: 2 });
+      comp.save();
+      ctrl.expectOne(r => r.method === 'POST').flush(
+        { error: "O departamento 'Tecnologia' está inativo." }, { status: 400, statusText: 'Bad Request' });
+      expect(comp.erroCampo('departamentoId')).toContain('inativo');
+      expect(comp.saveError()).toBe('');
+    });
+
+    it('erros por campo do servidor (DataAquisicao e ValorResidual) aparecem nos campos', () => {
+      preencherCadastro();
+      comp.save();
+      ctrl.expectOne(r => r.method === 'POST').flush({
+        title: 'One or more validation errors occurred.',
+        errors: {
+          DataAquisicao: ['Data de aquisição não pode ser futura.'],
+          ValorResidual: ['Valor residual deve ser menor que o valor de aquisição.']
+        }
+      }, { status: 400, statusText: 'Bad Request' });
+      expect(comp.erroCampo('dataAquisicao')).toBe('Data de aquisição não pode ser futura.');
+      expect(comp.erroCampo('valorResidual')).toBe('Valor residual deve ser menor que o valor de aquisição.');
+      expect(comp.saveError()).toBe('');
+    });
+
     it('não oferece edição de status', () => {
       expect(el().querySelector('#bemStatus')).toBeNull();
     });
@@ -277,12 +362,28 @@ describe('ImobBemFormComponent', () => {
       comp.save();
       const put = ctrl.expectOne(r => r.method === 'PUT' && r.url === `${BENS}/42`);
       expect(put.request.body).toEqual({
-        plaqueta: 'NB-0001', descricao: 'Notebook Dell 2', categoriaId: 3, localId: 7, responsavelId: 12,
+        plaqueta: 'NB-0001', descricao: 'Notebook Dell 2', categoriaId: 3, localId: 7, responsavelId: 12, departamentoId: null,
         dataAquisicao: '2024-03-10', valorAquisicao: 4500, valorResidual: 450, vidaUtilMeses: 60,
         fornecedorNome: 'Dell', numeroDocumentoAquisicao: 'NF-1', numeroSerie: 'SN-1', observacao: 'Garantia'
       });
       put.flush(bem());
       expect(navegar).toHaveBeenCalledWith(['/imobilizado/bens', 42]);
+    });
+
+    it('o departamento atual continua listado mesmo inativo e vai no PUT', () => {
+      montarEdicao(bem({ departamentoId: 8, departamentoNome: 'Extinto' }));
+      const opcoes = Array.from(el().querySelectorAll('#bemDepartamentoForm option')).map(o => o.textContent?.trim());
+      expect(opcoes).toContain('OLD — Extinto (inativo)');
+      expect(comp.form.value.departamentoId).toBe(8);
+      comp.save();
+      const put = ctrl.expectOne(r => r.method === 'PUT');
+      expect(put.request.body.departamentoId).toBe(8);
+      put.flush(bem());
+    });
+
+    it('na edição a ajuda do residual explica que vazio mantém o atual', () => {
+      montarEdicao();
+      expect(el().textContent).toContain('Vazio mantém o valor atual');
     });
 
     it('a categoria atual continua listada mesmo inativa', () => {

@@ -9,21 +9,23 @@ import { provideAuthFake } from '../../../testing/auth-fake';
 
 const INV = '/api/v1/imobilizado/inventarios';
 const ARVORE = '/api/v1/imobilizado/locais/arvore';
-const USUARIOS = '/api/v1/imobilizado/empresas/1/usuarios';
+const USUARIOS = '/api/v1/empresa-ativa/usuarios';
 
 const arvore = [
   { id: 1, nome: 'Matriz', codigo: null, localPaiId: null, ativo: true, filhos: [{ id: 2, nome: 'Andar 1', codigo: null, localPaiId: 1, ativo: true, filhos: [] }] },
   { id: 9, nome: 'Filial', codigo: null, localPaiId: null, ativo: true, filhos: [] }
 ];
-const usuarios = [
-  { usuarioId: 'u-1', nome: 'Carlos Contador', email: 'c@x.com', ativo: true, criadoEm: '' },
-  { usuarioId: 'u-2', nome: 'Beatriz Auditora', email: 'b@x.com', ativo: true, criadoEm: '' },
-  { usuarioId: 'u-3', nome: 'Inativo', email: 'i@x.com', ativo: false, criadoEm: '' }
-];
+const usuarios = {
+  items: [
+    { id: 'u-1', nome: 'Carlos Contador', email: 'c@x.com', perfil: 'leitura', perfilEfetivo: 'operador', ativo: true },
+    { id: 'u-2', nome: 'Beatriz Auditora', email: 'b@x.com', perfil: 'leitura', perfilEfetivo: 'leitura', ativo: true }
+  ],
+  page: 1, pageSize: 100, total: 2
+};
 
 const inv = (extra: Partial<ImobInventario> = {}): ImobInventario => ({
   id: 7, nome: 'Anual', descricao: 'Geral', status: 'rascunho', dataInicio: null, dataFim: null, criadoPorId: 'x',
-  criadoPorNome: 'Maria', criadoEm: '2026-10-20T09:00:00Z', atualizadoEm: '2026-10-20T09:00:00Z', totalLocais: 1, totalEsperados: 0,
+  criadoPorNome: 'Maria', criadoEm: '2026-10-20T09:00:00Z', atualizadoEm: '2026-10-20T09:00:00Z', totalLocais: 1, totalEsperados: 0, reavaliacao: false,
   locais: [{ localId: 1, localNome: 'Matriz' }], equipe: [{ usuarioId: 'u-1', nome: 'Carlos Contador' }, { usuarioId: 'u-9', nome: 'Ex-membro' }],
   ...extra
 });
@@ -52,7 +54,12 @@ describe('ImobInventarioFormComponent', () => {
     comp = fixture.componentInstance;
     fixture.detectChanges();
     ctrl.expectOne(ARVORE).flush(arvore);
-    if (role === 'admin') ctrl.expectOne(USUARIOS).flush(usuarios);
+    if (role === 'admin') {
+      const reqUsuarios = ctrl.expectOne(r => r.url === USUARIOS);
+      expect(reqUsuarios.request.params.get('ativo')).toBe('true');
+      expect(reqUsuarios.request.params.get('pageSize')).toBe('100');
+      reqUsuarios.flush(usuarios);
+    }
     if (id) ctrl.expectOne(`${INV}/${id}`).flush(inventario ?? inv());
     else ctrl.expectNone(r => r.url.startsWith(`${INV}/`));
     fixture.detectChanges();
@@ -70,7 +77,7 @@ describe('ImobInventarioFormComponent', () => {
       expect(comp.erroLocais()).toBe('Selecione ao menos um local.');
     });
 
-    it('lista só usuários ativos da empresa para a equipe', () => {
+    it('lista os usuários ativos da empresa ativa (ativo=true, pageSize 100) para a equipe', () => {
       expect(texto()).toContain('Carlos Contador');
       expect(texto()).toContain('Beatriz Auditora');
       expect(texto()).not.toContain('Inativo');
@@ -81,9 +88,29 @@ describe('ImobInventarioFormComponent', () => {
       comp.alternarMembro('u-2', true);
       comp.save();
       const req = ctrl.expectOne(r => r.method === 'POST' && r.url === INV);
-      expect(req.request.body).toEqual({ nome: 'Anual', descricao: undefined, localIds: [1, 9], usuarioIds: ['u-2'] });
+      expect(req.request.body).toEqual({ nome: 'Anual', descricao: undefined, localIds: [1, 9], usuarioIds: ['u-2'], reavaliacao: false, dataBase: undefined });
       req.flush(inv({ id: 55 }), { status: 201, statusText: 'Created' });
       expect(navegar).toHaveBeenCalledWith(['/imobilizado/inventarios', 55]);
+    });
+
+    it('ciclo de reavaliação exige a data-base e a envia', () => {
+      comp.form.patchValue({ nome: 'Ciclo 2026', localIds: [1], reavaliacao: true });
+      fixture.detectChanges();
+      expect(el().querySelector('#invDataBase')).not.toBeNull();
+      comp.save();
+      ctrl.expectNone(r => r.method === 'POST');
+      expect(comp.erroDataBase()).toBe('Informe a data-base.');
+
+      comp.form.patchValue({ dataBase: '2026-09-30' });
+      comp.save();
+      const req = ctrl.expectOne(r => r.method === 'POST' && r.url === INV);
+      expect(req.request.body.reavaliacao).toBeTrue();
+      expect(req.request.body.dataBase).toBe('2026-09-30');
+      req.flush(inv({ id: 56, reavaliacao: true, dataBase: '2026-09-30' }), { status: 201, statusText: 'Created' });
+    });
+
+    it('inventário comum não mostra nem envia data-base', () => {
+      expect(el().querySelector('#invDataBase')).toBeNull();
     });
 
     it('nome duplicado do servidor aparece no campo', () => {

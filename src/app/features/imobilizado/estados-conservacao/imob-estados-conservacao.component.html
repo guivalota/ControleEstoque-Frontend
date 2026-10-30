@@ -1,0 +1,220 @@
+<div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+      <h6 class="fw-bold mb-0">Estados de conservação</h6>
+      <div class="text-muted small">Notas de 0 a 10 usadas na reavaliação (nota EC e nota de vida remanescente).</div>
+    </div>
+    @if (podeEditar()) {
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="carregandoPadrao()" (click)="carregarPadrao()">
+          @if (carregandoPadrao()) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-magic me-1"></i> }
+          Carregar estados padrão
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" (click)="openCreate()">
+          <i class="bi bi-plus-lg me-1"></i>Novo estado
+        </button>
+      </div>
+    } @else {
+      <span class="badge bg-secondary-subtle text-secondary">Somente leitura</span>
+    }
+  </div>
+
+  <form class="row g-2 align-items-end mb-3" (ngSubmit)="carregar(1)">
+    <div class="col-12 col-md-5">
+      <label for="estBusca" class="form-label small mb-1">Buscar</label>
+      <input id="estBusca" name="busca" class="form-control form-control-sm" placeholder="Nome do estado" [(ngModel)]="busca">
+    </div>
+    <div class="col-6 col-md-3">
+      <label for="estAtivo" class="form-label small mb-1">Situação</label>
+      <select id="estAtivo" name="ativo" class="form-select form-select-sm" [(ngModel)]="ativoFiltro" (ngModelChange)="carregar(1)">
+        <option value="">Todos</option>
+        <option value="true">Somente ativos</option>
+        <option value="false">Somente inativos</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-sm btn-outline-primary me-1">Buscar</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="limparFiltros()">Limpar</button>
+    </div>
+  </form>
+
+  @if (feedback()) {
+    <div class="alert alert-success alert-dismissible py-2" role="status">
+      {{ feedback() }}
+      <button type="button" class="btn-close" aria-label="Fechar" (click)="feedback.set('')"></button>
+    </div>
+  }
+  @if (erro()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
+      <span>{{ erro() }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="carregar()">Tentar novamente</button>
+    </div>
+  }
+  @if (bloqueio(); as b) {
+    <app-bloqueio-exclusao
+      [mensagem]="b.mensagem"
+      [permiteDesativar]="b.estado.ativo"
+      [filtroBens]="null"
+      [desativando]="agindo() === b.estado.id"
+      (desativar)="desativar()"
+      (fechar)="bloqueio.set(null)" />
+  }
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Nome</th>
+                <th class="text-end">Nota EC</th>
+                <th class="text-end">Vida remanescente</th>
+                <th>Situação</th>
+                <th class="text-end pe-3">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of estados(); track e.id) {
+                <tr>
+                  <td class="ps-3">{{ e.nome }}</td>
+                  <td class="text-end">{{ e.notaEc }}</td>
+                  <td class="text-end">{{ e.notaVidaRemanescente }}</td>
+                  <td>
+                    @if (e.ativo) {
+                      <span class="badge bg-success-subtle text-success">Ativo</span>
+                    } @else {
+                      <span class="badge bg-secondary-subtle text-secondary">Inativo</span>
+                    }
+                  </td>
+                  <td class="text-end pe-3 text-nowrap">
+                    <button type="button" class="btn btn-sm btn-outline-primary me-1" (click)="abrirHistorico(e)"
+                            title="Histórico" [attr.aria-label]="'Histórico de ' + e.nome">
+                      <i class="bi bi-clock-history"></i>
+                    </button>
+                    @if (podeEditar()) {
+                      <button type="button" class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(e)"
+                              title="Editar" [attr.aria-label]="'Editar ' + e.nome">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="agindo() === e.id"
+                              (click)="excluir(e)" title="Excluir" [attr.aria-label]="'Excluir ' + e.nome">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox me-2"></i>Nenhum estado de conservação encontrado
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacao [page]="page()" [pageSize]="pageSize" [total]="total()" [disabled]="loading()"
+                       (mudar)="carregar($event)" />
+      }
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" #modalEl tabindex="-1" aria-labelledby="estModalTitulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <div class="modal-header">
+        <h5 class="modal-title" id="estModalTitulo">{{ editingId() !== null ? 'Editar estado' : 'Novo estado' }}</h5>
+        <button type="button" class="btn-close" aria-label="Fechar" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        @if (saveError()) {
+          <div class="alert alert-danger py-2" role="alert">{{ saveError() }}</div>
+        }
+        <div class="mb-3">
+          <label for="estNome" class="form-label">Nome *</label>
+          <input id="estNome" class="form-control" formControlName="nome" maxlength="100"
+                 [class.is-invalid]="erroCampo('nome')">
+          <div class="invalid-feedback">{{ erroCampo('nome') }}</div>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-6">
+            <label for="estNotaEc" class="form-label">Nota EC (0 a 10) *</label>
+            <input id="estNotaEc" class="form-control" type="number" min="0" max="10" step="0.01"
+                   formControlName="notaEc" [class.is-invalid]="erroCampo('notaEc')">
+            <div class="invalid-feedback">{{ erroCampo('notaEc') }}</div>
+          </div>
+          <div class="col-6">
+            <label for="estNotaVr" class="form-label">Vida remanescente (0 a 10) *</label>
+            <input id="estNotaVr" class="form-control" type="number" min="0" max="10" step="0.01"
+                   formControlName="notaVidaRemanescente" [class.is-invalid]="erroCampo('notaVidaRemanescente')">
+            <div class="invalid-feedback">{{ erroCampo('notaVidaRemanescente') }}</div>
+          </div>
+        </div>
+        @if (editingId() !== null) {
+          <div class="form-check form-switch">
+            <input id="estAtivoForm" class="form-check-input" type="checkbox" role="switch" formControlName="ativo">
+            <label for="estAtivoForm" class="form-check-label">Estado ativo</label>
+          </div>
+          <div class="form-text">Inative em vez de excluir quando o estado já foi usado.</div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade" #histEl tabindex="-1" aria-labelledby="estHistTitulo" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="estHistTitulo">Histórico — {{ histEstado()?.nome }}</h5>
+        <button type="button" class="btn-close" aria-label="Fechar" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        @if (histErro()) {
+          <div class="alert alert-danger m-3 py-2" role="alert">{{ histErro() }}</div>
+        }
+        @if (histLoading()) {
+          <div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Carregando...</div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr><th class="ps-3">Quando</th><th>Quem</th><th>Campo</th><th>De</th><th>Para</th></tr>
+              </thead>
+              <tbody>
+                @for (h of histItens(); track h.id) {
+                  <tr>
+                    <td class="ps-3 text-nowrap">{{ formatarDataHora(h.criadoEm) }}</td>
+                    <td>{{ h.usuarioNome || '—' }}</td>
+                    <td>{{ rotuloCampo(h.campo) }}</td>
+                    <td>{{ valorHistorico(h.campo, h.valorAnterior) }}</td>
+                    <td>{{ valorHistorico(h.campo, h.valorNovo) }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="5" class="text-center text-muted py-3">Sem registros no histórico</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <app-paginacao [page]="histPage()" [pageSize]="histPageSize" [total]="histTotal()" [disabled]="histLoading()"
+                         (mudar)="carregarHistorico($event)" />
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-confirm-dialog />

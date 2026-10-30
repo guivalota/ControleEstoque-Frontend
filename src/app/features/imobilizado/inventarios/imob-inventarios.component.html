@@ -57,7 +57,7 @@
             <tbody>
               @for (i of inventarios(); track i.id) {
                 <tr>
-                  <td class="ps-3"><a [routerLink]="['/imobilizado/inventarios', i.id]" class="fw-medium">{{ i.nome }}</a></td>
+                  <td class="ps-3"><a [routerLink]="['/imobilizado/inventarios', i.id]" class="fw-medium">{{ i.nome }}</a>@if (i.reavaliacao) { <span class="badge bg-info-subtle text-info-emphasis ms-1" title="Ciclo de reavaliação">Reavaliação</span> }</td>
                   <td><span class="badge" [class]="classeStatus[i.status]">{{ rotuloStatus[i.status] }}</span></td>
                   <td>{{ formatarData(i.dataInicio) }}</td>
                   <td class="text-end">{{ i.totalLocais }}</td>

@@ -3,9 +3,11 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Modal } from 'bootstrap';
 import { ImobCategoriaService } from '../../../core/services/imob-categoria.service';
+import { ImobGrupoService } from '../../../core/services/imob-grupo.service';
+import { ImobGrupo } from '../../../core/models/imob-grupo.model';
 import { PermissaoService } from '../../../core/services/permissao.service';
 import { ImobCategoria } from '../../../core/models/imob-categoria.model';
-import { aplicarErroNoForm, lerErroApi } from '../../../core/utils/erros-api';
+import { aplicarErroNoForm, lerErroApi, textoDoErro } from '../../../core/utils/erros-api';
 import { duasCasas, inteiro } from '../../../core/utils/validadores';
 import { formatarPercentual, formatarVidaUtil } from '../../../core/utils/imob-formato';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
@@ -28,6 +30,8 @@ interface Bloqueio {
 export class ImobCategoriasComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private service = inject(ImobCategoriaService);
+  private grupoService = inject(ImobGrupoService);
+  grupos = signal<ImobGrupo[]>([]);
   permissao = inject(PermissaoService);
 
   private modalEl = viewChild.required<ElementRef<HTMLElement>>('modalEl');
@@ -52,13 +56,19 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
   saving = signal(false);
   saveError = signal('');
   agindo = signal<number | null>(null);
+  carregandoPadrao = signal(false);
   bloqueio = signal<Bloqueio | null>(null);
 
+  /** Carregar categorias padrão: só admin (perfil efetivo na empresa ativa). */
+  podeCarregarPadrao = () => this.permissao.perfil() === 'admin';
+
   form = this.fb.group({
+    codigo: ['', [Validators.maxLength(50)]],
     nome: ['', [Validators.required, Validators.maxLength(255)]],
     vidaUtilMeses: [null as number | null, [Validators.required, Validators.min(1), Validators.max(1200), inteiro]],
     valorResidualPercentual: [null as number | null, [Validators.required, Validators.min(0), Validators.max(100), duasCasas]],
     metodoDepreciacao: ['linear' as const],
+    grupoId: [null as number | null],
     ativo: [true]
   });
 
@@ -70,6 +80,7 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
   };
 
   ngOnInit() {
+    this.grupoService.listar({ pageSize: 100 }).subscribe({ next: r => this.grupos.set(r.items), error: () => undefined });
     this.carregar(1);
   }
 
@@ -99,6 +110,29 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
     });
   }
 
+  async carregarPadrao() {
+    const ok = await this.confirmDialog().abrir({
+      titulo: 'Carregar categorias padrão',
+      mensagem: 'Cria as categorias padrão que ainda não existem (MOV, MAQ e HW). As categorias existentes não são alteradas.',
+      confirmar: 'Carregar'
+    });
+    if (!ok) return;
+    this.carregandoPadrao.set(true);
+    this.erro.set('');
+    this.feedback.set('');
+    this.service.carregarPadrao().subscribe({
+      next: res => {
+        this.carregandoPadrao.set(false);
+        this.feedback.set(`Categorias padrão: ${res.criadas} ${res.criadas === 1 ? 'criada' : 'criadas'}, ${res.jaExistentes} já ${res.jaExistentes === 1 ? 'existente' : 'existentes'}.`);
+        this.carregar(1);
+      },
+      error: err => {
+        this.carregandoPadrao.set(false);
+        this.erro.set(textoDoErro(lerErroApi(err, 'Erro ao carregar categorias padrão.'), 'Erro ao carregar categorias padrão.'));
+      }
+    });
+  }
+
   limparFiltros() {
     this.busca = '';
     this.ativoFiltro = '';
@@ -112,7 +146,7 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
 
   openCreate() {
     this.editingId.set(null);
-    this.form.reset({ nome: '', vidaUtilMeses: null, valorResidualPercentual: null, metodoDepreciacao: 'linear', ativo: true });
+    this.form.reset({ codigo: '', nome: '', vidaUtilMeses: null, valorResidualPercentual: null, metodoDepreciacao: 'linear', grupoId: null, ativo: true });
     this.saveError.set('');
     this.getModal().show();
   }
@@ -120,10 +154,12 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
   openEdit(c: ImobCategoria) {
     this.editingId.set(c.id);
     this.form.reset({
+      codigo: c.codigo ?? '',
       nome: c.nome,
       vidaUtilMeses: c.vidaUtilMeses,
       valorResidualPercentual: c.valorResidualPercentual,
       metodoDepreciacao: c.metodoDepreciacao,
+      grupoId: c.grupoId ?? null,
       ativo: c.ativo
     });
     this.saveError.set('');
@@ -137,10 +173,12 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
 
     const v = this.form.getRawValue();
     const corpo = {
+      ...(v.codigo?.trim() ? { codigo: v.codigo.trim() } : {}),
       nome: v.nome!.trim(),
       vidaUtilMeses: v.vidaUtilMeses!,
       valorResidualPercentual: v.valorResidualPercentual!,
-      metodoDepreciacao: v.metodoDepreciacao ?? 'linear' as const
+      metodoDepreciacao: v.metodoDepreciacao ?? 'linear' as const,
+      ...(v.grupoId ? { grupoId: v.grupoId } : {})
     };
     const id = this.editingId();
     const op = id !== null
@@ -159,6 +197,8 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
           vidaUtilMeses: ['vida útil', 'vida util'],
           valorResidualPercentual: ['residual'],
           metodoDepreciacao: ['método', 'metodo'],
+          codigo: ['código', 'codigo'],
+          grupoId: ['grupo'],
           nome: ['nome']
         }));
         this.saving.set(false);
@@ -196,10 +236,12 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
     if (!c) return;
     this.agindo.set(c.id);
     this.service.atualizar(c.id, {
+      ...(c.codigo?.trim() ? { codigo: c.codigo.trim() } : {}),
       nome: c.nome,
       vidaUtilMeses: c.vidaUtilMeses,
       valorResidualPercentual: c.valorResidualPercentual,
       metodoDepreciacao: c.metodoDepreciacao,
+      ...(c.grupoId ? { grupoId: c.grupoId } : {}),
       ativo: false
     }).subscribe({
       next: () => {
@@ -219,12 +261,12 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
     return !!this.bloqueio()?.mensagem.toLowerCase().includes('bens');
   }
 
-  erroCampo(nome: 'nome' | 'vidaUtilMeses' | 'valorResidualPercentual'): string {
+  erroCampo(nome: 'codigo' | 'nome' | 'vidaUtilMeses' | 'valorResidualPercentual'): string {
     const c = this.form.controls[nome];
     if (c.errors?.['servidor']) return c.errors['servidor'];
     if (!c.touched) return '';
     if (c.errors?.['required']) return 'Campo obrigatório.';
-    if (c.errors?.['maxlength']) return 'Máximo de 255 caracteres.';
+    if (c.errors?.['maxlength']) return nome === 'codigo' ? 'Máximo de 50 caracteres.' : 'Máximo de 255 caracteres.';
     if (nome === 'vidaUtilMeses') {
       if (c.errors?.['min'] || c.errors?.['max']) return 'Informe de 1 a 1200 meses.';
       if (c.errors?.['inteiro']) return 'Informe um número inteiro de meses.';

@@ -143,7 +143,7 @@
               <label class="form-label fw-medium">CNPJ <span class="text-danger">*</span></label>
               <div class="input-group">
                 <input type="text" class="form-control font-monospace" formControlName="cnpj"
-                  placeholder="00000000000000" maxlength="14"
+                  placeholder="00.000.000/0000-00" maxlength="18" (input)="onCnpjInput()"
                   [class.is-invalid]="f('cnpj').invalid && f('cnpj').touched" />
                 @if (!editingId()) {
                   <button type="button" class="btn btn-outline-secondary" (click)="consultarCnpj()"
@@ -152,7 +152,7 @@
                     @else { <i class="bi bi-search"></i> }
                   </button>
                 }
-                <div class="invalid-feedback">CNPJ deve ter 14 dígitos numéricos.</div>
+                <div class="invalid-feedback">CNPJ inválido: informe 14 caracteres (números ou letras) com dígitos verificadores corretos.</div>
               </div>
               @if (cnpjMsg()) {
                 <div class="form-text" [class.text-success]="cnpjMsg().includes('encontrado')" [class.text-danger]="!cnpjMsg().includes('encontrado')">

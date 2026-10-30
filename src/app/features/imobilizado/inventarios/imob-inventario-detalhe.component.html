@@ -7,6 +7,9 @@
       <h6 class="fw-bold mb-0">{{ inventario() ? inventario()!.nome : 'Inventário' }}</h6>
       @if (inventario(); as inv) {
         <span class="badge" [class]="classeStatus[inv.status]">{{ rotuloStatus[inv.status] }}</span>
+        @if (inv.reavaliacao) {
+          <span class="badge bg-info-subtle text-info-emphasis" title="Ciclo de reavaliação">Reavaliação · data-base {{ formatarData(inv.dataBase) }}</span>
+        }
       }
     </div>
     @if (inventario(); as inv) {

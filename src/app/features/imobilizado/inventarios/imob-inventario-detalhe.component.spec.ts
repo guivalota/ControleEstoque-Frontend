@@ -12,7 +12,7 @@ const URL_INV = '/api/v1/imobilizado/inventarios/7';
 const inv = (extra: Partial<ImobInventario> = {}): ImobInventario => ({
   id: 7, nome: 'Inventário anual 2026', descricao: 'Contagem geral', status: 'rascunho', dataInicio: null, dataFim: null,
   criadoPorId: 'u1', criadoPorNome: 'Maria Operadora', criadoEm: '2026-10-20T09:00:00Z', atualizadoEm: '2026-10-20T09:00:00Z',
-  totalLocais: 2, totalEsperados: 0,
+  totalLocais: 2, totalEsperados: 0, reavaliacao: false,
   locais: [{ localId: 1, localNome: 'Matriz' }, { localId: 9, localNome: 'Filial' }],
   equipe: [{ usuarioId: '8a1c0000-1111', nome: 'Carlos Contador' }, { usuarioId: '99990000-2222', nome: null }],
   ...extra

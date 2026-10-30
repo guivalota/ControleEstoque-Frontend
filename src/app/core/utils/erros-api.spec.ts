@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { lerErroApi } from './erros-api';
+import { ehUuid, lerErroApi, textoDoErro } from './erros-api';
 
 const erro = (status: number, error: unknown) => new HttpErrorResponse({ status, error });
 
@@ -23,5 +23,16 @@ describe('lerErroApi', () => {
   it('usa o fallback quando o corpo não é reconhecido', () => {
     expect(lerErroApi(erro(500, 'boom'), 'Falhou.').mensagem).toBe('Falhou.');
     expect(lerErroApi(undefined, 'Falhou.').mensagem).toBe('Falhou.');
+  });
+
+  it('textoDoErro junta os erros de campo quando não há mensagem e nunca devolve vazio', () => {
+    expect(textoDoErro(lerErroApi(erro(400, { errors: { UsuarioId: ['Inválido.'] } }), 'x'), 'Falhou.')).toBe('Inválido.');
+    expect(textoDoErro({ mensagem: '', campos: {} }, 'Falhou.')).toBe('Falhou.');
+  });
+
+  it('ehUuid valida o formato', () => {
+    expect(ehUuid('3f2504e0-4f89-11d3-9a0c-0305e82c3301')).toBeTrue();
+    expect(ehUuid('xyz')).toBeFalse();
+    expect(ehUuid('3f2504e0-4f89-11d3-9a0c-0305e82c33')).toBeFalse();
   });
 });

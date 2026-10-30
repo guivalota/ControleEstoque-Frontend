@@ -8,7 +8,7 @@ import {
 import { ImobConciliacaoService } from '../../../core/services/imob-conciliacao.service';
 import { baixarBlob } from '../../../core/utils/download';
 import { lerErroApi } from '../../../core/utils/erros-api';
-import { formatarDataHora } from '../../../core/utils/imob-formato';
+import { formatarData, formatarDataHora } from '../../../core/utils/imob-formato';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 
 type Acao = 'iniciar' | 'cancelar' | 'excluir' | 'encerrar';
@@ -29,6 +29,7 @@ export class ImobInventarioDetalheComponent implements OnInit {
   private confirmDialog = viewChild.required(ConfirmDialogComponent);
 
   readonly id = Number(this.route.snapshot.paramMap.get('id'));
+  formatarData = formatarData;
   rotuloStatus = ROTULO_STATUS_INVENTARIO;
   classeStatus = CLASSE_STATUS_INVENTARIO;
   formatarDataHora = formatarDataHora;

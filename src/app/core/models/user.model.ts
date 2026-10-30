@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'operador' | 'leitura';
+export type UserRole = 'admin' | 'contador' | 'operador' | 'leitura';
 
 export interface User {
   id: string;
@@ -7,6 +7,8 @@ export interface User {
   role: UserRole;
   ativo: boolean;
   criadoEm?: string;
+  /** Tipo da conta no diretório do super admin (superadmin, plataforma, cliente...). */
+  tipo?: string;
 }
 
 export interface CreateUserRequest {
