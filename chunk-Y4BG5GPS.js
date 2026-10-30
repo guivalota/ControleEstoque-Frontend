@@ -1,0 +1,1 @@
+import{R as n,n as s,oc as a,p as t}from"./chunk-EV5OKZTB.js";function f(r){return r.error instanceof Blob?s(r.error.text()).pipe(n(e=>{let o=e;try{o=JSON.parse(e)}catch{}return t(()=>new a({error:o,status:r.status,statusText:r.statusText,headers:r.headers,url:r.url??void 0}))})):t(()=>r)}export{f as a};

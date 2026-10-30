@@ -1,0 +1,1 @@
+var o=[{codigo:"max_usuarios",rotulo:"Usu\xE1rios"},{codigo:"max_bens",rotulo:"Bens (Imobilizado)"},{codigo:"max_produtos",rotulo:"Produtos (Estoque)"}],i=[{codigo:"estoque",rotulo:"Estoque"},{codigo:"imobilizado",rotulo:"Imobilizado"}];export{o as a,i as b};
