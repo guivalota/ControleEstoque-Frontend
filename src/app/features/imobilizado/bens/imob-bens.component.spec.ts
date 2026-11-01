@@ -50,6 +50,7 @@ describe('ImobBensComponent', () => {
     fixture.detectChanges();
     const req = listagem();
     responder(itens, req);
+    ctrl.expectOne('/api/v1/imobilizado/bens/codigo-anterior').flush({ oculto: false, bensComCodigoAnterior: 0 });
     ctrl.expectOne(r => r.url === CATEGORIAS).flush({
       items: [categoria(3, 'Informática'), categoria(4, 'Móveis', false)], page: 1, pageSize: 100, total: 2
     });
@@ -131,6 +132,7 @@ describe('ImobBensComponent', () => {
       fixture.detectChanges();
       expect(el().textContent).toContain('Carregando');
       responder([]);
+      ctrl.expectOne('/api/v1/imobilizado/bens/codigo-anterior').flush({ oculto: false, bensComCodigoAnterior: 0 });
       ctrl.expectOne(r => r.url === CATEGORIAS).flush({ items: [], page: 1, pageSize: 100, total: 0 });
       ctrl.expectOne(ARVORE).flush([]);
       ctrl.expectOne(r => r.url === GRUPOS).flush({ items: [], page: 1, pageSize: 100, total: 0 });

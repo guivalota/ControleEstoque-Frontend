@@ -6,9 +6,8 @@ type Theme = 'light' | 'dark';
 export class ThemeService {
   private readonly KEY = 'ce_theme';
 
-  private _theme = signal<Theme>(
-    (localStorage.getItem(this.KEY) as Theme) ?? 'light'
-  );
+  /** Escuro é o padrão; só vale o claro quando o usuário o escolheu (guardado em localStorage). */
+  private _theme = signal<Theme>(ThemeService.lerSalvo());
 
   theme = this._theme.asReadonly();
   isDark = computed(() => this._theme() === 'dark');
@@ -16,6 +15,14 @@ export class ThemeService {
   constructor() {
     this.applyTheme(this._theme());
     effect(() => this.applyTheme(this._theme()));
+  }
+
+  private static lerSalvo(): Theme {
+    try {
+      return localStorage.getItem('ce_theme') === 'light' ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
   }
 
   toggle() {
@@ -27,6 +34,6 @@ export class ThemeService {
 
   private applyTheme(theme: Theme) {
     document.documentElement.setAttribute('data-bs-theme', theme);
-    localStorage.setItem(this.KEY, theme);
+    try { localStorage.setItem(this.KEY, theme); } catch { /* storage indisponível */ }
   }
 }

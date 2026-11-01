@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
@@ -9,6 +9,8 @@ import { SidebarComponent } from './sidebar.component';
 import { ImobPerfil } from '../../core/models/imob-empresa.model';
 
 describe('SidebarComponent (menu por modulos)', () => {
+  let ultimo: ComponentFixture<SidebarComponent>;
+
   function criar(modulos: string[], perfil: ImobPerfil = 'admin') {
     TestBed.configureTestingModule({
       providers: [
@@ -21,6 +23,7 @@ describe('SidebarComponent (menu por modulos)', () => {
     empresa.id.set(1);
     const fixture = TestBed.createComponent(SidebarComponent);
     fixture.detectChanges();
+    ultimo = fixture;
     return fixture.nativeElement as HTMLElement;
   }
 
@@ -102,5 +105,19 @@ describe('SidebarComponent (menu por modulos)', () => {
     expect(tem(el, '/produtos')).toBeFalse();
     expect(tem(el, '/imobilizado')).toBeFalse();
     expect(tem(el, '/clientes')).toBeTrue();
+  });
+
+  it('Imobilizado é um grupo com subitens (Bens, Cadastros, Reavaliação) que abre e fecha', () => {
+    const el = criar(['imobilizado']);
+    for (const rota of ['/imobilizado/bens', '/imobilizado/inventarios', '/imobilizado/locais', '/imobilizado/grupos',
+      '/imobilizado/reavaliacao/estados-conservacao', '/imobilizado/reavaliacao/pesos', '/imobilizado/reavaliacao/escalas']) {
+      expect(tem(el, rota)).withContext(rota).toBeTrue();
+    }
+    const botao = el.querySelector('button[aria-controls="sub-imob"]') as HTMLButtonElement;
+    const sub = el.querySelector('#sub-imob') as HTMLElement;
+    expect(sub.classList.contains('aberto')).toBeFalse();
+    botao.click();
+    ultimo.detectChanges();
+    expect(sub.classList.contains('aberto')).toBeTrue();
   });
 });

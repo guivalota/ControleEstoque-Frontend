@@ -23,6 +23,7 @@ export const ICONE_SITUACAO_PREVISTA: Record<SituacaoPrevista, string> = {
 
 export interface ImobLeituraInfo {
   plaqueta: string;
+  plaquetaAnterior?: string | null;
   noEsperado: boolean;
   bemId?: number | null;
   descricao?: string | null;
@@ -36,6 +37,7 @@ export interface ImobLeitura {
   id: number;
   clientId: string;
   plaqueta: string;
+  plaquetaAnterior?: string | null;
   localLidoId: number;
   localLidoNome: string;
   usuarioId: string;

@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ImobBemService } from '../../../core/services/imob-bem.service';
+import { ImobCodigoAnteriorService } from '../../../core/services/imob-codigo-anterior.service';
 import { ImobCategoriaService } from '../../../core/services/imob-categoria.service';
 import { ImobLocalService } from '../../../core/services/imob-local.service';
 import { ImobDepartamentoService } from '../../../core/services/imob-departamento.service';
@@ -21,12 +22,12 @@ import { SeletorLocalComponent } from '../shared/seletor-local.component';
 import { AutocompleteResponsavelComponent } from '../shared/autocomplete-responsavel.component';
 
 type Campo =
-  | 'plaqueta' | 'descricao' | 'categoriaId' | 'localId' | 'responsavelId' | 'departamentoId' | 'dataAquisicao'
+  | 'plaqueta' | 'plaquetaAnterior' | 'descricao' | 'categoriaId' | 'localId' | 'responsavelId' | 'departamentoId' | 'dataAquisicao'
   | 'valorAquisicao' | 'valorResidual' | 'vidaUtilMeses'
   | 'fornecedorNome' | 'numeroDocumentoAquisicao' | 'numeroSerie' | 'observacao';
 
 const LIMITES: Partial<Record<Campo, number>> = {
-  plaqueta: 50, descricao: 500, fornecedorNome: 255, numeroDocumentoAquisicao: 100, numeroSerie: 100, observacao: 2000
+  plaqueta: 50, plaquetaAnterior: 50, descricao: 500, fornecedorNome: 255, numeroDocumentoAquisicao: 100, numeroSerie: 100, observacao: 2000
 };
 
 /** Residual (quando maior que zero) precisa ser menor que o valor de aquisição, como no servidor. */
@@ -47,6 +48,7 @@ function residualMenorQueAquisicao(c: AbstractControl): ValidationErrors | null 
 export class ImobBemFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private service = inject(ImobBemService);
+  readonly virada = inject(ImobCodigoAnteriorService);
   private categoriaService = inject(ImobCategoriaService);
   private localService = inject(ImobLocalService);
   private departamentoService = inject(ImobDepartamentoService);
@@ -78,6 +80,7 @@ export class ImobBemFormComponent implements OnInit {
 
   form = this.fb.group({
     plaqueta: ['', [Validators.required, Validators.maxLength(50)]],
+    plaquetaAnterior: ['', [Validators.maxLength(50)]],
     descricao: ['', [Validators.required, Validators.maxLength(500)]],
     /** Só filtra as categorias (o bem herda o grupo da categoria); não vai no corpo da requisição. */
     grupoId: [null as number | null],
@@ -155,6 +158,7 @@ export class ImobBemFormComponent implements OnInit {
       next: res => this.grupos.set(res.items),
       error: () => this.grupos.set([]) // o filtro por grupo é opcional
     });
+    this.virada.carregar();
     this.categoriaService.listar({ pageSize: 100 }).subscribe({
       next: res => { this.categorias.set(res.items); this.aplicarSugestoes(); },
       error: () => this.erroCarga.set('Não foi possível carregar as categorias.')
@@ -178,7 +182,7 @@ export class ImobBemFormComponent implements OnInit {
         next: bem => {
           this.bem.set(bem);
           this.form.reset({
-            plaqueta: bem.plaqueta, descricao: bem.descricao, categoriaId: bem.categoriaId, localId: bem.localId,
+            plaqueta: bem.plaqueta, plaquetaAnterior: bem.plaquetaAnterior ?? '', descricao: bem.descricao, categoriaId: bem.categoriaId, localId: bem.localId,
             responsavelId: bem.responsavelId ?? null, departamentoId: bem.departamentoId ?? null, dataAquisicao: bem.dataAquisicao,
             valorAquisicao: bem.valorAquisicao, valorResidual: bem.valorResidual, vidaUtilMeses: bem.vidaUtilMeses,
             fornecedorId: bem.fornecedorId ?? null, fornecedorNome: bem.fornecedorNome ?? '', numeroDocumentoAquisicao: bem.numeroDocumentoAquisicao ?? '',
@@ -244,6 +248,10 @@ export class ImobBemFormComponent implements OnInit {
       observacao: texto(v.observacao)
     };
 
+    // depois da virada o campo some e o servidor mantém o valor guardado; vazio é omitido
+    const anterior = this.virada.oculto() ? undefined : texto(v.plaquetaAnterior);
+    if (anterior) payload.plaquetaAnterior = anterior;
+
     const op = this.edicao ? this.service.atualizar(this.id!, payload) : this.service.criar(payload);
     op.subscribe({
       next: salvo => {
@@ -252,6 +260,7 @@ export class ImobBemFormComponent implements OnInit {
       },
       error: err => {
         this.saveError.set(aplicarErroNoForm(this.form, lerErroApi(err, 'Erro ao salvar bem.'), {
+          plaquetaAnterior: ['plaqueta anterior', 'código anterior', 'codigo anterior', 'anterior'],
           plaqueta: ['plaqueta'],
           valorResidual: ['residual'],
           dataAquisicao: ['data de aquisição', 'data de aquisicao', 'data da aquisição', 'dataaquisicao'],

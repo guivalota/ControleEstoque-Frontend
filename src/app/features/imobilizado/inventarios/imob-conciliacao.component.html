@@ -65,19 +65,20 @@
         <div style="min-width: 14rem">
           <app-seletor-local [formControl]="filtroLocal" [arvore]="arvore()" placeholder="Todos os locais" (change)="carregar(1)" />
         </div>
-        <input class="form-control form-control-sm w-auto" placeholder="Plaqueta ou descrição" aria-label="Buscar"
+        <input class="form-control form-control-sm w-auto" placeholder="Plaqueta (atual ou anterior) ou descrição" aria-label="Buscar"
                [formControl]="busca" (keydown.enter)="carregar(1)">
         <button type="button" class="btn btn-sm btn-outline-primary" (click)="carregar(1)">Filtrar</button>
       </div>
       <div class="table-responsive">
         <table class="table table-sm align-middle mb-0">
           <thead>
-            <tr><th>Plaqueta</th><th>Descrição</th><th>Esperado em</th><th>Lido em</th><th class="text-center">Leituras</th><th>Situação</th><th class="text-end">Ações</th></tr>
+            <tr><th>Plaqueta</th>@if (colunaAnterior()) { <th>Plaqueta anterior</th> }<th>Descrição</th><th>Esperado em</th><th>Lido em</th><th class="text-center">Leituras</th><th>Situação</th><th class="text-end">Ações</th></tr>
           </thead>
           <tbody>
             @for (i of itens(); track i.plaqueta) {
               <tr>
                 <td>{{ i.plaqueta }}</td>
+                @if (colunaAnterior()) { <td class="text-muted">{{ i.plaquetaAnterior || '—' }}</td> }
                 <td>{{ i.descricao || ((i.bemId ?? null) === null ? 'Plaqueta desconhecida' : '—') }}</td>
                 <td>{{ i.localEsperadoNome || '—' }}</td>
                 <td>
@@ -111,7 +112,7 @@
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="7" class="text-center text-muted py-3">{{ carregando() ? 'Carregando...' : 'Nenhum item neste filtro.' }}</td></tr>
+              <tr><td [attr.colspan]="colunaAnterior() ? 8 : 7" class="text-center text-muted py-3">{{ carregando() ? 'Carregando...' : 'Nenhum item neste filtro.' }}</td></tr>
             }
           </tbody>
         </table>

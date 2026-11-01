@@ -63,6 +63,7 @@ describe('ImobBemFormComponent', () => {
     comp = fixture.componentInstance;
     depoisDeCriar?.();
     fixture.detectChanges();
+    ctrl.expectOne('/api/v1/imobilizado/bens/codigo-anterior').flush({ oculto: false, bensComCodigoAnterior: 0 });
     ctrl.expectOne(r => r.url === '/api/v1/imobilizado/categorias').flush({ items: categorias, page: 1, pageSize: 100, total: categorias.length });
     ctrl.expectOne(r => r.url === '/api/v1/imobilizado/grupos').flush({ items: GRUPOS, page: 1, pageSize: 100, total: GRUPOS.length });
     ctrl.expectOne(r => r.url === '/api/v1/imobilizado/departamentos').flush({

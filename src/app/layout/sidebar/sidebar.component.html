@@ -42,29 +42,62 @@
   <ul class="nav nav-pills flex-column gap-1">
     @if (mostrarEstoque()) {
       <li class="nav-item">
-        <a class="nav-link sidebar-link" routerLink="/dashboard" routerLinkActive="active">
-          <i class="bi bi-speedometer2 me-2"></i>Dashboard
-        </a>
+        <button type="button" class="nav-link sidebar-link sidebar-grupo w-100 text-start" (click)="alternar('estoque')"
+                [class.ativo]="rotaEm('/dashboard,/produtos,/categorias,/movimentacoes,/lotes,/pedidos-compra,/notas-fiscais,/conferencia')"
+                [attr.aria-expanded]="aberto('estoque')" aria-controls="sub-estoque">
+          <i class="bi bi-box-seam me-2"></i>Estoque
+          <i class="bi bi-chevron-down ms-auto sidebar-seta" [class.girada]="aberto('estoque')"></i>
+        </button>
+        <ul id="sub-estoque" class="nav flex-column sidebar-sub" [class.aberto]="aberto('estoque')">
+          <li><a class="nav-link sidebar-sublink" routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/produtos" routerLinkActive="active">Produtos</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/categorias" routerLinkActive="active">Categorias</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/movimentacoes" routerLinkActive="active">Movimentações</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/lotes" routerLinkActive="active">Lotes</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/pedidos-compra" routerLinkActive="active">Pedidos de compra</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/notas-fiscais" routerLinkActive="active">Notas fiscais</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/conferencia" routerLinkActive="active">Conferência</a></li>
+        </ul>
       </li>
+    }
+    @if (mostrarImobilizado()) {
       <li class="nav-item">
-        <a class="nav-link sidebar-link" routerLink="/produtos" routerLinkActive="active">
-          <i class="bi bi-box me-2"></i>Produtos
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link sidebar-link" routerLink="/categorias" routerLinkActive="active">
-          <i class="bi bi-tags me-2"></i>Categorias
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link sidebar-link" routerLink="/movimentacoes" routerLinkActive="active">
-          <i class="bi bi-arrow-left-right me-2"></i>Movimentações
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link sidebar-link" routerLink="/lotes" routerLinkActive="active">
-          <i class="bi bi-boxes me-2"></i>Lotes
-        </a>
+        <button type="button" class="nav-link sidebar-link sidebar-grupo w-100 text-start" (click)="alternar('imob')"
+                [class.ativo]="rotaEm('/imobilizado')" [attr.aria-expanded]="aberto('imob')" aria-controls="sub-imob">
+          <i class="bi bi-buildings me-2"></i>Imobilizado
+          <i class="bi bi-chevron-down ms-auto sidebar-seta" [class.girada]="aberto('imob')"></i>
+        </button>
+        <ul id="sub-imob" class="nav flex-column sidebar-sub" [class.aberto]="aberto('imob')">
+          <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Visão geral</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/bens" routerLinkActive="active">Bens</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/inventarios" routerLinkActive="active">Inventários</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/ordens-servico" routerLinkActive="active">Ordens de serviço</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/depreciacao" routerLinkActive="active">Depreciação</a></li>
+          <li>
+            <button type="button" class="nav-link sidebar-sublink sidebar-grupo w-100 text-start" (click)="alternar('imob-cad')"
+                    [attr.aria-expanded]="aberto('imob-cad')" aria-controls="sub-imob-cad">
+              Cadastros <i class="bi bi-chevron-down ms-auto sidebar-seta" [class.girada]="aberto('imob-cad')"></i>
+            </button>
+            <ul id="sub-imob-cad" class="nav flex-column sidebar-sub sidebar-sub-2" [class.aberto]="aberto('imob-cad')">
+              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/locais" routerLinkActive="active">Locais</a></li>
+              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/categorias" routerLinkActive="active">Categorias</a></li>
+              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/grupos" routerLinkActive="active">Grupos</a></li>
+              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/departamentos" routerLinkActive="active">Departamentos</a></li>
+              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/responsaveis" routerLinkActive="active">Responsáveis</a></li>
+            </ul>
+          </li>
+          <li>
+            <button type="button" class="nav-link sidebar-sublink sidebar-grupo w-100 text-start" (click)="alternar('imob-reav')"
+                    [attr.aria-expanded]="aberto('imob-reav')" aria-controls="sub-imob-reav">
+              Reavaliação <i class="bi bi-chevron-down ms-auto sidebar-seta" [class.girada]="aberto('imob-reav')"></i>
+            </button>
+            <ul id="sub-imob-reav" class="nav flex-column sidebar-sub sidebar-sub-2" [class.aberto]="aberto('imob-reav')">
+              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/reavaliacao/estados-conservacao" routerLinkActive="active">Estados de conservação</a></li>
+              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/reavaliacao/pesos" routerLinkActive="active">Pesos</a></li>
+              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/reavaliacao/escalas" routerLinkActive="active">Escalas VP e VF</a></li>
+            </ul>
+          </li>
+        </ul>
       </li>
     }
     @if (permissao.canManageUsers()) {
@@ -85,14 +118,6 @@
         <i class="bi bi-person-lines-fill me-2"></i>Clientes
       </a>
     </li>
-    @if (mostrarEstoque()) {
-      <li class="nav-item">
-        <a class="nav-link sidebar-link" routerLink="/pedidos-compra" routerLinkActive="active">
-          <i class="bi bi-cart me-2"></i>Pedidos de Compra
-        </a>
-      </li>
-    }
-
     @if (permissao.canManageUsers()) {
       <li class="mt-2 px-2"><small class="text-uppercase fw-semibold" style="color:#475569;font-size:.7rem;letter-spacing:.05em">Admin</small></li>
       <!-- Audit Logs é do painel do super admin (fatia 2), não do menu de empresa -->
@@ -103,29 +128,6 @@
       </li>
     }
 
-    @if (mostrarImobilizado()) {
-      <li class="mt-2 px-2"><small class="text-uppercase fw-semibold" style="color:#475569;font-size:.7rem;letter-spacing:.05em">Patrimônio</small></li>
-      <li class="nav-item">
-        <a class="nav-link sidebar-link" routerLink="/imobilizado" routerLinkActive="active">
-          <i class="bi bi-buildings me-2"></i>Imobilizado
-        </a>
-      </li>
-
-    }
-    @if (mostrarEstoque()) {
-      <li class="mt-2 px-2"><small class="text-uppercase fw-semibold" style="color:#475569;font-size:.7rem;letter-spacing:.05em">Fiscal</small></li>
-
-      <li class="nav-item">
-        <a class="nav-link sidebar-link" routerLink="/notas-fiscais" routerLinkActive="active">
-          <i class="bi bi-file-earmark-text me-2"></i>Notas Fiscais
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link sidebar-link" routerLink="/conferencia" routerLinkActive="active">
-          <i class="bi bi-clipboard-check me-2"></i>Conferência
-        </a>
-      </li>
-    }
   </ul>
   }
 

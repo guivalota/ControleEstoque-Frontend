@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ImobCodigoAnteriorService } from '../../../core/services/imob-codigo-anterior.service';
 import { ImobConciliacaoService } from '../../../core/services/imob-conciliacao.service';
 import { ImobInventarioService } from '../../../core/services/imob-inventario.service';
 import { ImobLocalService } from '../../../core/services/imob-local.service';
@@ -33,6 +34,7 @@ export class ImobConciliacaoComponent implements OnInit, OnDestroy {
   private locais = inject(ImobLocalService);
   private route = inject(ActivatedRoute);
   permissao = inject(PermissaoService);
+  private virada = inject(ImobCodigoAnteriorService);
 
   readonly id = Number(this.route.snapshot.paramMap.get('id'));
   readonly pageSize = PAGE_SIZE;
@@ -50,6 +52,9 @@ export class ImobConciliacaoComponent implements OnInit, OnDestroy {
   carregando = signal(false);
   naoEncontrado = signal(false);
   erro = signal('');
+
+  /** Coluna "Plaqueta anterior": só quando há algum valor ou a virada ainda não foi feita. */
+  colunaAnterior = computed(() => !this.virada.oculto() || this.itens().some(i => !!i.plaquetaAnterior));
 
   situacao = signal<SituacaoConciliacao | ''>('');
   resolucaoFiltro = signal<FiltroResolucao>('pendentes');
@@ -70,6 +75,7 @@ export class ImobConciliacaoComponent implements OnInit, OnDestroy {
   private timer?: ReturnType<typeof setInterval>;
 
   ngOnInit() {
+    this.virada.carregar();
     this.inventarios.obter(this.id).subscribe({
       next: inv => {
         this.inventario.set(inv);

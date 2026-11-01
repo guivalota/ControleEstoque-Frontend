@@ -5,6 +5,7 @@ const ROTULOS: Record<string, string> = {
   criacao: 'Cadastro',
   exclusao: 'Exclusão',
   plaqueta: 'Plaqueta',
+  plaqueta_anterior: 'Plaqueta anterior',
   descricao: 'Descrição',
   categoria_id: 'Categoria',
   local_id: 'Local',

@@ -79,6 +79,16 @@ describe('guards de carga da empresa e de modulo', () => {
     expect(empresa.aviso()).toBe('Seu plano não inclui este módulo.');
   });
 
+  it('moduloGuard na entrada padrao (/dashboard) sem Estoque segue para o Imobilizado sem aviso', () => {
+    let res: unknown;
+    const guard = moduloGuard('estoque');
+    TestBed.runInInjectionContext(() => guard({} as ActivatedRouteSnapshot, { url: '/dashboard' } as RouterStateSnapshot) as Observable<boolean | UrlTree>)
+      .subscribe(v => res = v);
+    ctrl.expectOne(URL).flush([emp(1, ['imobilizado'])]);
+    expect(res instanceof UrlTree ? TestBed.inject(Router).serializeUrl(res) : res).toBe('/imobilizado');
+    expect(empresa.aviso()).toBe('');
+  });
+
   it('moduloGuard do estoque barra o contador e manda para o Imobilizado', () => {
     const c = { ...emp(1, ['estoque', 'imobilizado']), perfil: 'contador' as const };
     expect(rodar(moduloGuard('estoque'), [c])).toBe('/imobilizado');
