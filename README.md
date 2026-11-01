@@ -85,10 +85,9 @@ src/app/
   layout/      shell, sidebar, topbar
   features/    uma pasta por módulo (rotas lazy-loaded)
     imobilizado/   área de patrimônio (shell, bens, inventários, OS, depreciação...)
-docs/imobilizado/  especificações de contrato da API para o Imobilizado
 ```
 
-Convenções do projeto (estado com signals, modais Bootstrap, paginação, formatação, tratamento de erros, multiempresa) estão no [CLAUDE.md](CLAUDE.md). As especificações por funcionalidade estão em [docs/imobilizado](docs/imobilizado); leia-as antes de alterar endpoints, mensagens de erro ou tipos.
+Convenções do projeto (estado com signals, modais Bootstrap, paginação, formatação, tratamento de erros, multiempresa) estão no [CLAUDE.md](CLAUDE.md). As especificações por funcionalidade e o backlog ficam fora do repositório, em `../design/modulos/imobilizado/` e `../backlog/` (ver [Documentação do produto](#documentação-do-produto)); leia-as antes de alterar endpoints, mensagens de erro ou tipos.
 
 ## Fluxo de trabalho e deploy
 

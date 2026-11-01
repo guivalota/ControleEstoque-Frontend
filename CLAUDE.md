@@ -108,7 +108,7 @@ Components import `Modal` from `'bootstrap'` (typed via `src/typings.d.ts`). Eac
 
 ## Área Imobilizado (controle patrimonial)
 
-Separate module from Estoque (own routes, services, models). Contract specs live in `docs/imobilizado/` (`frontend-spec-imob-*.md`; `PLANO_DE_ACAO.md` is backend context) — read them before changing endpoints, error messages or types, and report backend divergences instead of working around them.
+Separate module from Estoque (own routes, services, models). Contract specs live outside this repo, in `../design/modulos/imobilizado/` (DSG-10…14, 24) and `../design/specs-originais/imobilizado/` (`frontend-spec-imob-*.md`; `PLANO_DE_ACAO.md` is backend context); stories in `../backlog/` (E09–E13, E19–E21) — read them before changing endpoints, error messages or types, and report backend divergences instead of working around them.
 
 ```
 core/models/imob-*.model.ts, paged-result.model.ts
