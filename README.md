@@ -19,11 +19,19 @@ Dashboard, categorias, produtos, fornecedores, clientes, notas fiscais (importa�
 | Cadastros base | Locais (árvore), categorias de bem, responsáveis |
 | Bens | Lista com filtros na URL, formulário, detalhe com histórico, dados incompletos, exportação e importação por CSV |
 | Etiquetas | PDF com QR por seleção, por filtro ou pelo detalhe do bem (modelos A4 e rolo) |
+| Renovação de etiquetas | Código anterior por bem, de-para em lote por CSV, "virada" que oculta o código antigo e lista de conferência em PDF |
+| Visão geral | Dashboard do módulo: valores do patrimônio, pendências (inventários, OS, dados incompletos) e alertas de depreciação |
 | Inventários | Escopo e equipe, contagem (leituras e CSV), conciliação, painel de divergências, encerramento e relatório |
 | Ordens de serviço | Transferência, manutenção, baixa e venda, com fluxo de aprovação |
 | Depreciação | Prévia, fechamento de períodos, razão, relatórios e memória de cálculo |
 
+Navegação pelo menu lateral, em grupos (Estoque e Imobilizado, com Cadastros e Reavaliação). O tema escuro é o padrão; o botão de tema alterna.
+
 Perfis: `admin`, `operador` e `leitura`. No Imobilizado vale o menor entre o perfil global e o perfil na empresa.
+
+## Documentação do produto
+
+Decisões, pendências, specs e backlog ficam em [`../design/`](../design/README.md), [`../backlog/`](../backlog/README.md) e [`../SPEC.md`](../SPEC.md). Este README cobre apenas como rodar, testar e implantar o front.
 
 ## Pré-requisitos
 
@@ -77,10 +85,9 @@ src/app/
   layout/      shell, sidebar, topbar
   features/    uma pasta por módulo (rotas lazy-loaded)
     imobilizado/   área de patrimônio (shell, bens, inventários, OS, depreciação...)
-docs/imobilizado/  especificações de contrato da API para o Imobilizado
 ```
 
-Convenções do projeto (estado com signals, modais Bootstrap, paginação, formatação, tratamento de erros, multiempresa) estão no [CLAUDE.md](CLAUDE.md). As especificações por funcionalidade estão em [docs/imobilizado](docs/imobilizado); leia-as antes de alterar endpoints, mensagens de erro ou tipos.
+Convenções do projeto (estado com signals, modais Bootstrap, paginação, formatação, tratamento de erros, multiempresa) estão no [CLAUDE.md](CLAUDE.md). As especificações por funcionalidade e o backlog ficam fora do repositório, em `../design/modulos/imobilizado/` e `../backlog/` (ver [Documentação do produto](#documentação-do-produto)); leia-as antes de alterar endpoints, mensagens de erro ou tipos.
 
 ## Fluxo de trabalho e deploy
 

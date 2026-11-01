@@ -25,7 +25,10 @@ export function bemEditavel(status: ImobBemStatus): boolean {
 
 export interface ImobBem {
   id: number;
+  /** Código ATUAL (o da etiqueta vigente; é o que vai no QR). */
   plaqueta: string;
+  /** Código da etiqueta antiga; `null` se não houver ou depois da virada. */
+  plaquetaAnterior?: string | null;
   descricao: string;
   categoriaId: number; categoriaNome: string;
   localId: number; localNome: string;
@@ -50,7 +53,7 @@ export interface ImobBem {
 }
 
 export interface SalvarImobBem {
-  plaqueta: string; descricao: string;
+  plaqueta: string; plaquetaAnterior?: string; descricao: string;
   categoriaId: number; localId: number; responsavelId?: number | null; departamentoId?: number | null;
   dataAquisicao?: string | null; valorAquisicao?: number | null;
   valorResidual?: number; vidaUtilMeses?: number;

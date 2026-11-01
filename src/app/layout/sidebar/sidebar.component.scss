@@ -47,3 +47,46 @@
   border-radius: 4px;
   padding: 2px;
 }
+
+// ── grupos com submenu (dropdown) ─────────────────────────────────────────────
+.sidebar-grupo {
+  display: flex;
+  align-items: center;
+  border: 0;
+  background: transparent;
+
+  &.ativo { color: #f1f5f9; background-color: rgba(59, 130, 246, 0.18); }
+}
+
+.sidebar-seta {
+  font-size: 0.7rem;
+  transition: transform 0.15s ease;
+
+  &.girada { transform: rotate(180deg); }
+}
+
+.sidebar-sub {
+  display: none;
+  margin: 0.15rem 0 0.25rem 1.1rem;
+  padding-left: 0.5rem;
+  border-left: 1px solid #334155;
+
+  &.aberto { display: flex; }
+}
+
+.sidebar-sub-2 { margin-left: 0.5rem; }
+
+.sidebar-sublink {
+  display: flex;
+  align-items: center;
+  color: #94a3b8;
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.6rem;
+
+  &:hover { background-color: #334155; color: #f1f5f9; }
+
+  &.active { background-color: #3b82f6; color: #fff; }
+
+  &.sidebar-grupo { background: transparent; }
+}

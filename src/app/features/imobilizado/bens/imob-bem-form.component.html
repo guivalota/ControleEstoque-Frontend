@@ -35,7 +35,16 @@
                    [class.is-invalid]="erroCampo('plaqueta')">
             <div class="invalid-feedback">{{ erroCampo('plaqueta') }}</div>
           </div>
-          <div class="col-12 col-md-8">
+          @if (!virada.oculto()) {
+            <div class="col-12 col-md-4">
+              <label for="bemPlaquetaAnterior" class="form-label">Plaqueta anterior</label>
+              <input id="bemPlaquetaAnterior" class="form-control" formControlName="plaquetaAnterior" maxlength="50"
+                     [class.is-invalid]="erroCampo('plaquetaAnterior')" aria-describedby="bemPlaquetaAnteriorAjuda">
+              <div class="invalid-feedback">{{ erroCampo('plaquetaAnterior') }}</div>
+              <div id="bemPlaquetaAnteriorAjuda" class="form-text">Código da etiqueta antiga, se houver.</div>
+            </div>
+          }
+          <div class="col-12" [class.col-md-4]="!virada.oculto()" [class.col-md-8]="virada.oculto()">
             <label for="bemDescricao" class="form-label">Descrição *</label>
             <input id="bemDescricao" class="form-control" formControlName="descricao" maxlength="500"
                    [class.is-invalid]="erroCampo('descricao')">

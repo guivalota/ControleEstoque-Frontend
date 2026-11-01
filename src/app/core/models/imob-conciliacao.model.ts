@@ -35,6 +35,7 @@ export interface ConciliacaoItem {
   itemId?: number | null;
   bemId?: number | null;
   plaqueta: string;
+  plaquetaAnterior?: string | null;
   descricao?: string | null;
   situacao: SituacaoConciliacao;
   localEsperadoId?: number | null;

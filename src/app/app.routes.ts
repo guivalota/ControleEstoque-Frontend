@@ -158,6 +158,10 @@ export const routes: Routes = [
             loadComponent: () => import('./features/imobilizado/bens/imob-importacao-bens.component').then(m => m.ImobImportacaoBensComponent)
           },
           {
+            path: 'bens/renovar-etiquetas',
+            loadComponent: () => import('./features/imobilizado/bens/imob-renovacao-etiquetas.component').then(m => m.ImobRenovacaoEtiquetasComponent)
+          },
+          {
             path: 'bens/novo',
             canActivate: [escritaGuard],
             loadComponent: () => import('./features/imobilizado/bens/imob-bem-form.component').then(m => m.ImobBemFormComponent)

@@ -2,20 +2,28 @@
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h6 class="fw-bold mb-0">Bens</h6>
     <div class="d-flex gap-2">
-      <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="exportando()" (click)="exportar()">
+      <button type="button" class="btn btn-outline-primary btn-sm" [disabled]="exportando()" (click)="exportar()">
         @if (exportando()) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-download me-1"></i> }
         Exportar CSV
+      </button>
+      <button type="button" class="btn btn-outline-primary btn-sm" [disabled]="gerandoConferencia() || !total()" (click)="conferenciaPdf()"
+              title="Lista para imprimir e conferir os bens (por local), com espaço para a plaqueta nova">
+        @if (gerandoConferencia()) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-file-earmark-pdf me-1"></i> }
+        Conferência (PDF)
       </button>
       @if (selecionados().size) {
         <button type="button" class="btn btn-outline-primary btn-sm" (click)="imprimirSelecionados()">
           <i class="bi bi-qr-code me-1"></i>Etiquetas ({{ selecionados().size }})
         </button>
       }
-      <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="!total()" (click)="imprimirFiltro()">
+      <button type="button" class="btn btn-outline-primary btn-sm" [disabled]="!total()" (click)="imprimirFiltro()">
         <i class="bi bi-printer me-1"></i>Etiquetas do filtro
       </button>
+      <a class="btn btn-outline-primary btn-sm" routerLink="/imobilizado/bens/renovar-etiquetas">
+        <i class="bi bi-arrow-repeat me-1"></i>Renovar etiquetas
+      </a>
       @if (permissao.imobCanCreate()) {
-        <a class="btn btn-outline-secondary btn-sm" routerLink="/imobilizado/bens/importar">
+        <a class="btn btn-outline-primary btn-sm" routerLink="/imobilizado/bens/importar">
           <i class="bi bi-upload me-1"></i>Importar CSV
         </a>
         <a class="btn btn-primary btn-sm" routerLink="/imobilizado/bens/novo">
@@ -45,7 +53,7 @@
       <div class="col-12 col-md-4">
         <label for="bemBusca" class="form-label small mb-1">Buscar</label>
         <input id="bemBusca" class="form-control form-control-sm" formControlName="busca"
-               placeholder="Plaqueta, descrição ou nº de série">
+               [placeholder]="virada.oculto() ? 'Plaqueta, descrição ou nº de série' : 'Plaqueta (atual ou anterior), descrição ou nº de série'">
       </div>
       <div class="col-12 col-md-5">
         <label for="bemLocal" class="form-label small mb-1">Local</label>
@@ -70,6 +78,13 @@
           <input id="bemPendentes" class="form-check-input" type="checkbox" formControlName="pendentes">
           <label for="bemPendentes" class="form-check-label small">Pendentes de completar</label>
         </div>
+        @if (!virada.oculto()) {
+          <div class="form-check">
+            <input id="bemMostrarAnterior" class="form-check-input" type="checkbox"
+                   [checked]="mostrarAnterior()" (change)="mostrarAnterior.set($any($event.target).checked)">
+            <label for="bemMostrarAnterior" class="form-check-label small">Mostrar plaqueta anterior</label>
+          </div>
+        }
       </div>
       <div class="col-6 col-md-4">
         <label for="bemCategoria" class="form-label small mb-1">Categoria</label>
@@ -165,6 +180,7 @@
                   <input type="checkbox" class="form-check-input me-2" aria-label="Selecionar todos da página"
                          [checked]="paginaToda()" (change)="alternarPagina($any($event.target).checked)">Plaqueta
                 </th>
+                @if (colunaAnterior()) { <th>Plaqueta anterior</th> }
                 <th>Descrição</th>
                 <th>Local</th>
                 <th>Grupo</th>
@@ -182,6 +198,7 @@
                            [checked]="selecionados().has(b.id)" (change)="alternar(b.id, $any($event.target).checked)">
                     <a [routerLink]="['/imobilizado/bens', b.id]" class="fw-medium">{{ b.plaqueta }}</a>
                   </td>
+                  @if (colunaAnterior()) { <td class="text-nowrap text-muted">{{ b.plaquetaAnterior || '—' }}</td> }
                   <td>{{ b.descricao }}
                     @if (!b.dadosCompletos) { <span class="badge bg-warning-subtle text-warning-emphasis ms-1">Dados incompletos</span> }
                   </td>
@@ -207,7 +224,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="8" class="text-center text-muted py-4">
+                  <td [attr.colspan]="colunaAnterior() ? 9 : 8" class="text-center text-muted py-4">
                     <i class="bi bi-inbox me-2"></i>{{ temFiltro() ? 'Nenhum bem encontrado com os filtros atuais' : 'Nenhum bem cadastrado' }}
                   </td>
                 </tr>

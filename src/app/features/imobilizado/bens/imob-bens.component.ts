@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
+import { Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import { ImobCodigoAnteriorService } from '../../../core/services/imob-codigo-anterior.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { merge } from 'rxjs';
@@ -91,8 +92,16 @@ export class ImobBensComponent implements OnInit {
   /** Bens marcados para etiqueta; vale entre páginas e zera quando o filtro muda. */
   selecionados = signal<ReadonlySet<number>>(new Set());
 
+  readonly virada = inject(ImobCodigoAnteriorService);
+  /** Preferência do usuário (coluna ocultável). */
+  mostrarAnterior = signal(true);
+  /** A coluna só faz sentido se há algum código anterior na página ou a virada não foi feita. */
+  colunaAnterior = computed(() =>
+    this.mostrarAnterior() && (!this.virada.oculto() || this.bens().some(b => !!b.plaquetaAnterior)));
+
   exportando = signal(false);
   erroExportacao = signal('');
+  gerandoConferencia = signal(false);
 
   plaquetaBusca = this.fb.control('');
   buscandoPlaqueta = signal(false);
@@ -130,6 +139,7 @@ export class ImobBensComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.virada.carregar();
     this.categoriaService.listar({ pageSize: 100 }).subscribe({
       next: res => this.categorias.set(res.items),
       error: () => undefined
@@ -326,6 +336,25 @@ export class ImobBensComponent implements OnInit {
           ? `${e.mensagem} Tente filtrar por local ou categoria.`
           : e.mensagem);
         this.exportando.set(false);
+      }
+    });
+  }
+
+  /** PDF de conferência dos bens do filtro atual (para imprimir e levar a campo). */
+  conferenciaPdf() {
+    this.gerandoConferencia.set(true);
+    this.erroExportacao.set('');
+    this.service.conferenciaPdf(this.filtroAtivo).subscribe({
+      next: arquivo => {
+        baixarBlob(arquivo.blob, arquivo.nome);
+        this.gerandoConferencia.set(false);
+      },
+      error: err => {
+        const e = lerErroApi(err, 'Erro ao gerar a conferência.');
+        this.erroExportacao.set(err.status === 400 && e.mensagem
+          ? `${e.mensagem} Tente filtrar por local ou categoria.`
+          : e.mensagem);
+        this.gerandoConferencia.set(false);
       }
     });
   }

@@ -115,6 +115,7 @@ export class ImobContagemComponent implements OnInit {
       next: r => {
         this.pendente = null;
         this.registrando.set(false);
+        this.lidoPorId.set(r.id, plaqueta);
         this.sessao.update(l => [r, ...l].slice(0, MAX_FEEDBACK));
         this.plaqueta.reset('');
         this.observacao.reset('');
@@ -128,6 +129,16 @@ export class ImobContagemComponent implements OnInit {
         this.erro.set(lerErroApi(err, 'Erro ao registrar a leitura.').mensagem);
       }
     });
+  }
+
+  /** Código digitado/lido na leitura (em minúsculas, para comparar com o devolvido). */
+  private lidoPorId = new Map<number, string>();
+
+  /** Texto "1001 → A-0001" quando o servidor resolveu a etiqueta antiga para o código atual. */
+  etiquetaAntigaReconhecida(r: ImobLeituraRegistrada): string | null {
+    const lido = this.lidoPorId.get(r.id);
+    if (!lido || lido.toLowerCase() === r.plaqueta.toLowerCase()) return null;
+    return `${lido} → ${r.plaqueta}`;
   }
 
   anular(l: { id: number }) {

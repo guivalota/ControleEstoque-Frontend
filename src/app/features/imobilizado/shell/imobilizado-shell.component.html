@@ -8,30 +8,7 @@
   </div>
 </div>
 
-@if (empresa.ativa()) {
-  <nav class="mb-3" aria-label="Cadastros do Imobilizado">
-    <ul class="nav nav-pills gap-1">
-      <li class="nav-item">
-        <a class="nav-link py-1" routerLink="/imobilizado" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Início</a>
-      </li>
-      <li class="nav-item"><a class="nav-link py-1" routerLink="/imobilizado/bens" routerLinkActive="active">Bens</a></li>
-      <li class="nav-item"><a class="nav-link py-1" routerLink="/imobilizado/inventarios" routerLinkActive="active">Inventários</a></li>
-      <li class="nav-item"><a class="nav-link py-1" routerLink="/imobilizado/ordens-servico" routerLinkActive="active">Ordens de serviço</a></li>
-      <li class="nav-item"><a class="nav-link py-1" routerLink="/imobilizado/depreciacao" routerLinkActive="active">Depreciação</a></li>
-      <li class="nav-item"><a class="nav-link py-1" routerLink="/imobilizado/locais" routerLinkActive="active">Locais</a></li>
-      <li class="nav-item"><a class="nav-link py-1" routerLink="/imobilizado/categorias" routerLinkActive="active">Categorias</a></li>
-      <li class="nav-item"><a class="nav-link py-1" routerLink="/imobilizado/grupos" routerLinkActive="active">Grupos</a></li>
-      <li class="nav-item"><a class="nav-link py-1" routerLink="/imobilizado/departamentos" routerLinkActive="active">Departamentos</a></li>
-      <li class="nav-item"><a class="nav-link py-1" routerLink="/imobilizado/responsaveis" routerLinkActive="active">Responsáveis</a></li>
-    </ul>
-    <ul class="nav nav-pills gap-1 mt-2" aria-label="Reavaliação">
-      <li class="nav-item d-flex align-items-center"><span class="small text-muted fw-semibold text-uppercase me-1"><i class="bi bi-sliders me-1"></i>Reavaliação</span></li>
-      <li class="nav-item"><a class="nav-link py-1" routerLink="/imobilizado/reavaliacao/estados-conservacao" routerLinkActive="active">Estados de conservação</a></li>
-      <li class="nav-item"><a class="nav-link py-1" routerLink="/imobilizado/reavaliacao/pesos" routerLinkActive="active">Pesos</a></li>
-      <li class="nav-item"><a class="nav-link py-1" routerLink="/imobilizado/reavaliacao/escalas" routerLinkActive="active">Escalas VP e VF</a></li>
-    </ul>
-  </nav>
-}
+<!-- a navegação do Imobilizado fica no menu lateral (Imobilizado › Bens, Locais, Reavaliação…) -->
 
 @if (empresa.aviso()) {
   <div class="alert alert-warning" role="alert">

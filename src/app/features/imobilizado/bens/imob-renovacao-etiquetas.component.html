@@ -1,0 +1,205 @@
+<div>
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <a routerLink="/imobilizado/bens" class="btn btn-sm btn-outline-secondary" aria-label="Voltar para a lista de bens">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h6 class="fw-bold mb-0">Renovação de etiquetas</h6>
+  </div>
+
+  <!-- Conferência em PDF -->
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div>
+        <h6 class="text-muted text-uppercase small fw-semibold mb-1">Lista de conferência</h6>
+        <p class="small text-muted mb-0">
+          PDF com todos os bens, por local e plaqueta, com espaço para anotar a plaqueta nova e marcar o que foi conferido.
+          Para só uma parte, filtre na <a routerLink="/imobilizado/bens">lista de bens</a> e use "Conferência (PDF)".
+        </p>
+      </div>
+      <button type="button" class="btn btn-outline-primary" [disabled]="gerandoConferencia()" (click)="gerarConferencia()">
+        @if (gerandoConferencia()) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-file-earmark-pdf me-1"></i> }
+        Gerar PDF de conferência
+      </button>
+    </div>
+    @if (erroConferenciaPdf()) { <div class="alert alert-danger py-2 mx-3 mb-3" role="alert">{{ erroConferenciaPdf() }}</div> }
+  </div>
+
+  <!-- Virada -->
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+      <h6 class="text-muted text-uppercase small fw-semibold mb-3">Códigos antigos</h6>
+      @if (virada.carregando()) {
+        <div class="text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Carregando...</div>
+      } @else if (virada.erro()) {
+        <div class="alert alert-danger d-flex justify-content-between align-items-center py-2 mb-0" role="alert">
+          <span>Não foi possível carregar o estado dos códigos antigos.</span>
+          <button type="button" class="btn btn-sm btn-outline-danger" (click)="virada.carregar(true)">Tentar novamente</button>
+        </div>
+      } @else if (virada.estado()) {
+        @let e = virada.estado()!;
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+          <div>
+            <div class="mb-1">
+              @if (e.oculto) {
+                <span class="badge bg-secondary-subtle text-secondary"><i class="bi bi-eye-slash me-1"></i>Códigos antigos ocultos</span>
+              } @else {
+                <span class="badge bg-success-subtle text-success"><i class="bi bi-eye me-1"></i>Códigos antigos visíveis</span>
+              }
+            </div>
+            <div class="small text-muted">
+              {{ e.bensComCodigoAnterior }} {{ e.bensComCodigoAnterior === 1 ? 'bem com código anterior' : 'bens com código anterior' }}.
+              @if (e.oculto) {
+                O código antigo não aparece nas telas nem é aceito na leitura do levantamento. Nada foi apagado.
+              } @else {
+                Durante a transição, o levantamento aceita a etiqueta nova e a antiga.
+              }
+            </div>
+          </div>
+          @if (permissao.imobCanDelete()) {
+            <button type="button" class="btn" [class.btn-outline-danger]="!e.oculto" [class.btn-outline-primary]="e.oculto"
+                    [disabled]="alterando()" (click)="alternarVirada()">
+              @if (alterando()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              {{ e.oculto ? 'Voltar a exibir' : 'Ocultar códigos antigos' }}
+            </button>
+          }
+        </div>
+        @if (erroVirada()) { <div class="alert alert-danger py-2 mt-3 mb-0" role="alert">{{ erroVirada() }}</div> }
+        @if (feedbackVirada()) { <div class="alert alert-success py-2 mt-3 mb-0" role="status">{{ feedbackVirada() }}</div> }
+      }
+    </div>
+  </div>
+
+  @if (permissao.imobCanDelete()) {
+    <!-- De-para -->
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body">
+        <h6 class="text-muted text-uppercase small fw-semibold mb-2">Carregar de-para (antiga → nova)</h6>
+        <p class="small text-muted">
+          Cada bem cadastrado com a plaqueta <strong>antiga</strong> passa a ter a <strong>nova</strong> como plaqueta atual e
+          guarda a antiga como código anterior. Reenviar pares já aplicados é seguro. Não é possível aplicar com inventário em andamento.
+        </p>
+
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <label class="btn btn-outline-primary btn-sm mb-0" for="deParaArquivo">
+            <i class="bi bi-upload me-1"></i>Escolher CSV
+          </label>
+          <input id="deParaArquivo" type="file" class="d-none" accept=".csv,.txt,text/csv,text/plain" (change)="escolherArquivo($event)">
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="baixarModelo()">
+            <i class="bi bi-download me-1"></i>Baixar modelo
+          </button>
+          @if (texto.value) {
+            <button type="button" class="btn btn-outline-secondary btn-sm" (click)="limpar()">Limpar</button>
+          }
+          @if (nomeArquivo()) { <span class="small text-muted align-self-center">{{ nomeArquivo() }}</span> }
+        </div>
+
+        <label for="deParaTexto" class="form-label small">ou cole os pares (colunas <code>antiga;nova</code>, com ou sem cabeçalho)</label>
+        <textarea id="deParaTexto" class="form-control font-monospace" rows="6" [formControl]="texto"
+                  placeholder="antiga;nova&#10;1001;A-0001&#10;1002;A-0002" spellcheck="false"></textarea>
+      </div>
+    </div>
+
+    @if (previa().total > 0) {
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <h6 class="text-muted text-uppercase small fw-semibold mb-3">Prévia</h6>
+          <div class="row g-2 text-center mb-3">
+            <div class="col-6 col-md"><div class="border rounded p-2"><div class="fs-5 fw-semibold">{{ previa().total }}</div><div class="small text-muted">Linhas</div></div></div>
+            <div class="col-6 col-md"><div class="border rounded p-2" [class.border-danger]="previa().antigasRepetidas"><div class="fs-5 fw-semibold">{{ previa().antigasRepetidas }}</div><div class="small text-muted">Antigas repetidas</div></div></div>
+            <div class="col-6 col-md"><div class="border rounded p-2" [class.border-danger]="previa().novasRepetidas"><div class="fs-5 fw-semibold">{{ previa().novasRepetidas }}</div><div class="small text-muted">Novas repetidas</div></div></div>
+            <div class="col-6 col-md"><div class="border rounded p-2" [class.border-danger]="previa().iguais"><div class="fs-5 fw-semibold">{{ previa().iguais }}</div><div class="small text-muted">Antiga = nova</div></div></div>
+            <div class="col-6 col-md"><div class="border rounded p-2" [class.border-danger]="previa().vazias"><div class="fs-5 fw-semibold">{{ previa().vazias }}</div><div class="small text-muted">Vazias</div></div></div>
+            <div class="col-6 col-md"><div class="border rounded p-2" [class.border-danger]="previa().excesso"><div class="fs-5 fw-semibold">{{ previa().excesso }}</div><div class="small text-muted">&gt; 50 caracteres</div></div></div>
+          </div>
+
+          @if (previa().excedeLimite) {
+            <div class="alert alert-warning py-2" role="alert">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              O limite é de {{ maxPares }} pares por envio. Divida o arquivo em partes; cada envio é atômico por si só
+              (um envio que der certo não é desfeito se o seguinte falhar).
+            </div>
+          }
+          @if (previa().erros.length) {
+            <div class="alert alert-danger py-2" role="alert">
+              <i class="bi bi-x-octagon me-2"></i>Corrija os problemas destacados abaixo: o envio fica bloqueado enquanto houver erro.
+            </div>
+          }
+
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+            <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="conferindo()" (click)="conferirCadastro()">
+              @if (conferindo()) { <span class="spinner-border spinner-border-sm me-1"></span>{{ progressoConferencia() }} }
+              @else { <i class="bi bi-search me-1"></i>Conferir com o cadastro }
+            </button>
+            <span class="small text-muted">Opcional: lê os bens cadastrados e destaca pares com problema (o servidor valida de novo ao enviar).</span>
+          </div>
+          @if (erroConferencia()) { <div class="alert alert-danger py-2" role="alert">{{ erroConferencia() }}</div> }
+          @if (cruzamento()) {
+            <div class="small mb-2" role="status">
+              <span class="text-success me-3">{{ contagemCadastro('ok') }} serão atualizados</span>
+              <span class="text-muted me-3">{{ contagemCadastro('ja_aplicado') }} já aplicados</span>
+              <span class="me-3" [class.text-danger]="contagemCadastro('antiga_nao_encontrada')">{{ contagemCadastro('antiga_nao_encontrada') }} antigas não encontradas</span>
+              <span class="me-3" [class.text-danger]="contagemCadastro('nova_em_uso')">{{ contagemCadastro('nova_em_uso') }} novas já em uso</span>
+              @if (contagemCadastro('antiga_ja_substituida')) {
+                <span class="text-danger">{{ contagemCadastro('antiga_ja_substituida') }} antigas já ligadas a outra nova</span>
+              }
+            </div>
+          }
+
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead><tr><th>Linha</th><th>Antiga</th><th>Nova</th><th>Observação</th></tr></thead>
+              <tbody>
+                @for (l of linhasPrevia(); track l.linha) {
+                  <tr [class.table-danger]="l.erros.length" [class.table-warning]="!l.erros.length && l.problema">
+                    <td>{{ l.linha }}</td>
+                    <td class="font-monospace text-break">{{ l.antiga || '—' }}</td>
+                    <td class="font-monospace text-break">{{ l.nova || '—' }}</td>
+                    <td class="small">
+                      @for (m of l.erros; track m) { <div>{{ m }}</div> }
+                      @if (l.cadastro) { <div>{{ rotuloCadastro[l.cadastro] }}</div> }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (previa().total > previaLinhas) {
+            <div class="small text-muted mt-2">Mostrando {{ previaLinhas }} de {{ previa().total }} linhas (as com problema aparecem primeiro).</div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (resultado(); as r) {
+      <div class="alert alert-success" role="status">
+        <i class="bi bi-check-circle me-2"></i><strong>{{ r.aplicados }}</strong> {{ r.aplicados === 1 ? 'bem atualizado' : 'bens atualizados' }},
+        <strong>{{ r.ignorados }}</strong> {{ r.ignorados === 1 ? 'já estava aplicado' : 'já estavam aplicados' }}.
+      </div>
+    }
+    @if (erroEnvio()) {
+      <div class="alert alert-danger" role="alert">
+        <div><i class="bi bi-x-octagon me-2"></i>{{ erroEnvio() }}</div>
+        <div class="small mt-1"><strong>Nada foi gravado.</strong> Corrija o problema e envie novamente.</div>
+        @if (bloqueioInventario()) {
+          <div class="mt-2">
+            Conclua ou cancele o inventário em andamento e tente de novo.
+            <a routerLink="/imobilizado/inventarios" class="alert-link">Ir para os inventários</a>
+          </div>
+        }
+      </div>
+    }
+
+    <div class="d-flex justify-content-end">
+      <button type="button" class="btn btn-primary" [disabled]="!podeEnviar()" (click)="enviar()">
+        @if (enviando()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+        Aplicar de-para
+      </button>
+    </div>
+  } @else {
+    <div class="alert alert-info" role="note">
+      <i class="bi bi-info-circle me-2"></i>Apenas administradores da empresa carregam o de-para e alteram a exibição dos códigos antigos.
+    </div>
+  }
+</div>
+
+<app-confirm-dialog />
