@@ -1,7 +1,15 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
 
-const BASE = 'http://localhost:4200';
+// Credenciais e URL vêm do ambiente (nunca no repositório):
+//   E2E_BASE_URL (padrão http://localhost:4200), E2E_EMAIL, E2E_SENHA
+const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:4200';
+const E2E_EMAIL = process.env.E2E_EMAIL;
+const E2E_SENHA = process.env.E2E_SENHA;
+if (!E2E_EMAIL || !E2E_SENHA) {
+  console.log('Defina E2E_EMAIL e E2E_SENHA (e opcionalmente E2E_BASE_URL) para rodar esta verificação. Ignorado.');
+  process.exit(0);
+}
 const results = [];
 // CPFs válidos para testes (checksum correto, usados em rodízio)
 const TEST_CPFS = ['52998224725', '86870286060', '11144477735', '37462678047'];
@@ -14,7 +22,7 @@ function log(id, status, note = '') {
   results.push({ id, status, note });
 }
 
-async function login(page, email = 'admin@estoque.com', senha = 'Admin@1234') {
+async function login(page, email = E2E_EMAIL, senha = E2E_SENHA) {
   await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(800);
   await page.fill('input[formControlName="email"]', email);
@@ -58,8 +66,8 @@ page.on('console', msg => { if (msg.type() === 'error') consoleErrors.push(msg.t
 try {
   // ─── A01: Login válido ───────────────────────────────────────────────────
   await page.goto(`${BASE}/login`);
-  await page.fill('input[formControlName="email"]', 'admin@estoque.com');
-  await page.fill('input[formControlName="senha"]', 'Admin@1234');
+  await page.fill('input[formControlName="email"]', E2E_EMAIL);
+  await page.fill('input[formControlName="senha"]', E2E_SENHA);
   await page.click('button[type="submit"]');
   await page.waitForURL(`${BASE}/dashboard`, { timeout: 8000 });
   log('A01', '✅', 'login válido → /dashboard');
@@ -68,7 +76,7 @@ try {
   await clearSession(page);
   await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(800);
-  await page.fill('input[formControlName="email"]', 'admin@estoque.com');
+  await page.fill('input[formControlName="email"]', E2E_EMAIL);
   await page.fill('input[formControlName="senha"]', 'senhaerrada');
   await page.click('button[type="submit"]');
   await page.waitForTimeout(2500);
