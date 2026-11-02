@@ -3,6 +3,7 @@ import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { empresaInterceptor } from './empresa.interceptor';
 import { EmpresaAtivaService } from '../services/empresa-ativa.service';
+import { ToastService } from '../services/toast.service';
 
 describe('empresaInterceptor', () => {
   let http: HttpClient;
@@ -45,8 +46,8 @@ describe('empresaInterceptor', () => {
     }
   });
 
-  it('envia o header nas rotas de Estoque, clientes e fornecedores', () => {
-    for (const url of ['/api/v1/produtos?page=1', '/api/v1/categorias', '/api/v1/movimentacoes', '/api/v1/clientes', '/api/v1/fornecedores/1', '/api/v1/dashboard']) {
+  it('envia o header nas rotas de Estoque, clientes, fornecedores e equipe', () => {
+    for (const url of ['/api/v1/produtos?page=1', '/api/v1/categorias', '/api/v1/movimentacoes', '/api/v1/clientes', '/api/v1/fornecedores/1', '/api/v1/dashboard', '/api/v1/imobilizado/equipe']) {
       http.get(url).subscribe();
       expect(ctrl.expectOne(url).request.headers.get('X-Empresa-Id')).toBe('5');
     }
@@ -97,6 +98,26 @@ describe('empresaInterceptor', () => {
     ctrl.expectOne(`${base}/locais`).flush({ error: 'Sem acesso à empresa informada.' }, { status: 403, statusText: 'Forbidden' });
     expect(perdeu).toHaveBeenCalledTimes(1);
     expect(status).toBe(403);
+  });
+
+  it('403 de perfil insuficiente mantém a tela: toast com a mensagem do servidor e sem perdeuAcesso', () => {
+    const perdeu = spyOn(empresa, 'perdeuAcesso');
+    const toast = TestBed.inject(ToastService);
+    const erro = spyOn(toast, 'erro');
+    let status = 0;
+    http.post(`${base}/bens`, {}).subscribe({ error: e => status = e.status });
+    ctrl.expectOne(`${base}/bens`).flush({ error: 'Seu perfil não permite esta ação.' }, { status: 403, statusText: 'Forbidden' });
+    expect(perdeu).not.toHaveBeenCalled();
+    expect(erro).toHaveBeenCalledOnceWith('Seu perfil não permite esta ação.');
+    expect(status).toBe(403);
+  });
+
+  it('403 de perda de vínculo não gera toast (volta ao seletor)', () => {
+    spyOn(empresa, 'perdeuAcesso');
+    const erro = spyOn(TestBed.inject(ToastService), 'erro');
+    http.get(`${base}/locais`).subscribe({ error: () => undefined });
+    ctrl.expectOne(`${base}/locais`).flush({ error: 'Sem acesso à empresa informada.' }, { status: 403, statusText: 'Forbidden' });
+    expect(erro).not.toHaveBeenCalled();
   });
 
   it('403 na administração de empresas não aciona perdeuAcesso', () => {

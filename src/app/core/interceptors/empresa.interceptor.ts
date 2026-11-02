@@ -2,6 +2,7 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { EmpresaAtivaService } from '../services/empresa-ativa.service';
+import { ToastService } from '../services/toast.service';
 
 const API = /\/v1\//;
 // Rotas sem [RequerEmpresa] (não enviam o header); toda outra rota /v1/** é dado de empresa.
@@ -14,6 +15,7 @@ function perdeuVinculo(err: HttpErrorResponse): boolean {
 
 export const empresaInterceptor: HttpInterceptorFn = (req, next) => {
   const empresa = inject(EmpresaAtivaService);
+  const toast = inject(ToastService);
   const ehDados = API.test(req.url) && !SEM_EMPRESA.test(req.url);
 
   if (!ehDados) return next(req);
@@ -32,8 +34,11 @@ export const empresaInterceptor: HttpInterceptorFn = (req, next) => {
         empresa.empresaBloqueada(typeof corpo.error === 'string' && corpo.error ? corpo.error : 'Empresa bloqueada. Fale com o administrador.');
         return throwError(() => err);
       }
-      // 403 por perfil/equipe/dono da OS traz a regra em `error` e mantém a tela; só a perda de vínculo volta ao seletor.
-      if (err.status === 403 && perdeuVinculo(err)) empresa.perdeuAcesso();
+      // 403 por perfil/equipe/dono da OS traz a regra em `error` e mantém a tela (com toast); só a perda de vínculo volta ao seletor.
+      if (err.status === 403) {
+        if (perdeuVinculo(err)) empresa.perdeuAcesso();
+        else toast.erro((err.error as { error: string }).error);
+      }
       return throwError(() => err);
     })
   );
