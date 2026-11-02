@@ -36,15 +36,9 @@
           </select>
         </div>
         <div class="col-md-3">
-          <label class="form-label form-label-sm fw-medium mb-1">Produto</label>
-          <select class="form-select form-select-sm"
-            [value]="filterProdutoId()"
-            (change)="filterProdutoId.set($any($event.target).value ? +$any($event.target).value : null)">
-            <option [value]="null">Todos os produtos</option>
-            @for (p of produtos(); track p.id) {
-              <option [value]="p.id">{{ p.nome }}</option>
-            }
-          </select>
+          <label class="form-label form-label-sm fw-medium mb-1" for="filtroProduto">Produto</label>
+          <app-autocomplete-produto inputId="filtroProduto" [pequeno]="true" placeholder="Todos os produtos"
+            [ngModel]="filterProdutoId()" (ngModelChange)="filterProdutoId.set($event)" />
         </div>
         <div class="col-auto d-flex gap-2">
           <button class="btn btn-primary btn-sm" (click)="aplicarFiltros()">
@@ -178,14 +172,9 @@
             </div>
           } @else {
             <div class="mb-3">
-              <label class="form-label fw-medium">Produto <span class="text-danger">*</span></label>
-              <select class="form-select" formControlName="produtoId"
-                [class.is-invalid]="f('produtoId').invalid && f('produtoId').touched">
-                <option [value]="null">Selecione...</option>
-                @for (p of produtosMovimentaveis(); track p.id) {
-                  @if (p.ativo) { <option [value]="p.id">{{ p.nome }} ({{ p.sku }})</option> }
-                }
-              </select>
+              <label class="form-label fw-medium" for="movProduto">Produto <span class="text-danger">*</span></label>
+              <app-autocomplete-produto inputId="movProduto" formControlName="produtoId" [somenteMovimentaveis]="true"
+                [invalido]="f('produtoId').invalid && f('produtoId').touched" />
               <div class="invalid-feedback">Selecione um produto.</div>
             </div>
           }

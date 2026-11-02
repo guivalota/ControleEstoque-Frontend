@@ -1,34 +1,33 @@
 import { Component, inject, OnInit, signal, computed, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { QtdPipe } from '../../core/pipes/qtd.pipe';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { startWith } from 'rxjs/operators';
 import { Modal } from 'bootstrap';
 import { MovimentacaoService } from '../../core/services/movimentacao.service';
-import { ProdutoService } from '../../core/services/produto.service';
+import { AutocompleteProdutoComponent } from '../shared/autocomplete-produto.component';
 import { CategoriaService } from '../../core/services/categoria.service';
 import { PermissaoService } from '../../core/services/permissao.service';
 import { PedidoCompraService } from '../../core/services/pedido-compra.service';
 import { LoteService } from '../../core/services/lote.service';
 import { Lote } from '../../core/models/lote.model';
 import { ImpressaoService } from '../../core/services/impressao.service';
-import { ToastService } from '../../core/services/toast.service';
-import { lerErroApi, textoDoErro } from '../../core/utils/erros-api';
 import { Movimentacao, CreateMovimentacaoRequest, UpdateMovimentacaoRequest, TipoMovimentacao, MotivoAjuste } from '../../core/models/movimentacao.model';
 import { PedidoCompra } from '../../core/models/pedido-compra.model';
+import { ToastService } from '../../core/services/toast.service';
+import { lerErroApi, textoDoErro } from '../../core/utils/erros-api';
 
 @Component({
   selector: 'app-movimentacoes',
   standalone: true,
-  imports: [QtdPipe, ReactiveFormsModule, DatePipe, DecimalPipe],
+  imports: [QtdPipe, ReactiveFormsModule, FormsModule, DatePipe, DecimalPipe, AutocompleteProdutoComponent],
   templateUrl: './movimentacoes.component.html'
 })
 export class MovimentacoesComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private toast = inject(ToastService);
   movimentacaoService = inject(MovimentacaoService);
-  produtoService = inject(ProdutoService);
   categoriaService = inject(CategoriaService);
   permissao = inject(PermissaoService);
   private pedidoService = inject(PedidoCompraService);
@@ -41,8 +40,6 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
   private modal!: Modal;
 
   movimentacoes = this.movimentacaoService.movimentacoes;
-  produtos = this.produtoService.produtos;
-  produtosMovimentaveis = this.produtoService.movimentaveis;
   categorias = this.categoriaService.categorias;
   loading = this.movimentacaoService.loading;
 
@@ -64,14 +61,12 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
   lotesProduto = signal<Lote[]>([]);
 
   filteredMovimentacoes = computed(() => {
-    const prodMap = new Map(this.produtos().map(p => [p.id, p.nome]));
     return [...this.movimentacoes()]
       .sort((a, b) => {
         const dateA = a.dataMovimentacao ?? a.criadoEm;
         const dateB = b.dataMovimentacao ?? b.criadoEm;
         return new Date(dateB).getTime() - new Date(dateA).getTime();
-      })
-      .map(m => ({ ...m, produtoNome: prodMap.get(m.produtoId) ?? m.produtoNome }));
+      });
   });
 
   form = this.fb.group({
@@ -115,7 +110,6 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.form.controls['produtoId'].valueChanges.subscribe(id => this.carregarLotes(id));
     this.carregarPagina(1);
-    this.produtoService.getAll().subscribe();
     this.categoriaService.getAll().subscribe();
   }
 
