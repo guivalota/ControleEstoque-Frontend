@@ -1,9 +1,9 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { tap, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { carregarTodasPaginas } from '../utils/paginas';
-import { Produto, CreateProdutoRequest, UpdateProdutoRequest } from '../models/produto.model';
+import { Produto, CreateProdutoRequest, UpdateProdutoRequest, UnidadeMedida } from '../models/produto.model';
 
 interface PagedResult<T> { items: T[]; total: number; }
 
@@ -14,6 +14,9 @@ export class ProdutoService {
 
   produtos = signal<Produto[]>([]);
   loading = signal(false);
+  unidades = signal<UnidadeMedida[]>([]);
+  /** Produtos que recebem movimentação, lote, pedido e NF: o modelo de uma grade não, só as variações. */
+  movimentaveis = computed(() => this.produtos().filter(p => !p.usaGrade));
 
   getAll() {
     this.loading.set(true);
@@ -25,6 +28,11 @@ export class ProdutoService {
         this.loading.set(false);
       })
     );
+  }
+
+  /** Catálogo de unidades (un, m, kg…) e as casas decimais de cada uma. */
+  getUnidades() {
+    return this.http.get<UnidadeMedida[]>(`${this.url}/unidades-medida`).pipe(tap(u => this.unidades.set(u)));
   }
 
   getById(id: number) {

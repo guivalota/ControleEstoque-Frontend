@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { QtdPipe } from '../../../core/pipes/qtd.pipe';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { finalize } from 'rxjs/operators';
@@ -10,7 +11,7 @@ import { GiroEstoqueResponse } from '../../../core/models/conferencia.model';
 @Component({
   selector: 'app-giro-estoque',
   standalone: true,
-  imports: [DecimalPipe, RouterLink, RouterLinkActive],
+  imports: [QtdPipe, DecimalPipe, RouterLink, RouterLinkActive],
   templateUrl: './giro-estoque.component.html'
 })
 export class GiroEstoqueComponent implements OnInit {

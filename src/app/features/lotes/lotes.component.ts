@@ -1,4 +1,5 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { QtdPipe } from '../../core/pipes/qtd.pipe';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Modal } from 'bootstrap';
 import { LoteService } from '../../core/services/lote.service';
@@ -16,7 +17,7 @@ const DIAS_ALERTA = 30;
 @Component({
   selector: 'app-lotes',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [QtdPipe, ReactiveFormsModule],
   templateUrl: './lotes.component.html'
 })
 export class LotesComponent implements OnInit, OnDestroy {
@@ -30,6 +31,7 @@ export class LotesComponent implements OnInit, OnDestroy {
   private modal!: Modal;
 
   produtos = this.produtoService.produtos;
+  produtosMovimentaveis = this.produtoService.movimentaveis;
   fornecedores = this.fornecedorService.fornecedores;
 
   readonly pageSize = 50;
@@ -54,7 +56,7 @@ export class LotesComponent implements OnInit, OnDestroy {
     numeroLote: ['', [Validators.required, Validators.maxLength(100)]],
     dataFabricacao: ['' as string | null],
     dataValidade: ['' as string | null],
-    quantidadeInicial: [1, [Validators.required, Validators.min(1)]],
+    quantidadeInicial: [1, [Validators.required, Validators.min(0.001)]],
     fornecedorId: [null as number | null],
     observacao: ['' as string | null, Validators.maxLength(2000)]
   });

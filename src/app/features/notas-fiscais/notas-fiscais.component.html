@@ -247,13 +247,13 @@
                       <select class="form-select form-select-sm" formControlName="produtoId"
                         [class.is-invalid]="itemCtrl(i,'produtoId').invalid && itemCtrl(i,'produtoId').touched">
                         <option [value]="null">Selecione...</option>
-                        @for (p of produtos(); track p.id) {
+                        @for (p of produtosMovimentaveis(); track p.id) {
                           @if (p.ativo) { <option [value]="p.id">{{ p.nome }}</option> }
                         }
                       </select>
                     </td>
                     <td>
-                      <input type="number" class="form-control form-control-sm" formControlName="quantidade" min="1"
+                      <input type="number" class="form-control form-control-sm" formControlName="quantidade" min="0.001" step="any"
                         [class.is-invalid]="itemCtrl(i,'quantidade').invalid && itemCtrl(i,'quantidade').touched" />
                     </td>
                     <td>
@@ -352,7 +352,7 @@
                         <code class="text-muted ms-2 small">{{ item.codigoProdutoNF }}</code>
                       </div>
                       <div class="text-muted small text-nowrap ms-2">
-                        Qtd: <strong>{{ item.quantidade }}</strong>
+                        Qtd: <strong>{{ item.quantidade | qtd }}</strong>
                         · R$ {{ item.valorUnitario | number:'1.2-2' }}/un
                       </div>
                     </div>
@@ -373,7 +373,7 @@
                             </label>
                             <select class="form-select form-select-sm" formControlName="produtoId">
                               <option [value]="null">Selecione um produto...</option>
-                              @for (p of produtos(); track p.id) {
+                              @for (p of produtosMovimentaveis(); track p.id) {
                                 @if (p.ativo) {
                                   <option [value]="p.id">{{ p.nome }} — <code>{{ p.sku }}</code></option>
                                 }
@@ -485,7 +485,7 @@
                   <tr>
                     <td class="text-muted small">{{ m.id }}</td>
                     <td>{{ m.produtoNome ?? 'Produto #' + m.produtoId }}</td>
-                    <td>{{ m.quantidade }}</td>
+                    <td>{{ m.quantidade | qtd }}</td>
                     <td>R$ {{ m.valorUnitario | number:'1.2-2' }}</td>
                     <td class="fw-medium">R$ {{ m.valorTotal | number:'1.2-2' }}</td>
                     <td class="text-muted small">{{ m.observacao || '—' }}</td>

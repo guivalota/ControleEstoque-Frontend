@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { QtdPipe } from '../../../core/pipes/qtd.pipe';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { finalize } from 'rxjs/operators';
@@ -9,7 +10,7 @@ import { ConferenciaResult } from '../../../core/models/conferencia.model';
 @Component({
   selector: 'app-sugestoes-reposicao',
   standalone: true,
-  imports: [DecimalPipe, RouterLink, RouterLinkActive],
+  imports: [QtdPipe, DecimalPipe, RouterLink, RouterLinkActive],
   templateUrl: './sugestoes-reposicao.component.html'
 })
 export class SugestoesReposicaoComponent implements OnInit {

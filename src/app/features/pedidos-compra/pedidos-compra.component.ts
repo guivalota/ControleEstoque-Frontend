@@ -42,6 +42,7 @@ export class PedidosCompraComponent implements OnInit, OnDestroy {
   filterDestinadoA = signal('');
 
   produtos = this.produtoService.produtos;
+  produtosMovimentaveis = this.produtoService.movimentaveis;
   /** Ativos: opções de "Destinado a" no formulário. */
   usuarios = signal<UsuarioEmpresa[]>([]);
   /** Todos (inclusive inativos): filtros históricos por criador/destinatário. */
@@ -59,7 +60,7 @@ export class PedidosCompraComponent implements OnInit, OnDestroy {
   criarItemGroup(): FormGroup {
     return this.fb.group({
       produtoId: [null as number | null, Validators.required],
-      quantidadeSolicitada: [1, [Validators.required, Validators.min(1)]],
+      quantidadeSolicitada: [1, [Validators.required, Validators.min(0.001)]],
       observacao: ['' as string | null]
     });
   }

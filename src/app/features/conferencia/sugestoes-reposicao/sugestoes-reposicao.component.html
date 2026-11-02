@@ -88,9 +88,9 @@
                 <td class="ps-3 font-monospace text-muted small">{{ item.sku }}</td>
                 <td class="fw-medium">{{ item.nome }}</td>
                 <td class="text-muted small">{{ item.categoria }}</td>
-                <td class="text-center fw-bold">{{ item.saldoAtual }}</td>
-                <td class="text-center text-muted small">{{ item.estoqueMinimo }}</td>
-                <td class="text-center">{{ item.pontoReposicao }}</td>
+                <td class="text-center fw-bold">{{ item.saldoAtual | qtd }}</td>
+                <td class="text-center text-muted small">{{ item.estoqueMinimo | qtd }}</td>
+                <td class="text-center">{{ item.pontoReposicao | qtd }}</td>
                 <td class="text-end text-muted small">R$ {{ item.precoMedio | number:'1.2-2' }}</td>
               </tr>
             } @empty {

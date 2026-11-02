@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { QtdPipe } from '../../core/pipes/qtd.pipe';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
 import { BaseChartDirective, provideCharts, withDefaultRegisterables } from 'ng2-charts';
@@ -16,7 +17,7 @@ import { Movimentacao, PrecoMedioMensal } from '../../core/models/movimentacao.m
 @Component({
   selector: 'app-conferencia',
   standalone: true,
-  imports: [DecimalPipe, DatePipe, BaseChartDirective, RouterLink, RouterLinkActive],
+  imports: [QtdPipe, DecimalPipe, DatePipe, BaseChartDirective, RouterLink, RouterLinkActive],
   providers: [provideCharts(withDefaultRegisterables())],
   templateUrl: './conferencia.component.html'
 })

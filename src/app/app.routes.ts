@@ -75,6 +75,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/produtos/produtos.component').then(m => m.ProdutosComponent)
       },
       {
+        path: 'produtos/:id/grade',
+        canActivate: [moduloGuard('estoque')],
+        loadComponent: () => import('./features/produtos/grade/produto-grade.component').then(m => m.ProdutoGradeComponent)
+      },
+      {
         path: 'categorias',
         canActivate: [moduloGuard('estoque')],
         loadComponent: () => import('./features/categorias/categorias.component').then(m => m.CategoriasComponent)

@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, computed, signal, DestroyRef } from '@angular/core';
+import { QtdPipe } from '../../core/pipes/qtd.pipe';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { interval } from 'rxjs';
@@ -13,7 +14,7 @@ import { TipoMovimentacao } from '../../core/models/movimentacao.model';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [DecimalPipe, DatePipe, RouterLink],
+  imports: [QtdPipe, DecimalPipe, DatePipe, RouterLink],
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {

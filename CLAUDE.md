@@ -168,6 +168,12 @@ Estoque também tem `lotes` (CRUD + validade; params PascalCase) e `loteId` opci
 - Etiquetas (spec 5.2): `ImobEtiquetasDialogComponent` (shared) recebe `abrir({ ids } | { filtro, total }, modelo?)`; PDF vem como blob (`ImobEtiquetaService.gerar`), pré-visualização em `<iframe>` via object URL, `ids` ignora os filtros, limite de 500 por pedido (erros 400 do servidor são exibidos). Seleção por checkbox na lista de bens; "Imprimir etiqueta" (`rolo-50x30`) no detalhe. O QR é gerado no servidor.
 - CSV export and any download needing the header: `HttpClient` + `responseType: 'blob'` + `baixarBlob()`, never `<a href>` to the API.
 
+### Estoque: tipo, unidade, quantidade decimal e grade (E23)
+
+- **Quantidades são decimais** (metro, quilo): mostre com `QtdPipe` (`| qtd`, pt-BR, até 3 casas, sem zeros à direita) e nunca com `{{ x }}` (sairia com ponto). Inputs de quantidade usam `step="any"` ou `stepDaUnidade(casas)`; o servidor é quem recusa fração em unidade inteira (a mensagem aparece no formulário). `DecimalPipe` com `'pt-BR'` continua proibido (a locale não é registrada).
+- **Produto** tem `tipoItem`, `unidadeCodigo`, `unidadeCompraCodigo` + `fatorConversao` e `unidadeCasasDecimais`; `ProdutoService.unidades` guarda o catálogo (`GET v1/produtos/unidades-medida`). Editar sem conversão envia `unidadeCompraCodigo: ''` (o back remove).
+- **Grade:** tela `/produtos/:id/grade` (`ProdutoGradeComponent`, `GradeService`): escolhe valores por eixo, gera as variações (cada uma é um produto) e mostra o saldo em matriz tamanho x cor. O modelo (`usaGrade`) **não** é oferecido nos selects de movimentação, lote, pedido e NF: use `ProdutoService.movimentaveis` (`produtosMovimentaveis` nos componentes), não `produtos`.
+
 ### Testing
 
 - Specs use Jasmine + `HttpTestingController`; roles via `provideAuthFake(role)`. Stub `Modal.prototype.show/hide` in specs that open Bootstrap modals (the fade animation otherwise finishes after teardown and breaks Karma).

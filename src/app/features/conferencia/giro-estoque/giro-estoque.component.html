@@ -118,8 +118,8 @@
                   <td class="ps-3 fw-medium">{{ item.nome }}</td>
                   <td class="font-monospace text-muted small">{{ item.sku }}</td>
                   <td class="text-muted small">{{ item.categoria }}</td>
-                  <td class="text-center text-muted small">{{ item.saldoAtual }}</td>
-                  <td class="text-center text-muted small">{{ item.totalSaidas }}</td>
+                  <td class="text-center text-muted small">{{ item.saldoAtual | qtd }}</td>
+                  <td class="text-center text-muted small">{{ item.totalSaidas | qtd }}</td>
                   <td class="text-center" [title]="giroTitle(item.giroEstoque)">
                     @if (item.giroEstoque === null) {
                       <span class="text-muted">—</span>

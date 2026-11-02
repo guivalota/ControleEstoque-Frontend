@@ -116,7 +116,7 @@
           <div class="card border-0 shadow-sm h-100">
             <div class="card-body text-center">
               <div class="text-muted small mb-1">Saldo em Estoque</div>
-              <div class="fs-2 fw-bold" [class]="saldoClass(r.saldoAtual)">{{ r.saldoAtual }}</div>
+              <div class="fs-2 fw-bold" [class]="saldoClass(r.saldoAtual)">{{ r.saldoAtual | qtd }}</div>
               <div class="text-muted small">unidades</div>
             </div>
           </div>
@@ -127,9 +127,9 @@
             <div class="card-body text-center">
               <div class="text-muted small mb-1">Entradas / Saídas</div>
               <div class="fs-4 fw-bold">
-                <span class="text-success">+{{ r.totalEntradas }}</span>
+                <span class="text-success">+{{ r.totalEntradas | qtd }}</span>
                 <span class="text-muted mx-1">/</span>
-                <span class="text-danger">-{{ r.totalSaidas }}</span>
+                <span class="text-danger">-{{ r.totalSaidas | qtd }}</span>
               </div>
               <div class="text-muted small">unidades no período</div>
             </div>
@@ -216,7 +216,7 @@
                       <td>
                         <span class="badge" [class]="tipoBadge(m.tipo)">{{ tipoLabel(m.tipo) }}</span>
                       </td>
-                      <td class="fw-medium">{{ m.quantidade }}</td>
+                      <td class="fw-medium">{{ m.quantidade | qtd }}</td>
                       <td class="text-muted small">R$ {{ (m.valorUnitario ?? 0) | number:'1.2-2' }}</td>
                       <td class="fw-medium">R$ {{ (m.valorTotal ?? 0) | number:'1.2-2' }}</td>
                       <td class="text-muted small">{{ m.observacao || '—' }}</td>
@@ -274,7 +274,7 @@
                     <tr>
                       <td class="ps-3 text-muted small">{{ mesLabel(h.mes) }}</td>
                       <td class="text-end fw-medium">R$ {{ h.precoMedio | number:'1.2-2' }}</td>
-                      <td class="text-end text-muted small">{{ h.totalEntradas }} un.</td>
+                      <td class="text-end text-muted small">{{ h.totalEntradas | qtd }}</td>
                       <td class="text-end text-muted small">R$ {{ h.valorTotal | number:'1.2-2' }}</td>
                     </tr>
                   }
@@ -409,11 +409,11 @@
                     <td class="ps-3 fw-medium">{{ item.nome }}</td>
                     <td class="font-monospace text-muted small">{{ item.sku }}</td>
                     <td class="text-muted small">{{ item.categoria }}</td>
-                    <td class="text-end text-success small">+{{ item.totalEntradas }}</td>
-                    <td class="text-end text-danger small">-{{ item.totalSaidas }}</td>
-                    <td class="text-center fw-bold" [class]="saldoClass(item.saldoAtual)">{{ item.saldoAtual }}</td>
-                    <td class="text-center text-muted small">{{ item.estoqueMinimo }}</td>
-                    <td class="text-center text-muted small">{{ item.pontoReposicao }}</td>
+                    <td class="text-end text-success small">+{{ item.totalEntradas | qtd }}</td>
+                    <td class="text-end text-danger small">-{{ item.totalSaidas | qtd }}</td>
+                    <td class="text-center fw-bold" [class]="saldoClass(item.saldoAtual)">{{ item.saldoAtual | qtd }}</td>
+                    <td class="text-center text-muted small">{{ item.estoqueMinimo | qtd }}</td>
+                    <td class="text-center text-muted small">{{ item.pontoReposicao | qtd }}</td>
                     <td class="text-end text-muted small">R$ {{ item.valorTotalEstoque | number:'1.2-2' }}</td>
                     <td class="text-center">
                       <span class="badge" [class]="saldoBadgeClass(item.saldoAtual)">
