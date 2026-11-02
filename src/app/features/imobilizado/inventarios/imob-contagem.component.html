@@ -17,7 +17,7 @@
   } @else if (inventario()) {
     <div class="card border-0 shadow-sm mb-3">
       <div class="card-body">
-        <form class="row g-2 align-items-end" (ngSubmit)="registrar()">
+        <form class="row g-2 align-items-end" (submit)="$event.preventDefault(); registrar()">
           <div class="col-md-4">
             <label class="form-label" for="contagemLocal">Estou em</label>
             <app-seletor-local inputId="contagemLocal" [formControl]="local" [arvore]="arvore()" [somenteAtivos]="true" placeholder="Selecione o local" />

@@ -125,7 +125,7 @@
         <div class="card-header bg-transparent fw-semibold">Decidir: {{ d.plaqueta }} — {{ rotulo[d.situacao] }}</div>
         <div class="card-body">
           @if (erroDecisao()) { <div class="alert alert-danger py-2" role="alert">{{ erroDecisao() }}</div> }
-          <form class="row g-2" (ngSubmit)="salvarDecisao()">
+          <form class="row g-2" (submit)="$event.preventDefault(); salvarDecisao()">
             <div class="col-md-4">
               <label class="form-label" for="decAcao">Ação</label>
               <select id="decAcao" class="form-select" [formControl]="acao">

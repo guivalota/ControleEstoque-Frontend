@@ -53,7 +53,7 @@
           <div class="small text-muted mb-2">Entrada: {{ rotulos[tipo()].entrada }} → nota de 0 a 10.</div>
 
           <h6 class="small text-uppercase text-muted mt-3">Testar valor</h6>
-          <form class="row g-2 align-items-end" (ngSubmit)="testar()">
+          <form class="row g-2 align-items-end" (submit)="$event.preventDefault(); testar()">
             <div class="col-8 col-md-4">
               <label for="escValorTeste" class="form-label small mb-1">Valor ({{ rotulos[tipo()].entrada }})</label>
               <input id="escValorTeste" type="number" step="any" class="form-control form-control-sm" [formControl]="valorTeste">

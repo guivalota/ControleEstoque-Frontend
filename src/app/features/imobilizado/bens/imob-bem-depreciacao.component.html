@@ -3,7 +3,7 @@
 } @else {
   @if (erro()) { <div class="alert alert-danger py-2" role="alert">{{ erro() }}</div> }
 
-  <form class="d-flex flex-wrap gap-2 align-items-end mb-3" (ngSubmit)="carregar(1)">
+  <form class="d-flex flex-wrap gap-2 align-items-end mb-3" (submit)="$event.preventDefault(); carregar(1)">
     <div>
       <label class="form-label mb-1" for="depEm">Data de referência</label>
       <input id="depEm" type="date" class="form-control form-control-sm" [formControl]="em">

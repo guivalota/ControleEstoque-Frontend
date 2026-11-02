@@ -207,6 +207,30 @@ describe('ImobReavaliacaoEscalasComponent', () => {
       expect(texto()).toContain('No rascunho do editor: nota 3');
     });
 
+    it('o botão Testar e a tecla Enter disparam a consulta (pelo DOM, sem recarregar a página)', () => {
+      comp.valorTeste.setValue(3.5);
+      const botao = el().querySelector<HTMLButtonElement>('form button[type=submit]')!;
+      expect(botao.textContent).toContain('Testar');
+
+      botao.click();
+
+      const req = ctrl.expectOne(r => r.url === `${BASE}/vp/nota`);
+      req.flush({ tipo: 'vp', escalaId: 2, versao: 2, valor: 3.5, nota: 4 });
+      fixture.detectChanges();
+      expect(el().querySelector('#resultadoTeste')!.textContent).toContain('nota 4');
+    });
+
+    it('o submit do formulário não é o nativo (a página não recarrega)', () => {
+      comp.valorTeste.setValue(2);
+      const form = el().querySelector('form')!;
+      const evento = new Event('submit', { cancelable: true });
+
+      form.dispatchEvent(evento);
+
+      expect(evento.defaultPrevented).toBeTrue();
+      ctrl.expectOne(r => r.url === `${BASE}/vp/nota`).flush({ tipo: 'vp', escalaId: 2, versao: 2, valor: 2, nota: 2 });
+    });
+
     it('sem valor não chama a API', () => {
       comp.testar();
       expect(comp.erroTeste()).toBe('Informe um valor para testar.');
