@@ -26,7 +26,7 @@ ng lint            # ESLint (legacy Estoque code has ~140 pre-existing errors; l
 
 API runs on a local Docker host exposed by **Tailscale Funnel** (temporary hosting; Railway and ngrok are no longer used). Current URL: see `src/environments/environment.prod.ts`.  
 Dev proxy in `proxy.conf.json` forwards `/api/*` → the dev API (strips `/api`, keeps `/v1/...`).  
-`environment.ts` uses `apiUrl: '/api'` (dev via proxy) · `environment.prod.ts` uses the Tailscale Funnel base URL (no `/v1`). If the URL changes, update `environment.prod.ts` and the CSP `connect-src` in `src/index.html` together.  
+`environment.ts` uses `apiUrl: '/api'` (dev via proxy) · `environment.prod.ts` uses the Tailscale Funnel base URL (no `/v1`). The URL has a **single source**: `API_URL` env var (CI: repo variable `vars.API_URL`) or, if absent, `config/api-url.txt`. `npm run build` runs `scripts/gerar-config.mjs` (prebuild), which rewrites `apiUrl` in `environment.prod.ts` and the CSP `connect-src` in `src/index.html` and fails on a non-https/invalid URL. To change it: edit `config/api-url.txt` (or set `API_URL`) and rebuild.  
 Each service appends `/v1/` explicitly: `${environment.apiUrl}/v1/categorias`, etc.
 
 **Test credentials** — veja `.env.local` (não versionado). Endpoint: `POST /v1/auth/login` com body `{ "email": "...", "senha": "..." }`.  

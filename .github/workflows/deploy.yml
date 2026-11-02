@@ -22,6 +22,9 @@ jobs:
       - run: npm ci
 
       - run: npm run build
+        env:
+          # Opcional: sobrescreve config/api-url.txt (variavel de repositorio, nao segredo)
+          API_URL: ${{ vars.API_URL }}
 
       - name: Fix SPA routing
         run: cp dist/controle-estoque/browser/index.html dist/controle-estoque/browser/404.html
