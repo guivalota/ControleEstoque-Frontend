@@ -9,6 +9,7 @@ const ROTULOS: Record<string, string> = {
   descricao: 'Descrição',
   categoria_id: 'Categoria',
   local_id: 'Local',
+  departamento_id: 'Departamento',
   responsavel_id: 'Responsável',
   data_aquisicao: 'Data de aquisição',
   valor_aquisicao: 'Valor de aquisição',
@@ -21,7 +22,7 @@ const ROTULOS: Record<string, string> = {
   status: 'Status'
 };
 
-const REFERENCIAS = new Set(['categoria_id', 'local_id', 'responsavel_id']);
+const REFERENCIAS = new Set(['categoria_id', 'local_id', 'responsavel_id', 'departamento_id']);
 const STATUS_BEM = new Set(['status']);
 const VALORES = new Set(['valor_aquisicao', 'valor_residual']);
 

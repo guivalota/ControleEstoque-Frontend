@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
 import { perfilAdminGuard } from './core/guards/perfil-admin.guard';
+import { clientesGuard } from './core/guards/clientes.guard';
 import { contaEmpresaGuard, superAdminGuard } from './core/guards/conta.guard';
 import { escritaGuard } from './core/guards/escrita.guard';
 import { cargaEmpresaGuard } from './core/guards/carga-empresa.guard';
@@ -75,6 +76,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/produtos/produtos.component').then(m => m.ProdutosComponent)
       },
       {
+        path: 'produtos/:id/grade',
+        canActivate: [moduloGuard('estoque')],
+        loadComponent: () => import('./features/produtos/grade/produto-grade.component').then(m => m.ProdutoGradeComponent)
+      },
+      {
         path: 'categorias',
         canActivate: [moduloGuard('estoque')],
         loadComponent: () => import('./features/categorias/categorias.component').then(m => m.CategoriasComponent)
@@ -100,6 +106,7 @@ export const routes: Routes = [
       },
       {
         path: 'clientes',
+        canActivate: [clientesGuard],
         loadComponent: () => import('./features/clientes/clientes.component').then(m => m.ClientesComponent)
       },
       {

@@ -8,9 +8,22 @@
     }
   </div>
 
+  @if (erroLista()) {
+    <div class="alert alert-danger py-2 small" role="alert">
+      <i class="bi bi-exclamation-triangle me-1"></i>{{ erroLista() }}
+    </div>
+  }
+
   <!-- Filtro -->
   <div class="card border-0 shadow-sm mb-3">
-    <div class="card-body py-2">
+    <div class="card-body py-2 d-flex flex-wrap gap-2">
+      <select class="form-select form-select-sm" style="max-width: 200px;" aria-label="Filtrar por tipo"
+        [value]="tipoFiltro()" (change)="tipoFiltro.set($any($event.target).value)">
+        <option value="">Todos os tipos</option>
+        @for (t of tipos; track t.valor) {
+          <option [value]="t.valor">{{ t.rotulo }}</option>
+        }
+      </select>
       <div class="input-group input-group-sm" style="max-width: 320px;">
         <span class="input-group-text bg-body border-end-0">
           <i class="bi bi-search text-muted"></i>
@@ -41,6 +54,8 @@
                 <th class="ps-3">SKU</th>
                 <th>Nome</th>
                 <th>Categoria</th>
+                <th>Tipo</th>
+                <th>Un.</th>
                 <th class="text-end">Preço</th>
                 <th class="text-center">Est. Mín.</th>
                 <th>Status</th>
@@ -51,11 +66,17 @@
               @for (p of filteredProdutos(); track p.id) {
                 <tr>
                   <td class="ps-3"><code class="text-muted small">{{ p.sku }}</code></td>
-                  <td>{{ p.nome }}</td>
+                  <td>
+                    {{ p.nome }}
+                    @if (p.usaGrade) { <span class="badge bg-info-subtle text-info ms-1">Modelo</span> }
+                    @if (p.produtoPaiId) { <span class="badge bg-secondary-subtle text-secondary ms-1">Variação</span> }
+                  </td>
                   <td class="text-muted">{{ p.categoriaNome }}</td>
+                  <td class="text-muted small">{{ rotuloTipo(p.tipoItem ?? 'revenda') }}</td>
+                  <td class="text-muted small">{{ p.unidadeCodigo ?? 'un' }}</td>
                   <td class="text-end">R$ {{ p.precoUnitario | number:'1.2-2' }}</td>
                   <td class="text-center text-muted small">
-                    @if (p.estoqueMinimo != null) { {{ p.estoqueMinimo }} }
+                    @if (p.estoqueMinimo !== null && p.estoqueMinimo !== undefined) { {{ p.estoqueMinimo | qtd }} }
                     @else { — }
                   </td>
                   <td>
@@ -66,6 +87,12 @@
                     }
                   </td>
                   <td class="text-end pe-3">
+                    @if (!p.produtoPaiId) {
+                      <a class="btn btn-sm btn-outline-primary me-1" [routerLink]="['/produtos', p.id, 'grade']"
+                        [title]="p.usaGrade ? 'Ver a grade (tamanho x cor)' : 'Criar grade (tamanho x cor)'">
+                        <i class="bi bi-grid-3x3-gap"></i>
+                      </a>
+                    }
                     @if (permissao.canEdit()) {
                       <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(p)" title="Editar">
                         <i class="bi bi-pencil"></i>
@@ -80,7 +107,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="7" class="text-center text-muted py-4">
+                  <td colspan="9" class="text-center text-muted py-4">
                     <i class="bi bi-inbox me-2"></i>Nenhum produto encontrado
                   </td>
                 </tr>
@@ -101,30 +128,77 @@
         <h6 class="modal-title fw-semibold">
           {{ editingId() ? 'Editar Produto' : 'Novo Produto' }}
         </h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
       </div>
       <div class="modal-body">
         <form [formGroup]="form" id="produtoForm">
           <div class="row g-3">
             <div class="col-md-4">
-              <label class="form-label fw-medium">SKU <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" formControlName="sku"
+              <label class="form-label fw-medium" for="prodSku">SKU <span class="text-danger">*</span></label>
+              <input id="prodSku" type="text" class="form-control" formControlName="sku"
                 [class.is-invalid]="f('sku').invalid && f('sku').touched" />
               <div class="invalid-feedback">SKU obrigatório (máx. 100 chars).</div>
             </div>
             <div class="col-md-8">
-              <label class="form-label fw-medium">Nome <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" formControlName="nome"
+              <label class="form-label fw-medium" for="prodNome">Nome <span class="text-danger">*</span></label>
+              <input id="prodNome" type="text" class="form-control" formControlName="nome"
                 [class.is-invalid]="f('nome').invalid && f('nome').touched" />
               <div class="invalid-feedback">Nome obrigatório (máx. 255 chars).</div>
             </div>
             <div class="col-12">
-              <label class="form-label fw-medium">Descrição</label>
-              <textarea class="form-control" formControlName="descricao" rows="2"></textarea>
+              <label class="form-label fw-medium" for="prodDescricao">Descrição</label>
+              <textarea id="prodDescricao" class="form-control" formControlName="descricao" rows="2"></textarea>
             </div>
+            <div class="col-md-4">
+              <label class="form-label fw-medium" for="tipoItem">Tipo do item</label>
+              <select id="tipoItem" class="form-select" formControlName="tipoItem">
+                @for (t of tipos; track t.valor) {
+                  <option [value]="t.valor">{{ t.rotulo }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-medium" for="unidadeCodigo">Unidade de estoque</label>
+              <select id="unidadeCodigo" class="form-select" formControlName="unidadeCodigo">
+                @for (u of unidades(); track u.codigo) {
+                  <option [value]="u.codigo">{{ u.nome }} ({{ u.codigo }})</option>
+                }
+                @if (unidades().length === 0) { <option value="un">Unidade (un)</option> }
+              </select>
+              <div class="form-text">
+                @if (casasEscolhidas() === 0) { Só quantidades inteiras. } @else { Aceita até {{ casasEscolhidas() }} casa(s) decimal(is). }
+              </div>
+            </div>
+            <div class="col-md-4 d-flex align-items-center">
+              <div class="form-check form-switch mt-3">
+                <input class="form-check-input" type="checkbox" id="usaConversao"
+                  [checked]="usaConversao()" (change)="alternarConversao($any($event.target).checked)" />
+                <label class="form-check-label" for="usaConversao">Compro em outra unidade</label>
+              </div>
+            </div>
+            @if (usaConversao()) {
+              <div class="col-md-4">
+                <label class="form-label fw-medium" for="unidadeCompraCodigo">Unidade de compra</label>
+                <select id="unidadeCompraCodigo" class="form-select" formControlName="unidadeCompraCodigo">
+                  <option [ngValue]="null">Selecione...</option>
+                  @for (u of unidades(); track u.codigo) {
+                    <option [value]="u.codigo">{{ u.nome }} ({{ u.codigo }})</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label fw-medium" for="fatorConversao">
+                  Quantas {{ unidadeEscolhida() }} cabem em 1 unidade de compra?
+                </label>
+                <input id="fatorConversao" type="number" class="form-control" formControlName="fatorConversao" min="0" step="any"
+                  placeholder="Ex.: 50 (1 rolo = 50 m)"
+                  [class.is-invalid]="f('fatorConversao').invalid && f('fatorConversao').touched" />
+                <div class="form-text">A nota fiscal e o pedido chegam na unidade de compra e entram no estoque já convertidos.</div>
+              </div>
+            }
             <div class="col-md-6">
-              <label class="form-label fw-medium">Categoria <span class="text-danger">*</span></label>
-              <select class="form-select" formControlName="categoriaId"
+              <label class="form-label fw-medium" for="prodCategoria">Categoria <span class="text-danger">*</span></label>
+              <select id="prodCategoria" class="form-select" formControlName="categoriaId"
                 [class.is-invalid]="f('categoriaId').invalid && f('categoriaId').touched">
                 <option [value]="null">Selecione...</option>
                 @for (cat of categorias(); track cat.id) {
@@ -134,23 +208,23 @@
               <div class="invalid-feedback">Selecione uma categoria.</div>
             </div>
             <div class="col-md-4">
-              <label class="form-label fw-medium">Preço Unitário (R$) <span class="text-danger">*</span></label>
-              <input type="number" class="form-control" formControlName="precoUnitario"
+              <label class="form-label fw-medium" for="prodPreco">Preço Unitário (R$) <span class="text-danger">*</span></label>
+              <input id="prodPreco" type="number" class="form-control" formControlName="precoUnitario"
                 min="0" step="0.01"
                 [class.is-invalid]="f('precoUnitario').invalid && f('precoUnitario').touched" />
               <div class="invalid-feedback">Preço deve ser ≥ 0.</div>
             </div>
             <div class="col-md-4">
-              <label class="form-label fw-medium">Estoque Mínimo</label>
-              <input type="number" class="form-control" formControlName="estoqueMinimo" min="0"
-                placeholder="0"
+              <label class="form-label fw-medium" for="prodMinimo">Estoque Mínimo</label>
+              <input id="prodMinimo" type="number" class="form-control" formControlName="estoqueMinimo" min="0"
+                [attr.step]="stepQuantidade()" placeholder="0"
                 [class.is-invalid]="f('estoqueMinimo').invalid && f('estoqueMinimo').touched" />
               <div class="invalid-feedback">Deve ser ≥ 0.</div>
             </div>
             <div class="col-md-4">
-              <label class="form-label fw-medium">Ponto de Reposição</label>
-              <input type="number" class="form-control" formControlName="pontoReposicao" min="0"
-                placeholder="0"
+              <label class="form-label fw-medium" for="prodReposicao">Ponto de Reposição</label>
+              <input id="prodReposicao" type="number" class="form-control" formControlName="pontoReposicao" min="0"
+                [attr.step]="stepQuantidade()" placeholder="0"
                 [class.is-invalid]="f('pontoReposicao').invalid && f('pontoReposicao').touched" />
               <div class="invalid-feedback">Deve ser ≥ 0.</div>
             </div>

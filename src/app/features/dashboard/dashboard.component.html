@@ -156,7 +156,7 @@
                     {{ tipoLabel(mov.tipo) }}
                   </span>
                 </td>
-                <td>{{ mov.quantidade }}</td>
+                <td>{{ mov.quantidade | qtd }}</td>
                 <td class="text-muted small">{{ mov.criadoEm | date:'dd/MM/yyyy HH:mm' }}</td>
               </tr>
             } @empty {

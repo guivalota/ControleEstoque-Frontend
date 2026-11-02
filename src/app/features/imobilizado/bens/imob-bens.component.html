@@ -33,7 +33,7 @@
     </div>
   </div>
 
-  <form class="row g-2 align-items-end mb-3" (ngSubmit)="buscarPlaqueta()">
+  <form class="row g-2 align-items-end mb-3" (submit)="$event.preventDefault(); buscarPlaqueta()">
     <div class="col-12 col-md-4">
       <label for="bemPlaqueta" class="form-label small mb-1">Ir para a plaqueta</label>
       <div class="input-group input-group-sm">

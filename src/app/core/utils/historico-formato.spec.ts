@@ -9,6 +9,7 @@ const entrada = (id: number, extra: Partial<ImobBemHistorico> = {}): ImobBemHist
 describe('rotuloCampoHistorico', () => {
   it('traduz os campos conhecidos', () => {
     expect(rotuloCampoHistorico('local_id')).toBe('Local');
+    expect(rotuloCampoHistorico('departamento_id')).toBe('Departamento');
     expect(rotuloCampoHistorico('categoria_id')).toBe('Categoria');
     expect(rotuloCampoHistorico('responsavel_id')).toBe('Responsável');
     expect(rotuloCampoHistorico('valor_aquisicao')).toBe('Valor de aquisição');
@@ -40,6 +41,8 @@ describe('formatarValorHistorico', () => {
 
   it('referências usam o nome e caem para #id sem descrição', () => {
     expect(formatarValorHistorico('local_id', '7', 'Sala 101')).toBe('Sala 101');
+    expect(formatarValorHistorico('departamento_id', '910', 'Financeiro')).toBe('Financeiro');
+    expect(formatarValorHistorico('departamento_id', '910', null)).toBe('#910');
     expect(formatarValorHistorico('responsavel_id', '12', 'Ana Souza')).toBe('Ana Souza');
     expect(formatarValorHistorico('categoria_id', '3', null)).toBe('#3');
     expect(formatarValorHistorico('local_id', '9', '  ')).toBe('#9');

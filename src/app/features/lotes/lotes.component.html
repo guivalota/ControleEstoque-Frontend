@@ -57,8 +57,8 @@
                       @case ('vencendo') { <span class="badge bg-warning-subtle text-warning-emphasis ms-1">Vence em {{ dias(l) }} dia(s)</span> }
                     }
                   </td>
-                  <td class="text-end">{{ l.quantidadeInicial }}</td>
-                  <td class="text-end fw-medium">{{ l.quantidadeAtual }}</td>
+                  <td class="text-end">{{ l.quantidadeInicial | qtd }}</td>
+                  <td class="text-end fw-medium">{{ l.quantidadeAtual | qtd }}</td>
                   <td class="text-muted">{{ fornecedorNome(l.fornecedorId) }}</td>
                   <td class="text-end pe-3 text-nowrap">
                     @if (permissao.canEdit()) {
@@ -103,7 +103,7 @@
             <label class="form-label fw-medium" for="lotProduto">Produto <span class="text-danger">*</span></label>
             <select id="lotProduto" class="form-select" formControlName="produtoId" [class.is-invalid]="f('produtoId').invalid && f('produtoId').touched">
               <option [ngValue]="null">Selecione...</option>
-              @for (p of produtos(); track p.id) { <option [ngValue]="p.id">{{ p.sku }} — {{ p.nome }}</option> }
+              @for (p of produtosMovimentaveis(); track p.id) { <option [ngValue]="p.id">{{ p.sku }} — {{ p.nome }}</option> }
             </select>
             <div class="invalid-feedback">Selecione o produto.</div>
           </div>
@@ -116,7 +116,7 @@
             </div>
             <div class="col-md-4">
               <label class="form-label fw-medium" for="lotQtd">Qtd. inicial <span class="text-danger">*</span></label>
-              <input id="lotQtd" type="number" min="1" class="form-control" formControlName="quantidadeInicial"
+              <input id="lotQtd" type="number" min="0.001" step="any" class="form-control" formControlName="quantidadeInicial"
                      [class.is-invalid]="f('quantidadeInicial').invalid && f('quantidadeInicial').touched" />
               <div class="invalid-feedback">Maior que zero.</div>
             </div>

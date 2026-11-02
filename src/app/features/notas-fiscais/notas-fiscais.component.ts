@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal, computed, ViewChild, ElementRef, OnDestroy } from '@angular/core';
+import { QtdPipe } from '../../core/pipes/qtd.pipe';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DecimalPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { Modal } from 'bootstrap';
@@ -18,7 +19,7 @@ import { AnaliseNfeItem, AnaliseNfeResponse, ResolucaoItem } from '../../core/mo
 @Component({
   selector: 'app-notas-fiscais',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, DecimalPipe, DatePipe, TitleCasePipe],
+  imports: [QtdPipe, ReactiveFormsModule, FormsModule, DecimalPipe, DatePipe, TitleCasePipe],
   templateUrl: './notas-fiscais.component.html'
 })
 export class NotasFiscaisComponent implements OnInit, OnDestroy {
@@ -55,6 +56,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
   filterStatus = '';
 
   produtos = this.produtoService.produtos;
+  produtosMovimentaveis = this.produtoService.movimentaveis;
   fornecedores = this.fornecedorService.fornecedores;
   categorias = this.categoriaService.categorias;
   loading = this.nfService.loading;
@@ -318,7 +320,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
   criarItemGroup() {
     return this.fb.group({
       produtoId: [null as number | null, Validators.required],
-      quantidade: [1, [Validators.required, Validators.min(1)]],
+      quantidade: [1, [Validators.required, Validators.min(0.001)]],
       valorUnitario: [0, [Validators.required, Validators.min(0)]],
       observacao: ['' as string | null]
     });

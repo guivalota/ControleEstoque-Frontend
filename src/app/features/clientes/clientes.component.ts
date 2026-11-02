@@ -6,6 +6,7 @@ import { ClienteService } from '../../core/services/cliente.service';
 import { ImpressaoService } from '../../core/services/impressao.service';
 import { PermissaoService } from '../../core/services/permissao.service';
 import { CepService } from '../../core/services/cep.service';
+import { lerErroApi, textoDoErro } from '../../core/utils/erros-api';
 import { Cliente, CreateClienteRequest, UpdateClienteRequest } from '../../core/models/cliente.model';
 
 @Component({
@@ -53,11 +54,15 @@ export class ClientesComponent implements OnInit, OnDestroy {
     ativo: [true]
   });
 
+  /** Falha ao carregar a lista (ex.: 403 de perfil): aparece na tela em vez de uma lista vazia enganosa. */
+  erroLista = signal('');
+
   ngOnInit() { this.buscar(1); }
   ngOnDestroy() { this.modal?.dispose(); }
 
   buscar(page = 1) {
     this.loading.set(true);
+    this.erroLista.set('');
     this.clienteService.buscar({
       busca: this.filterBusca || undefined,
       uf: this.filterUf || undefined,
@@ -71,7 +76,10 @@ export class ClientesComponent implements OnInit, OnDestroy {
         this.page.set(page);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false)
+      error: (err) => {
+        this.loading.set(false);
+        this.erroLista.set(textoDoErro(lerErroApi(err, 'Não foi possível carregar os clientes.'), 'Não foi possível carregar os clientes.'));
+      }
     });
   }
 

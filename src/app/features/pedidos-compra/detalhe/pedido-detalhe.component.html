@@ -96,10 +96,10 @@
                     <div class="fw-medium">{{ item.produtoNome }}</div>
                     <code class="text-muted small">{{ item.produtoSku }}</code>
                   </td>
-                  <td class="text-center">{{ item.quantidadeSolicitada }}</td>
+                  <td class="text-center">{{ item.quantidadeSolicitada | qtd }}</td>
                   <td class="text-center">
                     <span [class]="item.quantidadeAtendida >= item.quantidadeSolicitada ? 'text-success fw-semibold' : ''">
-                      {{ item.quantidadeAtendida }}
+                      {{ item.quantidadeAtendida | qtd }}
                     </span>
                   </td>
                   <td>
@@ -198,7 +198,7 @@
             <select class="form-select" formControlName="produtoId"
               [class.is-invalid]="af('produtoId').invalid && af('produtoId').touched">
               <option [value]="null">Selecione...</option>
-              @for (p of produtos(); track p.id) {
+              @for (p of produtosMovimentaveis(); track p.id) {
                 @if (p.ativo) { <option [value]="p.id">{{ p.nome }} — {{ p.sku }}</option> }
               }
             </select>
@@ -206,7 +206,7 @@
           </div>
           <div class="mb-3">
             <label class="form-label fw-medium">Quantidade Solicitada <span class="text-danger">*</span></label>
-            <input type="number" class="form-control" formControlName="quantidadeSolicitada" min="1"
+            <input type="number" class="form-control" formControlName="quantidadeSolicitada" min="0.001" step="any"
               [class.is-invalid]="af('quantidadeSolicitada').invalid && af('quantidadeSolicitada').touched" />
             <div class="invalid-feedback">Mínimo: 1.</div>
           </div>

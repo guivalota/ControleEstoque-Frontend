@@ -11,7 +11,7 @@ const URL_BEM = '/api/v1/imobilizado/bens/42';
 
 const bem = (extra: Partial<ImobBem> = {}): ImobBem => ({
   id: 42, plaqueta: 'NB-0001', descricao: 'Notebook Dell Latitude', categoriaId: 3, categoriaNome: 'Informática',
-  localId: 7, localNome: 'Sala 101', responsavelId: 12, responsavelNome: 'Ana Souza',
+  localId: 7, localNome: 'Sala 101', responsavelId: 12, responsavelNome: 'Ana Souza', departamentoId: 3, departamentoNome: 'Financeiro',
   dataAquisicao: '2024-03-10', valorAquisicao: 4500, valorResidual: 450, vidaUtilMeses: 60, dadosCompletos: true, status: 'ativo',
   fornecedorNome: 'Dell Brasil', numeroDocumentoAquisicao: 'NF-12345', numeroSerie: null, observacao: null,
   criadoEm: '2026-10-22T14:03:11Z', atualizadoEm: '2026-10-22T14:03:11Z', ...extra
@@ -58,13 +58,15 @@ describe('ImobBemDetalheComponent', () => {
     expect(texto()).toContain('R$ 450,00');
     expect(texto()).toContain('60 meses (5 anos)');
     expect(texto()).toContain('Dell Brasil');
+    expect(texto()).toContain('DepartamentoFinanceiro');
     expect(texto()).toContain('Ativo');
   });
 
   it('campos vazios aparecem como "—"', () => {
     montar();
-    carregar(bem({ responsavelId: null, responsavelNome: null }));
+    carregar(bem({ responsavelId: null, responsavelNome: null, departamentoId: null, departamentoNome: null }));
     expect(texto()).toContain('Responsável—');
+    expect(texto()).toContain('Departamento—');
     expect(texto()).toContain('Número de série—');
   });
 

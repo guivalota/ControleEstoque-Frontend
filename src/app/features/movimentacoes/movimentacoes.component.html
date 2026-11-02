@@ -103,7 +103,7 @@
                       <div class="text-muted" style="font-size:.7rem">{{ motivoLabel(m.motivoAjuste) }}</div>
                     }
                   </td>
-                  <td class="fw-medium text-end">{{ m.quantidade }}</td>
+                  <td class="fw-medium text-end">{{ m.quantidade | qtd }}</td>
                   <td class="text-muted small text-end">R$ {{ (m.valorUnitario ?? 0) | number:'1.2-2' }}</td>
                   <td class="fw-medium text-end">R$ {{ (m.valorTotal ?? 0) | number:'1.2-2' }}</td>
                   <td class="text-muted small">{{ m.observacao || '—' }}</td>
@@ -182,7 +182,7 @@
               <select class="form-select" formControlName="produtoId"
                 [class.is-invalid]="f('produtoId').invalid && f('produtoId').touched">
                 <option [value]="null">Selecione...</option>
-                @for (p of produtos(); track p.id) {
+                @for (p of produtosMovimentaveis(); track p.id) {
                   @if (p.ativo) { <option [value]="p.id">{{ p.nome }} ({{ p.sku }})</option> }
                 }
               </select>
@@ -211,7 +211,7 @@
               <select id="movLote" class="form-select" formControlName="loteId">
                 <option [ngValue]="null">Sem lote</option>
                 @for (l of lotesProduto(); track l.id) {
-                  <option [ngValue]="l.id">{{ l.numeroLote }} — saldo {{ l.quantidadeAtual }}</option>
+                  <option [ngValue]="l.id">{{ l.numeroLote }} — saldo {{ l.quantidadeAtual | qtd }}</option>
                 }
               </select>
               <div class="form-text">Saídas e ajustes de saída não podem exceder o saldo do lote.</div>
@@ -239,7 +239,7 @@
           <div class="row g-3 mb-3">
             <div class="col-6">
               <label class="form-label fw-medium">Quantidade <span class="text-danger">*</span></label>
-              <input type="number" class="form-control" formControlName="quantidade" min="1"
+              <input type="number" class="form-control" formControlName="quantidade" min="0.001" step="any"
                 [class.is-invalid]="f('quantidade').invalid && f('quantidade').touched" />
               <div class="invalid-feedback">Quantidade mínima: 1.</div>
             </div>

@@ -8,7 +8,7 @@
 
   <div class="card border-0 shadow-sm">
     <div class="card-header bg-transparent">
-      <form class="row g-2" (ngSubmit)="carregar(1)">
+      <form class="row g-2" (submit)="$event.preventDefault(); carregar(1)">
         <div class="col-md-4">
           <input class="form-control form-control-sm" placeholder="Nº da OS ou plaqueta" aria-label="Buscar" [formControl]="busca">
         </div>

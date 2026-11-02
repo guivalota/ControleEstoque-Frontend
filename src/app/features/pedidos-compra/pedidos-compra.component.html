@@ -182,13 +182,13 @@
                       <select class="form-select form-select-sm" formControlName="produtoId"
                         [class.is-invalid]="iCtrl(i,'produtoId').invalid && iCtrl(i,'produtoId').touched">
                         <option [value]="null">Selecione...</option>
-                        @for (p of produtos(); track p.id) {
+                        @for (p of produtosMovimentaveis(); track p.id) {
                           @if (p.ativo) { <option [value]="p.id">{{ p.nome }}</option> }
                         }
                       </select>
                     </td>
                     <td>
-                      <input type="number" class="form-control form-control-sm" formControlName="quantidadeSolicitada" min="1"
+                      <input type="number" class="form-control form-control-sm" formControlName="quantidadeSolicitada" min="0.001" step="any"
                         [class.is-invalid]="iCtrl(i,'quantidadeSolicitada').invalid && iCtrl(i,'quantidadeSolicitada').touched" />
                     </td>
                     <td>

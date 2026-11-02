@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, OnDestroy, signal, ViewChild, ElementRef } from '@angular/core';
+import { QtdPipe } from '../../../core/pipes/qtd.pipe';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -14,7 +15,7 @@ import { PedidoCompra, PedidoCompraItem } from '../../../core/models/pedido-comp
 @Component({
   selector: 'app-pedido-detalhe',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe, DecimalPipe],
+  imports: [QtdPipe, ReactiveFormsModule, DatePipe, DecimalPipe],
   templateUrl: './pedido-detalhe.component.html'
 })
 export class PedidoDetalheComponent implements OnInit, OnDestroy {
@@ -41,6 +42,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   impressaoErro = signal('');
 
   produtos = this.produtoService.produtos;
+  produtosMovimentaveis = this.produtoService.movimentaveis;
   /** Usuários ativos da empresa (opções de "Destinado a"). */
   usuarios = signal<UsuarioEmpresa[]>([]);
 
@@ -52,7 +54,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
 
   addItemForm = this.fb.group({
     produtoId: [null as number | null, Validators.required],
-    quantidadeSolicitada: [1, [Validators.required, Validators.min(1)]],
+    quantidadeSolicitada: [1, [Validators.required, Validators.min(0.001)]],
     observacao: ['' as string | null]
   });
 

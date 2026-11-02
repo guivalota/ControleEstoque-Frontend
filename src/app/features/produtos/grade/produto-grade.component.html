@@ -1,0 +1,157 @@
+<div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <a routerLink="/produtos" class="text-decoration-none small"><i class="bi bi-arrow-left me-1"></i>Produtos</a>
+      <h5 class="fw-bold mb-0 mt-1">
+        Grade @if (grade(); as g) { <span class="text-muted fw-normal">— {{ g.nome }} <code class="small">{{ g.sku }}</code></span> }
+      </h5>
+    </div>
+    @if (grade(); as g) {
+      <div class="text-end">
+        <div class="small text-muted">Saldo total</div>
+        <div class="fs-4 fw-bold">{{ g.saldoTotal | qtd }} <span class="fs-6 text-muted">{{ g.unidadeCodigo }}</span></div>
+      </div>
+    }
+  </div>
+
+  @if (erro()) {
+    <div class="alert alert-danger py-2 small" role="alert"><i class="bi bi-exclamation-triangle me-1"></i>{{ erro() }}</div>
+  }
+  @if (aviso()) {
+    <div class="alert alert-success py-2 small" role="status"><i class="bi bi-check-circle me-1"></i>{{ aviso() }}</div>
+  }
+
+  @if (carregando()) {
+    <div class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Carregando...</div>
+  } @else {
+    @let g = grade();
+    @if (g) {
+
+    <!-- Matriz de saldo -->
+    @if (g.variacoes.length > 0) {
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-body fw-semibold small">Estoque por variação</div>
+        <div class="card-body p-0">
+          @if (matrizPossivel()) {
+            <div class="table-responsive">
+              <table class="table table-sm align-middle text-center mb-0" aria-label="Saldo por tamanho e cor">
+                <thead class="table-light">
+                  <tr>
+                    <th class="text-start ps-3">{{ eixosDaGrade()[0].nome }} \ {{ eixosDaGrade()[1].nome }}</th>
+                    @for (c of colunas(); track c.id) { <th>{{ c.nome }}</th> }
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (l of linhas(); track l.id) {
+                    <tr>
+                      <th class="text-start ps-3">{{ l.nome }}</th>
+                      @for (c of colunas(); track c.id) {
+                        @let v = celula(l.id, c.id);
+                        <td [class.text-muted]="!v || v.saldo === 0" [class.table-secondary]="v && !v.ativo">
+                          @if (v) { {{ v.saldo | qtd }} } @else { <span class="text-muted">·</span> }
+                        </td>
+                      }
+                      <td class="fw-semibold">{{ totalLinha(l.id) | qtd }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot class="table-light">
+                  <tr>
+                    <th class="text-start ps-3">Total</th>
+                    @for (c of colunas(); track c.id) { <th>{{ totalColuna(c.id) | qtd }}</th> }
+                    <th>{{ g.saldoTotal | qtd }}</th>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          }
+
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3">SKU</th>
+                  <th>Nome</th>
+                  @for (e of g.eixos; track e.id) { <th>{{ e.nome }}</th> }
+                  <th class="text-end">Saldo</th>
+                  <th class="pe-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (v of g.variacoes; track v.produtoId) {
+                  <tr>
+                    <td class="ps-3"><code class="small">{{ v.sku }}</code></td>
+                    <td>{{ v.nome }}</td>
+                    @for (e of g.eixos; track e.id) { <td>{{ nomeDoValor(e.id, v.valores[e.id]) }}</td> }
+                    <td class="text-end fw-medium">{{ v.saldo | qtd }}</td>
+                    <td class="pe-3">
+                      @if (v.ativo) { <span class="badge bg-success-subtle text-success">Ativo</span> }
+                      @else { <span class="badge bg-secondary-subtle text-secondary">Inativo</span> }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="alert alert-info small">
+        <i class="bi bi-info-circle me-1"></i>
+        Este produto ainda não tem grade. Escolha abaixo os tamanhos, cores ou outros eixos: cada combinação vira uma variação
+        com SKU, estoque e lote próprios. Depois de criada a grade, o produto passa a ser um <strong>modelo</strong> e só as
+        variações recebem movimentação.
+      </div>
+    }
+
+    <!-- Gerar variações -->
+    @if (permissao.canCreate()) {
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-body fw-semibold small">Gerar variações</div>
+        <div class="card-body">
+          @for (e of eixosAtivos(); track e.id) {
+            <div class="mb-3">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="fw-medium">{{ e.nome }}</span>
+                <button type="button" class="btn btn-link btn-sm p-0" (click)="marcarTodos(e, true)">todos</button>
+                <button type="button" class="btn btn-link btn-sm p-0 text-muted" (click)="marcarTodos(e, false)">nenhum</button>
+              </div>
+              <div class="d-flex flex-wrap gap-3">
+                @for (v of e.valores; track v.id) {
+                  @if (v.ativo) {
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" [id]="'v' + v.id"
+                        [checked]="marcado(e.id, v.id)" (change)="alternar(e.id, v.id, $any($event.target).checked)" />
+                      <label class="form-check-label" [for]="'v' + v.id">{{ v.nome }} <small class="text-muted">({{ v.codigo }})</small></label>
+                    </div>
+                  }
+                }
+              </div>
+              <div class="input-group input-group-sm mt-2" style="max-width: 420px;">
+                <input type="text" class="form-control" placeholder="Código (ex.: EG)" maxlength="20" aria-label="Código do novo valor"
+                  [ngModel]="novoValor[e.id]?.codigo ?? ''" (ngModelChange)="novoValor[e.id] = { codigo: $event, nome: novoValor[e.id]?.nome ?? '' }" />
+                <input type="text" class="form-control" placeholder="Nome (ex.: Extra grande)" maxlength="60" aria-label="Nome do novo valor"
+                  [ngModel]="novoValor[e.id]?.nome ?? ''" (ngModelChange)="novoValor[e.id] = { codigo: novoValor[e.id]?.codigo ?? '', nome: $event }" />
+                <button type="button" class="btn btn-outline-primary" (click)="adicionarValor(e)">Novo valor</button>
+              </div>
+            </div>
+          }
+
+          <div class="d-flex align-items-center gap-3 mt-2">
+            <button type="button" class="btn btn-primary btn-sm" (click)="gerar()" [disabled]="gerando() || totalSelecionado() === 0 || excedeLimite()">
+              @if (gerando()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+              Gerar {{ totalSelecionado() }} variação(ões)
+            </button>
+            @if (excedeLimite()) {
+              <span class="text-danger small">O máximo por vez é 200.</span>
+            } @else {
+              <span class="text-muted small">SKU de cada variação: <code>{{ g.sku }}-VALOR1-VALOR2</code>. O que já existe é pulado.</span>
+            }
+          </div>
+        </div>
+      </div>
+    }
+    }
+  }
+</div>

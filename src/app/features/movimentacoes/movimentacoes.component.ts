@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal, computed, ViewChild, ElementRef, OnDestroy } from '@angular/core';
+import { QtdPipe } from '../../core/pipes/qtd.pipe';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe, DecimalPipe } from '@angular/common';
@@ -18,7 +19,7 @@ import { PedidoCompra } from '../../core/models/pedido-compra.model';
 @Component({
   selector: 'app-movimentacoes',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe, DecimalPipe],
+  imports: [QtdPipe, ReactiveFormsModule, DatePipe, DecimalPipe],
   templateUrl: './movimentacoes.component.html'
 })
 export class MovimentacoesComponent implements OnInit, OnDestroy {
@@ -38,6 +39,7 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
 
   movimentacoes = this.movimentacaoService.movimentacoes;
   produtos = this.produtoService.produtos;
+  produtosMovimentaveis = this.produtoService.movimentaveis;
   categorias = this.categoriaService.categorias;
   loading = this.movimentacaoService.loading;
 
@@ -72,7 +74,7 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
   form = this.fb.group({
     produtoId: [null as number | null, Validators.required],
     tipo: ['entrada' as TipoMovimentacao, Validators.required],
-    quantidade: [1, [Validators.required, Validators.min(1)]],
+    quantidade: [1, [Validators.required, Validators.min(0.001)]],
     valorUnitario: [0, [Validators.required, Validators.min(0)]],
     dataMovimentacao: ['' as string | null],
     observacao: ['' as string | null],

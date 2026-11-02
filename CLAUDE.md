@@ -165,8 +165,15 @@ Estoque também tem `lotes` (CRUD + validade; params PascalCase) e `loteId` opci
 - E19 screens: `departamentos` (CRUD), `reavaliacao/estados-conservacao`, `reavaliacao/pesos`, `reavaliacao/escalas` (VP/VF range editor, validation in `core/utils/escala-faixas.ts`). Parameter screens are read for everyone and editable only where `podeEditarParametros()` (`features/imobilizado/parametros/pode-editar-parametros.ts`, today admin) says so; that is the single place to release the contador profile later. Bens list also filters by `departamentoId`, `compraDe`/`compraAte` and sorts by `ordenarPor`/`direcao` (all in the URL).
 - Formatting: use `Intl` helpers in `imob-formato.ts` (BRL, `dd/MM/yyyy` without `Date` parsing, `%`). The app does **not** register the `pt-BR` locale, so don't use `DecimalPipe`/`CurrencyPipe`/`DatePipe` with `'pt-BR'`.
 - Angular `@if (...; as x)` alias only works on the first `@if` block; use `@let` otherwise.
+- **`(ngSubmit)` só existe em `<form [formGroup]>` ou com `FormsModule` (`NgForm`).** Em um `<form>` solto de um componente que só importa `ReactiveFormsModule` o evento nunca dispara e o navegador recarrega a página (quebrou "Testar valor" das escalas, Filtrar das OS, Gerar dos relatórios e outros). Nesses formulários use `(submit)="$event.preventDefault(); acao()"` e, no spec, clique o botão pelo DOM (chamar o método direto não pega o defeito).
 - Etiquetas (spec 5.2): `ImobEtiquetasDialogComponent` (shared) recebe `abrir({ ids } | { filtro, total }, modelo?)`; PDF vem como blob (`ImobEtiquetaService.gerar`), pré-visualização em `<iframe>` via object URL, `ids` ignora os filtros, limite de 500 por pedido (erros 400 do servidor são exibidos). Seleção por checkbox na lista de bens; "Imprimir etiqueta" (`rolo-50x30`) no detalhe. O QR é gerado no servidor.
 - CSV export and any download needing the header: `HttpClient` + `responseType: 'blob'` + `baixarBlob()`, never `<a href>` to the API.
+
+### Estoque: tipo, unidade, quantidade decimal e grade (E23)
+
+- **Quantidades são decimais** (metro, quilo): mostre com `QtdPipe` (`| qtd`, pt-BR, até 3 casas, sem zeros à direita) e nunca com `{{ x }}` (sairia com ponto). Inputs de quantidade usam `step="any"` ou `stepDaUnidade(casas)`; o servidor é quem recusa fração em unidade inteira (a mensagem aparece no formulário). `DecimalPipe` com `'pt-BR'` continua proibido (a locale não é registrada).
+- **Produto** tem `tipoItem`, `unidadeCodigo`, `unidadeCompraCodigo` + `fatorConversao` e `unidadeCasasDecimais`; `ProdutoService.unidades` guarda o catálogo (`GET v1/produtos/unidades-medida`). Editar sem conversão envia `unidadeCompraCodigo: ''` (o back remove).
+- **Grade:** tela `/produtos/:id/grade` (`ProdutoGradeComponent`, `GradeService`): escolhe valores por eixo, gera as variações (cada uma é um produto) e mostra o saldo em matriz tamanho x cor. O modelo (`usaGrade`) **não** é oferecido nos selects de movimentação, lote, pedido e NF: use `ProdutoService.movimentaveis` (`produtosMovimentaveis` nos componentes), não `produtos`.
 
 ### Testing
 
