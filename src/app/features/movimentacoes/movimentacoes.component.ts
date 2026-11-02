@@ -13,6 +13,8 @@ import { PedidoCompraService } from '../../core/services/pedido-compra.service';
 import { LoteService } from '../../core/services/lote.service';
 import { Lote } from '../../core/models/lote.model';
 import { ImpressaoService } from '../../core/services/impressao.service';
+import { ToastService } from '../../core/services/toast.service';
+import { lerErroApi, textoDoErro } from '../../core/utils/erros-api';
 import { Movimentacao, CreateMovimentacaoRequest, UpdateMovimentacaoRequest, TipoMovimentacao, MotivoAjuste } from '../../core/models/movimentacao.model';
 import { PedidoCompra } from '../../core/models/pedido-compra.model';
 
@@ -24,6 +26,7 @@ import { PedidoCompra } from '../../core/models/pedido-compra.model';
 })
 export class MovimentacoesComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
+  private toast = inject(ToastService);
   movimentacaoService = inject(MovimentacaoService);
   produtoService = inject(ProdutoService);
   categoriaService = inject(CategoriaService);
@@ -155,7 +158,7 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
       ProdutoId: this.filterProdutoId() ?? undefined
     }).subscribe({
       next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindo.set(false); },
-      error: () => { alert('Erro ao gerar relatório.'); this.imprimindo.set(false); }
+      error: err => { this.toast.erroApi(err, 'Erro ao gerar relatório.'); this.imprimindo.set(false); }
     });
   }
 
@@ -168,7 +171,7 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
       ProdutoId: this.filterProdutoId() ?? undefined
     }).subscribe({
       next: blob => { this.impressaoService.baixarArquivo(blob, 'movimentacoes.csv'); this.exportando.set(false); },
-      error: () => { alert('Erro ao exportar CSV.'); this.exportando.set(false); }
+      error: err => { this.toast.erroApi(err, 'Erro ao exportar CSV.'); this.exportando.set(false); }
     });
   }
 
@@ -252,7 +255,7 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
         this.carregarPagina(id ? this.currentPage() : 1);
       },
       error: (err) => {
-        this.saveError.set(err.error?.message ?? 'Erro ao salvar movimentação.');
+        this.saveError.set(textoDoErro(lerErroApi(err, 'Erro ao salvar movimentação.'), 'Erro ao salvar movimentação.'));
         this.saving.set(false);
       }
     });
@@ -261,7 +264,7 @@ export class MovimentacoesComponent implements OnInit, OnDestroy {
   delete(m: Movimentacao) {
     if (!confirm(`Excluir a movimentação #${m.id} (${this.tipoLabel(m.tipo)} — ${m.produtoNome ?? 'Produto #' + m.produtoId})?`)) return;
     this.movimentacaoService.delete(m.id).subscribe({
-      error: (err) => alert(err.error?.message ?? 'Erro ao excluir movimentação.')
+      error: err => this.toast.erroApi(err, 'Erro ao excluir movimentação.')
     });
   }
 

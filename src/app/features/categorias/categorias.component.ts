@@ -4,6 +4,7 @@ import { Modal } from 'bootstrap';
 import { CategoriaService } from '../../core/services/categoria.service';
 import { PermissaoService } from '../../core/services/permissao.service';
 import { Categoria, CreateCategoriaRequest, UpdateCategoriaRequest } from '../../core/models/categoria.model';
+import { lerErroApi, textoDoErro } from '../../core/utils/erros-api';
 
 @Component({
   selector: 'app-categorias',
@@ -74,7 +75,7 @@ export class CategoriasComponent implements OnInit, OnDestroy {
     op.subscribe({
       next: () => { this.saving.set(false); this.getModal().hide(); },
       error: (err) => {
-        this.saveError.set(err.error?.message ?? 'Erro ao salvar categoria.');
+        this.saveError.set(textoDoErro(lerErroApi(err, 'Erro ao salvar categoria.'), 'Erro ao salvar categoria.'));
         this.saving.set(false);
       }
     });

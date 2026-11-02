@@ -9,6 +9,7 @@ import { UsuarioEmpresaService } from '../../core/services/usuario-empresa.servi
 import { UsuarioEmpresa } from '../../core/models/usuario-empresa.model';
 import { PermissaoService } from '../../core/services/permissao.service';
 import { PedidoCompra, PedidoStatus } from '../../core/models/pedido-compra.model';
+import { lerErroApi, textoDoErro } from '../../core/utils/erros-api';
 
 const PAGE_SIZE = 50;
 
@@ -139,7 +140,7 @@ export class PedidosCompraComponent implements OnInit, OnDestroy {
         this.router.navigate(['/pedidos-compra', p.id]);
       },
       error: (err) => {
-        this.saveError.set(err.error?.message ?? 'Erro ao criar pedido.');
+        this.saveError.set(textoDoErro(lerErroApi(err, 'Erro ao criar pedido.'), 'Erro ao criar pedido.'));
         this.saving.set(false);
       }
     });

@@ -8,6 +8,7 @@ import { PermissaoService } from '../../core/services/permissao.service';
 import { CepService } from '../../core/services/cep.service';
 import { lerErroApi, textoDoErro } from '../../core/utils/erros-api';
 import { Cliente, CreateClienteRequest, UpdateClienteRequest } from '../../core/models/cliente.model';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-clientes',
@@ -17,6 +18,7 @@ import { Cliente, CreateClienteRequest, UpdateClienteRequest } from '../../core/
 })
 export class ClientesComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
+  private toast = inject(ToastService);
   private cepService = inject(CepService);
   private clienteService = inject(ClienteService);
   private impressaoService = inject(ImpressaoService);
@@ -100,7 +102,7 @@ export class ClientesComponent implements OnInit, OnDestroy {
       ativo: this.filterAtivo !== '' ? this.filterAtivo : undefined
     }).subscribe({
       next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindo.set(false); },
-      error: () => { alert('Erro ao gerar PDF.'); this.imprimindo.set(false); }
+      error: err => { this.toast.erroApi(err, 'Erro ao gerar PDF.'); this.imprimindo.set(false); }
     });
   }
 
@@ -173,7 +175,7 @@ export class ClientesComponent implements OnInit, OnDestroy {
     op.subscribe({
       next: () => { this.saving.set(false); this.getModal().hide(); this.buscar(this.page()); },
       error: (err) => {
-        this.saveError.set(err.error?.message ?? 'Erro ao salvar cliente.');
+        this.saveError.set(textoDoErro(lerErroApi(err, 'Erro ao salvar cliente.'), 'Erro ao salvar cliente.'));
         this.saving.set(false);
       }
     });

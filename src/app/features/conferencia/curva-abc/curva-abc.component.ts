@@ -6,6 +6,7 @@ import { ConferenciaService } from '../../../core/services/conferencia.service';
 import { CategoriaService } from '../../../core/services/categoria.service';
 import { ImpressaoService } from '../../../core/services/impressao.service';
 import { CurvaAbcResponse, ClasseAbc } from '../../../core/models/conferencia.model';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-curva-abc',
@@ -15,6 +16,7 @@ import { CurvaAbcResponse, ClasseAbc } from '../../../core/models/conferencia.mo
 })
 export class CurvaAbcComponent implements OnInit {
   private conferenciaService = inject(ConferenciaService);
+  private toast = inject(ToastService);
   private categoriaService = inject(CategoriaService);
   private impressaoService = inject(ImpressaoService);
 
@@ -110,7 +112,7 @@ export class CurvaAbcComponent implements OnInit {
     }).pipe(finalize(() => this.exportando.set(false)))
       .subscribe({
         next: blob => this.impressaoService.baixarArquivo(blob, 'curva-abc.csv'),
-        error: () => alert('Erro ao exportar CSV.')
+        error: err => this.toast.erroApi(err, 'Erro ao exportar CSV.')
       });
   }
 

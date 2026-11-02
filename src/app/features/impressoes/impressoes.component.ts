@@ -6,6 +6,7 @@ import { ImpressaoService } from '../../core/services/impressao.service';
 import { UsuarioEmpresaService } from '../../core/services/usuario-empresa.service';
 import { UsuarioEmpresa } from '../../core/models/usuario-empresa.model';
 import { Impressao } from '../../core/models/impressao.model';
+import { ToastService } from '../../core/services/toast.service';
 
 const PAGE_SIZE = 50;
 
@@ -21,6 +22,7 @@ const TIPO_LABELS: Record<string, string> = {
 })
 export class ImpressoesComponent implements OnInit {
   private impressaoService = inject(ImpressaoService);
+  private toast = inject(ToastService);
   private usuarioEmpresaService = inject(UsuarioEmpresaService);
 
   /** Todos os usuários da empresa, inclusive inativos (filtro histórico por quem imprimiu). */
@@ -81,7 +83,7 @@ export class ImpressoesComponent implements OnInit {
     this.reimprimindo.set(item.id);
     this.impressaoService.imprimirPedido(item.documentoId).subscribe({
       next: blob => { this.impressaoService.abrirPdf(blob); this.reimprimindo.set(null); },
-      error: () => { alert('Erro ao reimprimir.'); this.reimprimindo.set(null); }
+      error: err => { this.toast.erroApi(err, 'Erro ao reimprimir.'); this.reimprimindo.set(null); }
     });
   }
 

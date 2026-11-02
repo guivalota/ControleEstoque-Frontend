@@ -15,6 +15,8 @@ import { PedidoCompra } from '../../core/models/pedido-compra.model';
 import { cnpjValidator, mascararCnpj, normalizarCnpj } from '../../core/utils/cnpj';
 import { NotaFiscal, TipoNotaFiscal } from '../../core/models/nota-fiscal.model';
 import { AnaliseNfeItem, AnaliseNfeResponse, ResolucaoItem } from '../../core/models/nfe.model';
+import { ToastService } from '../../core/services/toast.service';
+import { lerErroApi, textoDoErro } from '../../core/utils/erros-api';
 
 @Component({
   selector: 'app-notas-fiscais',
@@ -24,6 +26,7 @@ import { AnaliseNfeItem, AnaliseNfeResponse, ResolucaoItem } from '../../core/mo
 })
 export class NotasFiscaisComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
+  private toast = inject(ToastService);
   nfService = inject(NotaFiscalService);
   produtoService = inject(ProdutoService);
   fornecedorService = inject(FornecedorService);
@@ -147,7 +150,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
       status: this.filterStatus || undefined
     }).subscribe({
       next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindo.set(false); },
-      error: () => { alert('Erro ao gerar PDF.'); this.imprimindo.set(false); }
+      error: err => { this.toast.erroApi(err, 'Erro ao gerar PDF.'); this.imprimindo.set(false); }
     });
   }
 
@@ -155,7 +158,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
     this.imprimindoNf.set(nf.id);
     this.impressaoService.gerarPdf(`/v1/impressoes/nota-fiscal/${nf.id}`).subscribe({
       next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindoNf.set(null); },
-      error: () => { alert('Erro ao gerar PDF.'); this.imprimindoNf.set(null); }
+      error: err => { this.toast.erroApi(err, 'Erro ao gerar PDF.'); this.imprimindoNf.set(null); }
     });
   }
 
@@ -214,7 +217,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
         this.getResolucaoModal().show();
       },
       error: (err) => {
-        this.importMsg.set(err.error?.message ?? 'Erro ao analisar NF-e.');
+        this.importMsg.set(textoDoErro(lerErroApi(err, 'Erro ao analisar NF-e.'), 'Erro ao analisar NF-e.'));
         this.importando.set(false);
         input.value = '';
       }
@@ -298,7 +301,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
         this.produtoService.getAll().subscribe();
       },
       error: (err) => {
-        this.importacaoErro.set(err.error?.message ?? 'Erro ao importar NF-e.');
+        this.importacaoErro.set(textoDoErro(lerErroApi(err, 'Erro ao importar NF-e.'), 'Erro ao importar NF-e.'));
         this.importando.set(false);
       }
     });
@@ -373,7 +376,7 @@ export class NotasFiscaisComponent implements OnInit, OnDestroy {
     this.nfService.create(req).subscribe({
       next: () => { this.saving.set(false); this.getModal().hide(); this.buscarNotas(1); },
       error: (err) => {
-        this.saveError.set(err.error?.message ?? 'Erro ao salvar nota fiscal.');
+        this.saveError.set(textoDoErro(lerErroApi(err, 'Erro ao salvar nota fiscal.'), 'Erro ao salvar nota fiscal.'));
         this.saving.set(false);
       }
     });
