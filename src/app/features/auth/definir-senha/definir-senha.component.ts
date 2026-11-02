@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -15,7 +16,10 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
   return group.get('novaSenha')?.value === group.get('confirmarSenha')?.value ? null : { passwordsMismatch: true };
 }
 
-/** Primeiro acesso com senha provisória: define a senha definitiva (PUT v1/users/me) e segue o fluxo normal. */
+/**
+ * Define a senha (PUT v1/users/me): no primeiro acesso com senha provisória (obrigatório) ou, por escolha do
+ * usuário, como "Alterar minha senha" (ex.: super admin, pelo cabeçalho da Plataforma).
+ */
 @Component({
   selector: 'app-definir-senha',
   standalone: true,
@@ -27,6 +31,7 @@ export class DefinirSenhaComponent {
   private fb = inject(FormBuilder);
   private userService = inject(UserService);
   private router = inject(Router);
+  private location = inject(Location);
   auth = inject(AuthService);
   theme = inject(ThemeService);
 
@@ -67,6 +72,11 @@ export class DefinirSenhaComponent {
         this.loading.set(false);
       }
     });
+  }
+
+  /** Troca voluntária (sem senha provisória): volta para a tela anterior sem salvar. */
+  voltar() {
+    this.location.back();
   }
 
   field(name: string) {

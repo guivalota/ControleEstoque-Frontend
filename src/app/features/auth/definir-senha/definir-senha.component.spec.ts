@@ -15,6 +15,7 @@ describe('DefinirSenhaComponent', () => {
     refreshToken: jasmine.createSpy('refreshToken'),
     encerrarSessaoLocal: jasmine.createSpy('encerrar'),
     marcarTrocaSenhaPendente: jasmine.createSpy('marcar'),
+    precisaTrocarSenha: jasmine.createSpy('precisaTrocarSenha').and.returnValue(true),
     destinoInicial: () => '/dashboard',
     logout: jasmine.createSpy('logout')
   };
@@ -23,6 +24,7 @@ describe('DefinirSenhaComponent', () => {
     authFake.refreshToken.calls.reset();
     authFake.marcarTrocaSenhaPendente.calls.reset();
     authFake.encerrarSessaoLocal.calls.reset();
+    authFake.precisaTrocarSenha.and.returnValue(true);
     TestBed.configureTestingModule({
       imports: [DefinirSenhaComponent],
       providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), { provide: AuthService, useValue: authFake }]
@@ -79,5 +81,20 @@ describe('DefinirSenhaComponent', () => {
     ctrl.expectOne('/api/v1/users/me').flush({}, { status: 401, statusText: 'Unauthorized' });
     expect(authFake.encerrarSessaoLocal).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  it('com senha provisória pendente mostra "Defina sua senha" e não oferece cancelar', () => {
+    fixture.detectChanges();
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Defina sua senha');
+    expect(texto).not.toContain('Cancelar');
+  });
+
+  it('troca voluntária (ex.: super admin) mostra "Alterar minha senha" e permite cancelar', () => {
+    authFake.precisaTrocarSenha.and.returnValue(false);
+    fixture.detectChanges();
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Alterar minha senha');
+    expect(texto).toContain('Cancelar');
   });
 });

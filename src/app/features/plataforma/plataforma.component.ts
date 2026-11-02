@@ -17,6 +17,9 @@ import { ThemeService } from '../../core/services/theme.service';
         <span class="text-muted d-none d-sm-inline">
           <i class="bi bi-person-circle me-1"></i>{{ auth.currentUser()?.nome }}
         </span>
+        <a class="btn btn-sm btn-outline-secondary" routerLink="/definir-senha">
+          <i class="bi bi-key me-1"></i>Alterar minha senha
+        </a>
         <button type="button" class="btn btn-sm btn-outline-secondary" (click)="theme.toggle()"
                 [attr.aria-label]="theme.isDark() ? 'Usar tema claro' : 'Usar tema escuro'">
           <i class="bi" [class.bi-sun]="theme.isDark()" [class.bi-moon]="!theme.isDark()"></i>
