@@ -52,7 +52,8 @@ describe('SidebarComponent (menu por modulos)', () => {
     expect(tem(el, '/produtos')).toBeFalse();
     expect(tem(el, '/notas-fiscais')).toBeFalse();
     expect(tem(el, '/imobilizado')).toBeTrue();
-    expect(tem(el, '/clientes')).toBeTrue();
+    expect(tem(el, '/clientes')).toBeFalse(); // a API responde 403 ao contador
+    expect(tem(el, '/fornecedores')).toBeTrue(); // ele lê fornecedores (cadastro de bens)
     expect(tem(el, '/usuarios')).toBeFalse();
     expect(tem(el, '/configuracoes')).toBeFalse();
   });

@@ -39,6 +39,9 @@ export class PermissaoService {
   /** Estoque (módulo e telas): o contador não usa. */
   podeUsarEstoque = computed(() => !this.isContador());
 
+  /** Clientes (Core): a API não lista para o contador (403); o menu e a rota o escondem. Fornecedores ele lê (usa no cadastro de bens). */
+  podeUsarClientes = computed(() => !this.isContador());
+
   /** Categorias do Imobilizado (vida útil, residual): admin, contador e operador (legado). */
   imobCanEditCategorias = computed(() => ['admin', 'contador', 'operador'].includes(this.perfil() ?? ''));
 
