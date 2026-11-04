@@ -100,17 +100,22 @@
                   <td class="fw-medium text-end">{{ m.quantidade | qtd }}</td>
                   <td class="text-muted small text-end">R$ {{ (m.valorUnitario ?? 0) | number:'1.2-2' }}</td>
                   <td class="fw-medium text-end">R$ {{ (m.valorTotal ?? 0) | number:'1.2-2' }}</td>
-                  <td class="text-muted small">{{ m.observacao || '—' }}</td>
+                  <td class="text-muted small">
+                    {{ m.observacao || '—' }}
+                    @if (m.origem === 'ordem_producao') {
+                      <div><a [routerLink]="['/producao/ordens', m.origemId]" class="badge text-bg-info text-decoration-none">Produção · ordem #{{ m.origemId }}</a></div>
+                    }
+                  </td>
                   <td class="text-muted small">
                     {{ (m.dataMovimentacao ?? m.criadoEm) | date:'dd/MM/yyyy' }}
                   </td>
                   <td class="text-end pe-3">
-                    @if (permissao.canEdit()) {
+                    @if (permissao.canEdit() && !m.origem) {
                       <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(m)" title="Editar">
                         <i class="bi bi-pencil"></i>
                       </button>
                     }
-                    @if (permissao.canDelete()) {
+                    @if (permissao.canDelete() && !m.origem) {
                       <button class="btn btn-sm btn-outline-danger" (click)="delete(m)" title="Excluir">
                         <i class="bi bi-trash"></i>
                       </button>

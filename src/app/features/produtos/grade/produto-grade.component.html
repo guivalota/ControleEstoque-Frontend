@@ -76,6 +76,7 @@
                   @for (e of g.eixos; track e.id) { <th>{{ e.nome }}</th> }
                   <th class="text-end">Saldo</th>
                   <th class="pe-3">Status</th>
+                  @if (empresa.temModulo('producao')) { <th class="text-end">Etiquetas</th> }
                 </tr>
               </thead>
               <tbody>
@@ -89,11 +90,28 @@
                       @if (v.ativo) { <span class="badge bg-success-subtle text-success">Ativo</span> }
                       @else { <span class="badge bg-secondary-subtle text-secondary">Inativo</span> }
                     </td>
+                    @if (empresa.temModulo('producao')) {
+                      <td class="text-end" style="width: 7rem">
+                        <input class="form-control form-control-sm text-end" type="number" min="0" max="500" step="1" placeholder="cópias"
+                               [attr.aria-label]="'Cópias da etiqueta ' + v.sku" [(ngModel)]="copias[v.produtoId]">
+                      </td>
+                    }
                   </tr>
                 }
               </tbody>
             </table>
           </div>
+          @if (empresa.temModulo('producao')) {
+            <div class="d-flex flex-wrap align-items-center gap-2 p-3 border-top">
+              <select class="form-select form-select-sm w-auto" aria-label="Modelo da etiqueta" [(ngModel)]="modeloEtiqueta">
+                @for (m of modelosEtiqueta; track m.codigo) { <option [value]="m.codigo">{{ m.descricao }}</option> }
+              </select>
+              <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="!temCopias()" (click)="imprimirEtiquetas()">
+                <i class="bi bi-upc-scan me-1"></i>Imprimir etiquetas
+              </button>
+              <span class="small text-secondary">Informe as cópias de cada tamanho.</span>
+            </div>
+          }
         </div>
       </div>
     } @else {

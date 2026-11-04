@@ -34,6 +34,11 @@ export class ProdutosComponent implements OnInit, OnDestroy {
   readonly tipos = TIPOS_ITEM;
   readonly rotuloTipo = rotuloTipoItem;
 
+  /** Só o que se vende tem preço de venda; material, aviamento, embalagem e consumo têm custo (das entradas), não preço. */
+  vendavel(tipo: string | undefined | null) {
+    return !tipo || tipo === 'revenda' || tipo === 'acabado' || tipo === 'semiacabado';
+  }
+
   searchTerm = signal('');
   tipoFiltro = signal<TipoItem | ''>('');
   editingId = signal<number | null>(null);
@@ -43,6 +48,7 @@ export class ProdutosComponent implements OnInit, OnDestroy {
   erroLista = signal('');
   /** Unidade de estoque escolhida no formulário (para o `step` dos campos de quantidade). */
   unidadeEscolhida = signal('un');
+  tipoEscolhido = signal<TipoItem>('revenda');
   /** Mostra os campos de conversão de compra (rolo -> metros). */
   usaConversao = signal(false);
 
@@ -81,6 +87,7 @@ export class ProdutosComponent implements OnInit, OnDestroy {
     this.produtoService.getUnidades().subscribe();
     this.categoriaService.getAll().subscribe();
     this.form.controls.unidadeCodigo.valueChanges.subscribe(v => this.unidadeEscolhida.set(v ?? 'un'));
+    this.form.controls.tipoItem.valueChanges.subscribe(v => this.tipoEscolhido.set(v ?? 'revenda'));
   }
 
   ngOnDestroy() {

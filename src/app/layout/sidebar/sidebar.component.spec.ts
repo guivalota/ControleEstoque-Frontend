@@ -39,6 +39,19 @@ describe('SidebarComponent (menu por modulos)', () => {
     expect(tem(el, '/usuarios')).toBeTrue();
   });
 
+  it('com producao: mostra o grupo Produção; sem o módulo, o grupo não aparece', () => {
+    const el = criar(['estoque', 'producao']);
+    expect(tem(el, '/producao')).toBeTrue();
+    expect(tem(el, '/producao/ordens')).toBeTrue();
+    expect(tem(el, '/producao/faccao')).toBeTrue();
+    expect(tem(el, '/producao/relatorios')).toBeTrue();
+    expect(tem(el, '/manual/producao')).toBeTrue();
+    TestBed.resetTestingModule();
+    const semModulo = criar(['estoque']);
+    expect(tem(semModulo, '/producao')).toBeFalse();
+    expect(tem(semModulo, '/manual/producao')).toBeFalse();
+  });
+
   it('so imobilizado: esconde Estoque, mostra Imobilizado e Core', () => {
     const el = criar(['imobilizado']);
     expect(tem(el, '/produtos')).toBeFalse();

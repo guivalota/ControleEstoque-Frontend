@@ -15,6 +15,9 @@ export interface Movimentacao {
   observacao?: string;
   motivoAjuste?: MotivoAjuste;
   loteId?: number | null;
+  /** Quem gerou o lançamento além do usuário (ex.: `ordem_producao`); sem valor = manual ou nota fiscal. */
+  origem?: string | null;
+  origemId?: number | null;
   criadoEm: string;
   usuarioId?: string;
 }

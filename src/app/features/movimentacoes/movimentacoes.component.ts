@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { Component, inject, OnInit, signal, computed, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { QtdPipe } from '../../core/pipes/qtd.pipe';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -21,7 +22,7 @@ import { lerErroApi, textoDoErro } from '../../core/utils/erros-api';
 @Component({
   selector: 'app-movimentacoes',
   standalone: true,
-  imports: [QtdPipe, ReactiveFormsModule, FormsModule, DatePipe, DecimalPipe, AutocompleteProdutoComponent],
+  imports: [QtdPipe, RouterLink, ReactiveFormsModule, FormsModule, DatePipe, DecimalPipe, AutocompleteProdutoComponent],
   templateUrl: './movimentacoes.component.html'
 })
 export class MovimentacoesComponent implements OnInit, OnDestroy {

@@ -66,6 +66,66 @@ export const routes: Routes = [
     canActivate: [authGuard, contaEmpresaGuard, cargaEmpresaGuard],
     children: [
       {
+        path: 'producao',
+        canActivate: [moduloGuard('producao')],
+        loadComponent: () => import('./features/producao/producao-inicio.component').then(m => m.ProducaoInicioComponent)
+      },
+      {
+        path: 'producao/fichas-tecnicas',
+        canActivate: [moduloGuard('producao')],
+        loadComponent: () => import('./features/producao/fichas-tecnicas/fichas-tecnicas-lista.component').then(m => m.FichasTecnicasListaComponent)
+      },
+      {
+        path: 'producao/relatorios',
+        canActivate: [moduloGuard('producao')],
+        loadComponent: () => import('./features/producao/relatorios/relatorios-producao.component').then(m => m.RelatoriosProducaoComponent)
+      },
+      {
+        path: 'producao/rastreio/lote/:id',
+        canActivate: [moduloGuard('producao')],
+        loadComponent: () => import('./features/producao/rastreio/rastreio-lote.component').then(m => m.RastreioLoteComponent)
+      },
+      {
+        path: 'producao/faccao',
+        canActivate: [moduloGuard('producao')],
+        loadComponent: () => import('./features/producao/faccao/remessas-lista.component').then(m => m.RemessasListaComponent)
+      },
+      {
+        path: 'producao/faccao/nova',
+        canActivate: [moduloGuard('producao')],
+        loadComponent: () => import('./features/producao/faccao/remessa-form.component').then(m => m.RemessaFormComponent)
+      },
+      {
+        path: 'producao/faccao/:id',
+        canActivate: [moduloGuard('producao')],
+        loadComponent: () => import('./features/producao/faccao/remessa-detalhe.component').then(m => m.RemessaDetalheComponent)
+      },
+      {
+        path: 'producao/necessidade-materiais',
+        canActivate: [moduloGuard('producao')],
+        loadComponent: () => import('./features/producao/necessidade/necessidade-materiais.component').then(m => m.NecessidadeMateriaisComponent)
+      },
+      {
+        path: 'producao/ordens',
+        canActivate: [moduloGuard('producao')],
+        loadComponent: () => import('./features/producao/ordens/ordens-lista.component').then(m => m.OrdensListaComponent)
+      },
+      {
+        path: 'producao/ordens/nova',
+        canActivate: [moduloGuard('producao')],
+        loadComponent: () => import('./features/producao/ordens/ordem-form.component').then(m => m.OrdemFormComponent)
+      },
+      {
+        path: 'producao/ordens/:id',
+        canActivate: [moduloGuard('producao')],
+        loadComponent: () => import('./features/producao/ordens/ordem-detalhe.component').then(m => m.OrdemDetalheComponent)
+      },
+      {
+        path: 'producao/fichas-tecnicas/produto/:produtoId',
+        canActivate: [moduloGuard('producao')],
+        loadComponent: () => import('./features/producao/fichas-tecnicas/ficha-tecnica-editor.component').then(m => m.FichaTecnicaEditorComponent)
+      },
+      {
         path: 'dashboard',
         canActivate: [moduloGuard('estoque')],
         loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
@@ -274,6 +334,10 @@ export const routes: Routes = [
       },
       {
         path: 'manual',
+        loadComponent: () => import('./features/manual/manual.component').then(m => m.ManualComponent)
+      },
+      {
+        path: 'manual/:modulo',
         loadComponent: () => import('./features/manual/manual.component').then(m => m.ManualComponent)
       },
       {

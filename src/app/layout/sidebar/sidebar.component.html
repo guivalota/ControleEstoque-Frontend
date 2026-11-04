@@ -60,6 +60,24 @@
         </ul>
       </li>
     }
+    @if (mostrarProducao()) {
+      <li class="nav-item">
+        <button type="button" class="nav-link sidebar-link sidebar-grupo w-100 text-start" (click)="alternar('producao')"
+                [class.ativo]="rotaEm('/producao')" [attr.aria-expanded]="aberto('producao')" aria-controls="sub-producao">
+          <i class="bi bi-scissors me-2"></i>Produção
+          <i class="bi bi-chevron-down ms-auto sidebar-seta" [class.girada]="aberto('producao')"></i>
+        </button>
+        <ul id="sub-producao" class="nav flex-column sidebar-sub" [class.aberto]="aberto('producao')">
+          <li><a class="nav-link sidebar-sublink" routerLink="/producao" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Visão geral</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/producao/fichas-tecnicas" routerLinkActive="active">Fichas técnicas</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/producao/ordens" routerLinkActive="active">Ordens de produção</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/producao/necessidade-materiais" routerLinkActive="active">Necessidade de materiais</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/producao/faccao" routerLinkActive="active">Terceirização</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/producao/relatorios" routerLinkActive="active">Relatórios</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/manual/producao" routerLinkActive="active">Manual da Produção</a></li>
+        </ul>
+      </li>
+    }
     @if (mostrarImobilizado()) {
       <li class="nav-item">
         <button type="button" class="nav-link sidebar-link sidebar-grupo w-100 text-start" (click)="alternar('imob')"

@@ -61,6 +61,9 @@
                   <td class="text-end fw-medium">{{ l.quantidadeAtual | qtd }}</td>
                   <td class="text-muted">{{ fornecedorNome(l.fornecedorId) }}</td>
                   <td class="text-end pe-3 text-nowrap">
+                    @if (empresa.temModulo('producao')) {
+                      <a class="btn btn-sm btn-outline-primary me-1" [routerLink]="['/producao/rastreio/lote', l.id]" title="Rastreio (produção)"><i class="bi bi-diagram-3"></i></a>
+                    }
                     @if (permissao.canEdit()) {
                       <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(l)" title="Editar"><i class="bi bi-pencil"></i></button>
                     }
