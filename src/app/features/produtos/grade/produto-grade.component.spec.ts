@@ -5,6 +5,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { MAX_VARIACOES, ProdutoGradeComponent } from './produto-grade.component';
 import { GradeEixo, GradeProduto } from '../../../core/models/grade.model';
 import { provideAuthFake } from '../../../testing/auth-fake';
+import { EmpresaAtivaService } from '../../../core/services/empresa-ativa.service';
 
 const val = (id: number, eixoId: number, codigo: string, nome = codigo, ativo = true) => ({ id, eixoId, codigo, nome, ordem: id, ativo });
 
@@ -33,7 +34,7 @@ describe('ProdutoGradeComponent', () => {
   let ctrl: HttpTestingController;
   const el = () => fixture.nativeElement as HTMLElement;
 
-  function montar(grade: GradeProduto, role: 'admin' | 'operador' | 'leitura' = 'admin') {
+  function montar(grade: GradeProduto, role: 'admin' | 'operador' | 'leitura' = 'admin', producao = false) {
     TestBed.configureTestingModule({
       imports: [ProdutoGradeComponent],
       providers: [
@@ -42,6 +43,7 @@ describe('ProdutoGradeComponent', () => {
       ]
     });
     ctrl = TestBed.inject(HttpTestingController);
+    spyOn(TestBed.inject(EmpresaAtivaService), 'temModulo').and.callFake(codigo => producao && codigo === 'producao');
     fixture = TestBed.createComponent(ProdutoGradeComponent);
     comp = fixture.componentInstance;
     fixture.detectChanges();
@@ -51,6 +53,29 @@ describe('ProdutoGradeComponent', () => {
   }
 
   afterEach(() => ctrl.verify());
+
+  it('com o módulo Produção: cópias de etiqueta por variação e botão que pede o PDF', () => {
+    montar(COM_GRADE(), 'admin', true);
+    const botao = () => Array.from(el().querySelectorAll('button')).find(b => b.textContent?.includes('Imprimir etiquetas')) as HTMLButtonElement;
+    expect(botao().disabled).toBeTrue();
+
+    comp.copias[100] = 3;
+    comp.copias[101] = 0;
+    fixture.detectChanges();
+    expect(botao().disabled).toBeFalse();
+    comp.imprimirEtiquetas();
+
+    const req = ctrl.expectOne('/api/v1/producao/etiquetas/acabado');
+    expect(req.request.body).toEqual({ modelo: 'rolo-50x30', itens: [{ produtoId: 100, copias: 3 }] });
+    expect(req.request.responseType).toBe('blob');
+    req.flush(new Blob(['%PDF-'], { type: 'application/pdf' }));
+  });
+
+  it('sem o módulo Produção: não oferece etiquetas', () => {
+    montar(COM_GRADE());
+
+    expect(el().textContent).not.toContain('Imprimir etiquetas');
+  });
 
   it('sem grade: explica o que acontece e oferece os eixos', () => {
     montar(SEM_GRADE());

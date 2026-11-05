@@ -26,7 +26,9 @@ ng lint            # ESLint (legacy Estoque code has ~140 pre-existing errors; l
 
 API runs on a local Docker host exposed by **Tailscale Funnel** (temporary hosting; Railway and ngrok are no longer used). Current URL: see `src/environments/environment.prod.ts`.  
 Dev proxy in `proxy.conf.json` forwards `/api/*` → the dev API (strips `/api`, keeps `/v1/...`).  
-`environment.ts` uses `apiUrl: '/api'` (dev via proxy) · `environment.prod.ts` uses the Tailscale Funnel base URL (no `/v1`). If the URL changes, update `environment.prod.ts` and the CSP `connect-src` in `src/index.html` together.  
+`environment.ts` uses `apiUrl: '/api'` (dev via proxy) · `environment.prod.ts` uses the Tailscale Funnel base URL (no `/v1`). Feedback ao usuário: use `ToastService` (`core/services/toast.service.ts`: `sucesso/info/erro/erroApi(err, fallback)`), nunca `alert()` (a regra `no-restricted-globals` do ESLint barra). `confirm()` ainda é usado para confirmações.
+
+The URL has a **single source**: `API_URL` env var (CI: repo variable `vars.API_URL`) or, if absent, `config/api-url.txt`. `npm run build` runs `scripts/gerar-config.mjs` (prebuild), which rewrites `apiUrl` in `environment.prod.ts` and the CSP `connect-src` in `src/index.html` and fails on a non-https/invalid URL. To change it: edit `config/api-url.txt` (or set `API_URL`) and rebuild.  
 Each service appends `/v1/` explicitly: `${environment.apiUrl}/v1/categorias`, etc.
 
 **Test credentials** — veja `.env.local` (não versionado). Endpoint: `POST /v1/auth/login` com body `{ "email": "...", "senha": "..." }`.  
@@ -222,3 +224,14 @@ Movimentações support `PUT /v1/movimentacoes/{id}` and `DELETE /v1/movimentaco
 - All forms use Angular Reactive Forms with `markAllAsTouched()` on invalid submit
 - Services use `map(res => res.items)` to unwrap the paged response, then `tap` into `signal.set(data)`
 - Optional HTTP filters are passed as `HttpParams`, only set when the value is defined
+
+
+### Produção (confecção — E23)
+
+- Rotas `/producao/**` (todas com `moduloGuard('producao')`): painel (`/producao`), `fichas-tecnicas`, `ordens` (`/nova`, `/:id`), `necessidade-materiais`, `faccao` (`/nova?ordemId=`, `/:id`), `relatorios`, `rastreio/lote/:id`. Menu: grupo "Produção" (`podeUsarEstoque`: o contador não vê).
+- Serviços em `core/services` (`ficha-tecnica`, `ordem-producao`, `necessidade-materiais`, `faccao`, `rastreio-lote`, `relatorio-producao`, `etiqueta-acabado`): stateless, devolvem Observables. A ordem embute `app-corte-ordem` e `app-lotes-ordem` (buscam os próprios dados quando a ordem muda).
+- Operações "tudo ou nada" do servidor devolvem `{ registrado|liberada: false, … }` quando falta confirmação (sobreprodução, falta de material): mostre o aviso e reenvie com `confirmar…: true`. Falta de saldo é erro 400 com a mensagem pronta.
+- Downloads (romaneio, relatórios, etiquetas): `responseType: 'blob'` + `pipe(catchError(erroDeBlob))` + `baixarBlob()`; sem o `erroDeBlob` a mensagem do servidor se perde.
+- Specs que renderizam a ordem precisam atender as chamadas dos componentes embutidos (`/cortes`, `/lotes`, `/apontamentos`) antes do `http.verify()`.
+- **Custo e preço (Produção):** apontar mostra "Mão de obra por peça" e "Custos indiretos por peça" já preenchidos com os da ficha (`fichaMaoDeObra/fichaCustosIndiretos` da ordem); vazio = servidor usa os da ficha, 0 = zerado. O retorno da terceirização tem só os indiretos (`fichaCustosIndiretos` da remessa). A ficha embute `app-precificacao-produto` (margem, despesas, preço mínimo sugerido; recarrega quando muda `fichaId`). O cadastro de produto só mostra "Preço de venda" para revenda/acabado/semiacabado (`vendavel()`); material fica com preço 0 e traço na lista.
+- **Manual por módulo:** `/manual` e `/manual/:modulo` (`features/manual`) são abas, uma por módulo, cada uma um Markdown em `public/docs` (`manual-usuario.md` = Estoque/geral, sempre visível; `manual-producao.md` só com o módulo e perfil que usa o Estoque). Módulo novo = um item em `modulos()` no componente + o `.md` + link no submenu (`/manual/<modulo>`). O `[innerHTML]` sanitiza e **remove `id`**, por isso o índice "Ir para" localiza os `h2` pela posição, não por âncora.

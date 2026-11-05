@@ -25,6 +25,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   mostrarImobilizado = computed(() => this.empresa.temModulo('imobilizado'));
   /** Estoque no menu: módulo liberado e perfil que o usa (contador não usa). */
   mostrarEstoque = computed(() => this.empresa.temModulo('estoque') && this.permissao.podeUsarEstoque());
+  /** Produção no menu: módulo liberado e perfil que usa o Estoque (a Produção consome o Estoque). */
+  mostrarProducao = computed(() => this.empresa.temModulo('producao') && this.permissao.podeUsarEstoque());
   private routerSub?: Subscription;
 
   /** URL atual (sem query), para abrir sozinho o grupo da página em que o usuário está. */
@@ -33,7 +35,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private manual = signal<Record<string, boolean>>({});
 
   private static readonly ROTAS_GRUPO: Record<string, string> = {
-    estoque: '/dashboard,/produtos,/categorias,/movimentacoes,/lotes,/pedidos-compra,/notas-fiscais,/conferencia',
+    estoque: '/dashboard,/produtos,/categorias,/grade,/movimentacoes,/lotes,/pedidos-compra,/notas-fiscais,/conferencia',
+    producao: '/producao',
     imob: '/imobilizado',
     'imob-cad': '/imobilizado/locais,/imobilizado/categorias,/imobilizado/grupos,/imobilizado/departamentos,/imobilizado/responsaveis',
     'imob-reav': '/imobilizado/reavaliacao'

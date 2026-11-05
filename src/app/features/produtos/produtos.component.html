@@ -56,7 +56,7 @@
                 <th>Categoria</th>
                 <th>Tipo</th>
                 <th>Un.</th>
-                <th class="text-end">Preço</th>
+                <th class="text-end" title="Preço de venda (materiais não têm: o custo vem das entradas)">Preço de venda</th>
                 <th class="text-center">Est. Mín.</th>
                 <th>Status</th>
                 <th class="text-end pe-3">Ações</th>
@@ -74,7 +74,7 @@
                   <td class="text-muted">{{ p.categoriaNome }}</td>
                   <td class="text-muted small">{{ rotuloTipo(p.tipoItem ?? 'revenda') }}</td>
                   <td class="text-muted small">{{ p.unidadeCodigo ?? 'un' }}</td>
-                  <td class="text-end">R$ {{ p.precoUnitario | number:'1.2-2' }}</td>
+                  <td class="text-end">@if (vendavel(p.tipoItem)) { R$ {{ p.precoUnitario | number:'1.2-2' }} } @else { <span class="text-muted" title="O custo deste item vem das entradas de estoque">—</span> }</td>
                   <td class="text-center text-muted small">
                     @if (p.estoqueMinimo !== null && p.estoqueMinimo !== undefined) { {{ p.estoqueMinimo | qtd }} }
                     @else { — }
@@ -207,13 +207,20 @@
               </select>
               <div class="invalid-feedback">Selecione uma categoria.</div>
             </div>
-            <div class="col-md-4">
-              <label class="form-label fw-medium" for="prodPreco">Preço Unitário (R$) <span class="text-danger">*</span></label>
-              <input id="prodPreco" type="number" class="form-control" formControlName="precoUnitario"
-                min="0" step="0.01"
-                [class.is-invalid]="f('precoUnitario').invalid && f('precoUnitario').touched" />
-              <div class="invalid-feedback">Preço deve ser ≥ 0.</div>
-            </div>
+            @if (vendavel(tipoEscolhido())) {
+              <div class="col-md-4">
+                <label class="form-label fw-medium" for="prodPreco">Preço de venda (R$)</label>
+                <input id="prodPreco" type="number" class="form-control" formControlName="precoUnitario"
+                  min="0" step="0.01"
+                  [class.is-invalid]="f('precoUnitario').invalid && f('precoUnitario').touched" />
+                <div class="invalid-feedback">Preço deve ser ≥ 0.</div>
+                <div class="form-text">Referência para vender; o custo vem das entradas de estoque.</div>
+              </div>
+            } @else {
+              <div class="col-md-4">
+                <div class="form-text pt-4">Este tipo de item não tem preço de venda: o custo vem das entradas de estoque.</div>
+              </div>
+            }
             <div class="col-md-4">
               <label class="form-label fw-medium" for="prodMinimo">Estoque Mínimo</label>
               <input id="prodMinimo" type="number" class="form-control" formControlName="estoqueMinimo" min="0"

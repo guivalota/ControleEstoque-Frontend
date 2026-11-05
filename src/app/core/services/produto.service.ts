@@ -30,6 +30,13 @@ export class ProdutoService {
     );
   }
 
+  /** Busca no servidor por trecho do nome ou do SKU (sem carregar o catálogo inteiro). */
+  buscar(busca: string, pageSize = 20) {
+    return this.http.get<PagedResult<Produto>>(this.url, {
+      params: new HttpParams().set('page', 1).set('pageSize', pageSize).set('busca', busca)
+    });
+  }
+
   /** Catálogo de unidades (un, m, kg…) e as casas decimais de cada uma. */
   getUnidades() {
     return this.http.get<UnidadeMedida[]>(`${this.url}/unidades-medida`).pipe(tap(u => this.unidades.set(u)));

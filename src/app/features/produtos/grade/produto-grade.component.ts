@@ -1,10 +1,13 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { EmpresaAtivaService } from '../../../core/services/empresa-ativa.service';
+import { EtiquetaAcabadoService, MODELOS_ETIQUETA_ACABADO } from '../../../core/services/etiqueta-acabado.service';
 import { GradeService } from '../../../core/services/grade.service';
 import { PermissaoService } from '../../../core/services/permissao.service';
 import { GradeEixo, GradeProduto, VariacaoGrade } from '../../../core/models/grade.model';
 import { QtdPipe } from '../../../core/pipes/qtd.pipe';
+import { baixarBlob } from '../../../core/utils/download';
 import { lerErroApi, textoDoErro } from '../../../core/utils/erros-api';
 
 /** Limite de variações por geração (igual ao do servidor). */
@@ -23,7 +26,14 @@ export const MAX_VARIACOES = 200;
 export class ProdutoGradeComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private service = inject(GradeService);
+  private etiquetas = inject(EtiquetaAcabadoService);
   permissao = inject(PermissaoService);
+  empresa = inject(EmpresaAtivaService);
+
+  /** Cópias de etiqueta por variação (produtoId -> cópias); só com o módulo Produção. */
+  copias: Record<number, number | null> = {};
+  readonly modelosEtiqueta = MODELOS_ETIQUETA_ACABADO;
+  modeloEtiqueta = MODELOS_ETIQUETA_ACABADO[0].codigo;
 
   produtoId = 0;
   carregando = signal(true);
@@ -74,6 +84,20 @@ export class ProdutoGradeComponent implements OnInit {
         this.erro.set(textoDoErro(lerErroApi(err, 'Não foi possível carregar a grade.'), 'Não foi possível carregar a grade.'));
         this.carregando.set(false);
       }
+    });
+  }
+
+  temCopias() {
+    return Object.values(this.copias).some(c => Number(c) > 0);
+  }
+
+  imprimirEtiquetas() {
+    const itens = Object.entries(this.copias).filter(([, c]) => Number(c) > 0).map(([id, c]) => ({ produtoId: Number(id), copias: Number(c) }));
+    if (itens.length === 0) return;
+    this.erro.set('');
+    this.etiquetas.gerar(itens, this.modeloEtiqueta).subscribe({
+      next: blob => baixarBlob(blob, 'etiquetas-acabado.pdf'),
+      error: err => this.erro.set(textoDoErro(lerErroApi(err, 'Não foi possível gerar as etiquetas.'), 'Não foi possível gerar as etiquetas.'))
     });
   }
 

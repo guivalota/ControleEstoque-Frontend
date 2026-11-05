@@ -57,6 +57,16 @@ describe('ProdutosComponent (tipo, unidade e conversão)', () => {
     expect(linhas[1]).toContain('m');
   });
 
+  it('a lista mostra o preço de venda só do que se vende; material mostra traço', () => {
+    montar([prod(1, { precoUnitario: 59.9 }), prod(2, { tipoItem: 'materia_prima', unidadeCodigo: 'm', precoUnitario: 18 }), prod(3, { tipoItem: 'acabado', precoUnitario: 120 })]);
+
+    const linhas = Array.from(el().querySelectorAll('tbody tr')).map(tr => (tr.textContent ?? '').replace(/s+/g, ' '));
+    expect(linhas[0]).toMatch(/59[.,]90/);
+    expect(linhas[1]).not.toMatch(/18[.,]00/);
+    expect(linhas[2]).toMatch(/120[.,]00/);
+    expect(el().querySelector('thead')!.textContent).toContain('Preço de venda');
+  });
+
   it('filtra por tipo', () => {
     montar([prod(1), prod(2, { tipoItem: 'materia_prima' }), prod(3, { tipoItem: 'materia_prima' })]);
 
@@ -93,6 +103,31 @@ describe('ProdutosComponent (tipo, unidade e conversão)', () => {
       expect(comp.form.value.unidadeCodigo).toBe('un');
       expect(comp.stepQuantidade()).toBe('1');
       expect(comp.usaConversao()).toBeFalse();
+    });
+
+    it('o campo de preço de venda só aparece para revenda, acabado e semiacabado', () => {
+      comp.openCreate();
+      fixture.detectChanges();
+      expect(el().querySelector('#prodPreco')).not.toBeNull();
+
+      for (const tipo of ['materia_prima', 'aviamento', 'embalagem', 'consumo'] as const) {
+        comp.form.patchValue({ tipoItem: tipo });
+        fixture.detectChanges();
+        expect(el().querySelector('#prodPreco')).withContext(tipo).toBeNull();
+      }
+      for (const tipo of ['acabado', 'semiacabado', 'revenda'] as const) {
+        comp.form.patchValue({ tipoItem: tipo });
+        fixture.detectChanges();
+        expect(el().querySelector('#prodPreco')).withContext(tipo).not.toBeNull();
+      }
+    });
+
+    it('material novo é criado com preço 0, sem exigir preço', () => {
+      comp.openCreate();
+      comp.form.patchValue({ tipoItem: 'materia_prima', unidadeCodigo: 'm', sku: 'TEC', nome: 'Malha', categoriaId: 1 });
+
+      expect(comp.form.valid).toBeTrue();
+      expect((comp.montarPayload(false) as { precoUnitario: number }).precoUnitario).toBe(0);
     });
 
     it('trocar para metro libera 3 casas decimais nos campos de quantidade', () => {

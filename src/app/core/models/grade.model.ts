@@ -18,6 +18,12 @@ export interface GradeEixo {
 
 export interface CreateGradeValorRequest { codigo: string; nome: string; ordem?: number; }
 
+export interface CreateGradeEixoRequest { codigo: string; nome: string; ordem?: number; }
+
+/** Campos omitidos não mudam. O código nunca muda (as variações já geradas usam o código no SKU). */
+export interface UpdateGradeEixoRequest { nome?: string; ordem?: number; ativo?: boolean; }
+export interface UpdateGradeValorRequest { nome?: string; ordem?: number; ativo?: boolean; }
+
 export interface GradeEixoSelecao { eixoId: number; valorIds: number[]; }
 
 export interface GerarGradeRequest { eixos: GradeEixoSelecao[]; }

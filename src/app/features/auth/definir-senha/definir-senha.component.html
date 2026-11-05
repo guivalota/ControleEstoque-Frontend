@@ -15,8 +15,13 @@
         <div class="login-icon mb-3">
           <i class="bi bi-shield-lock-fill text-primary" style="font-size: 2.5rem;"></i>
         </div>
-        <h5 class="fw-bold mb-0">Defina sua senha</h5>
-        <p class="text-muted small">Sua senha atual é provisória. Crie uma senha definitiva para continuar.</p>
+        @if (auth.precisaTrocarSenha()) {
+          <h5 class="fw-bold mb-0">Defina sua senha</h5>
+          <p class="text-muted small">Sua senha atual é provisória. Crie uma senha definitiva para continuar.</p>
+        } @else {
+          <h5 class="fw-bold mb-0">Alterar minha senha</h5>
+          <p class="text-muted small">Ao salvar, suas sessões serão encerradas e você entrará de novo com a senha nova.</p>
+        }
       </div>
 
       <form [formGroup]="form" (ngSubmit)="submit()">
@@ -78,6 +83,11 @@
         </button>
 
         <div class="text-center mt-3">
+          @if (!auth.precisaTrocarSenha()) {
+            <button type="button" class="btn btn-link btn-sm text-muted text-decoration-none" (click)="voltar()">
+              <i class="bi bi-arrow-left me-1"></i>Cancelar
+            </button>
+          }
           <button type="button" class="btn btn-link btn-sm text-muted text-decoration-none" (click)="auth.logout()">
             <i class="bi bi-box-arrow-left me-1"></i>Sair
           </button>

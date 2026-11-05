@@ -7,6 +7,7 @@ import { ConferenciaService } from '../../../core/services/conferencia.service';
 import { CategoriaService } from '../../../core/services/categoria.service';
 import { ImpressaoService } from '../../../core/services/impressao.service';
 import { GiroEstoqueResponse } from '../../../core/models/conferencia.model';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-giro-estoque',
@@ -16,6 +17,7 @@ import { GiroEstoqueResponse } from '../../../core/models/conferencia.model';
 })
 export class GiroEstoqueComponent implements OnInit {
   private conferenciaService = inject(ConferenciaService);
+  private toast = inject(ToastService);
   private categoriaService = inject(CategoriaService);
   private impressaoService = inject(ImpressaoService);
 
@@ -83,7 +85,7 @@ export class GiroEstoqueComponent implements OnInit {
     }).pipe(finalize(() => this.exportando.set(false)))
       .subscribe({
         next: blob => this.impressaoService.baixarArquivo(blob, 'giro-estoque.csv'),
-        error: () => alert('Erro ao exportar CSV.')
+        error: err => this.toast.erroApi(err, 'Erro ao exportar CSV.')
       });
   }
 

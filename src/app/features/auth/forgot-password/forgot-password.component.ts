@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ThemeService } from '../../../core/services/theme.service';
+import { lerErroApi, textoDoErro } from '../../../core/utils/erros-api';
 
 @Component({
   selector: 'app-forgot-password',
@@ -35,7 +36,7 @@ export class ForgotPasswordComponent {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(err.error?.message ?? 'Não foi possível processar a solicitação.');
+        this.error.set(textoDoErro(lerErroApi(err, 'Não foi possível processar a solicitação.'), 'Não foi possível processar a solicitação.'));
         this.loading.set(false);
       }
     });

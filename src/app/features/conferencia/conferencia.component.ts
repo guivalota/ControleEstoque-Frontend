@@ -13,6 +13,8 @@ import { AlertaService } from '../../core/services/alerta.service';
 import { PermissaoService } from '../../core/services/permissao.service';
 import { ConferenciaResult } from '../../core/models/conferencia.model';
 import { Movimentacao, PrecoMedioMensal } from '../../core/models/movimentacao.model';
+import { ToastService } from '../../core/services/toast.service';
+import { lerErroApi, textoDoErro } from '../../core/utils/erros-api';
 
 @Component({
   selector: 'app-conferencia',
@@ -23,6 +25,7 @@ import { Movimentacao, PrecoMedioMensal } from '../../core/models/movimentacao.m
 })
 export class ConferenciaComponent implements OnInit {
   private conferenciaService = inject(ConferenciaService);
+  private toast = inject(ToastService);
   private impressaoService = inject(ImpressaoService);
   imprimindo = signal(false);
   exportando = signal(false);
@@ -157,7 +160,7 @@ export class ConferenciaComponent implements OnInit {
     }).subscribe({
       next: res => { this.resultado.set(res); this.loading.set(false); },
       error: err => {
-        this.erro.set(err.error?.message ?? 'Erro ao conferir produto.');
+        this.erro.set(textoDoErro(lerErroApi(err, 'Erro ao conferir produto.'), 'Erro ao conferir produto.'));
         this.loading.set(false);
       }
     });
@@ -194,7 +197,7 @@ export class ConferenciaComponent implements OnInit {
       IncluirConsumoInterno: this.filterGeralIncluirConsumoInterno() || undefined
     }).subscribe({
       next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindo.set(false); },
-      error: () => { alert('Erro ao gerar relatório.'); this.imprimindo.set(false); }
+      error: err => { this.toast.erroApi(err, 'Erro ao gerar relatório.'); this.imprimindo.set(false); }
     });
   }
 
@@ -205,14 +208,14 @@ export class ConferenciaComponent implements OnInit {
       next: res => {
         this.enviandoAlerta.set(false);
         if (res.emailEnviado) {
-          alert(`Alerta enviado — ${res.totalAbaixoDoMinimo} produto(s) abaixo do mínimo`);
+          this.toast.sucesso(`Alerta enviado — ${res.totalAbaixoDoMinimo} produto(s) abaixo do mínimo`);
         } else {
-          alert('Nenhum produto abaixo do mínimo. E-mail não enviado.');
+          this.toast.info('Nenhum produto abaixo do mínimo. E-mail não enviado.');
         }
       },
-      error: () => {
+      error: err => {
         this.enviandoAlerta.set(false);
-        alert('Erro ao enviar alerta de estoque baixo.');
+        this.toast.erroApi(err, 'Erro ao enviar alerta de estoque baixo.');
       }
     });
   }
@@ -228,7 +231,7 @@ export class ConferenciaComponent implements OnInit {
       IncluirConsumoInterno: this.filterGeralIncluirConsumoInterno() || undefined
     }).subscribe({
       next: blob => { this.impressaoService.baixarArquivo(blob, 'conferencia.csv'); this.exportando.set(false); },
-      error: () => { alert('Erro ao exportar CSV.'); this.exportando.set(false); }
+      error: err => { this.toast.erroApi(err, 'Erro ao exportar CSV.'); this.exportando.set(false); }
     });
   }
 

@@ -1,8 +1,21 @@
 <div>
-  <div class="d-flex align-items-center gap-2 mb-4">
+  <div class="d-flex align-items-center gap-2 mb-3">
     <i class="bi bi-book fs-4 text-primary"></i>
     <h5 class="fw-bold mb-0">Manual do Usuário</h5>
   </div>
+
+  @if (modulos().length > 1) {
+    <ul class="nav nav-tabs mb-3" aria-label="Módulos do manual">
+      @for (m of modulos(); track m.chave) {
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="m.chave === ativo().chave" [attr.aria-current]="m.chave === ativo().chave ? 'page' : null"
+             [routerLink]="['/manual', m.chave]">
+            <i class="bi {{ m.icone }} me-1"></i>{{ m.titulo }}
+          </a>
+        </li>
+      }
+    </ul>
+  }
 
   @if (loading()) {
     <div class="text-center py-5 text-muted">
@@ -13,8 +26,18 @@
       <i class="bi bi-exclamation-triangle me-2"></i>Não foi possível carregar o manual.
     </div>
   } @else {
+    @if (secoes().length > 3) {
+      <nav class="card border-0 shadow-sm mb-3" aria-label="Seções do manual">
+        <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center gap-2">
+          <span class="text-muted small me-1">Ir para:</span>
+          @for (s of secoes(); track $index) {
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="irPara($index)">{{ s.titulo }}</button>
+          }
+        </div>
+      </nav>
+    }
     <div class="card border-0 shadow-sm">
-      <div class="card-body p-4 p-lg-5 manual-content" [innerHTML]="conteudo()"></div>
+      <div class="card-body p-4 p-lg-5 manual-content" #texto [innerHTML]="conteudo()"></div>
     </div>
   }
 </div>

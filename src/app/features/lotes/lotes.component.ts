@@ -1,5 +1,7 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { QtdPipe } from '../../core/pipes/qtd.pipe';
+import { EmpresaAtivaService } from '../../core/services/empresa-ativa.service';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Modal } from 'bootstrap';
 import { LoteService } from '../../core/services/lote.service';
@@ -17,7 +19,7 @@ const DIAS_ALERTA = 30;
 @Component({
   selector: 'app-lotes',
   standalone: true,
-  imports: [QtdPipe, ReactiveFormsModule],
+  imports: [QtdPipe, RouterLink, ReactiveFormsModule],
   templateUrl: './lotes.component.html'
 })
 export class LotesComponent implements OnInit, OnDestroy {
@@ -26,6 +28,7 @@ export class LotesComponent implements OnInit, OnDestroy {
   private produtoService = inject(ProdutoService);
   private fornecedorService = inject(FornecedorService);
   permissao = inject(PermissaoService);
+  empresa = inject(EmpresaAtivaService);
 
   @ViewChild('modalEl') modalEl!: ElementRef;
   private modal!: Modal;

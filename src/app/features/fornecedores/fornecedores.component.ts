@@ -8,6 +8,8 @@ import { PermissaoService } from '../../core/services/permissao.service';
 import { CepService } from '../../core/services/cep.service';
 import { cnpjValidator, cnpjValido, mascararCnpj, normalizarCnpj } from '../../core/utils/cnpj';
 import { Fornecedor, CreateFornecedorRequest, UpdateFornecedorRequest } from '../../core/models/fornecedor.model';
+import { ToastService } from '../../core/services/toast.service';
+import { lerErroApi, textoDoErro } from '../../core/utils/erros-api';
 
 @Component({
   selector: 'app-fornecedores',
@@ -17,6 +19,7 @@ import { Fornecedor, CreateFornecedorRequest, UpdateFornecedorRequest } from '..
 })
 export class FornecedoresComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
+  private toast = inject(ToastService);
   private cepService = inject(CepService);
   private fornecedorService = inject(FornecedorService);
   private impressaoService = inject(ImpressaoService);
@@ -96,7 +99,7 @@ export class FornecedoresComponent implements OnInit, OnDestroy {
       ativo: this.filterAtivo !== '' ? this.filterAtivo : undefined
     }).subscribe({
       next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindo.set(false); },
-      error: () => { alert('Erro ao gerar PDF.'); this.imprimindo.set(false); }
+      error: err => { this.toast.erroApi(err, 'Erro ao gerar PDF.'); this.imprimindo.set(false); }
     });
   }
 
@@ -196,7 +199,7 @@ export class FornecedoresComponent implements OnInit, OnDestroy {
     op.subscribe({
       next: () => { this.saving.set(false); this.getModal().hide(); this.buscar(this.page()); },
       error: (err) => {
-        this.saveError.set(err.error?.message ?? 'Erro ao salvar fornecedor.');
+        this.saveError.set(textoDoErro(lerErroApi(err, 'Erro ao salvar fornecedor.'), 'Erro ao salvar fornecedor.'));
         this.saving.set(false);
       }
     });

@@ -2,7 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import {
-  CreateGradeValorRequest, GerarGradeRequest, GerarGradeResponse, GradeEixo, GradeProduto, GradeValor
+  CreateGradeEixoRequest, CreateGradeValorRequest, GerarGradeRequest, GerarGradeResponse, GradeEixo, GradeProduto, GradeValor,
+  UpdateGradeEixoRequest, UpdateGradeValorRequest
 } from '../models/grade.model';
 
 @Injectable({ providedIn: 'root' })
@@ -14,8 +15,20 @@ export class GradeService {
     return this.http.get<GradeEixo[]>(`${this.base}/grade/eixos`);
   }
 
+  criarEixo(req: CreateGradeEixoRequest) {
+    return this.http.post<GradeEixo>(`${this.base}/grade/eixos`, req);
+  }
+
+  atualizarEixo(eixoId: number, req: UpdateGradeEixoRequest) {
+    return this.http.put<GradeEixo>(`${this.base}/grade/eixos/${eixoId}`, req);
+  }
+
   criarValor(eixoId: number, req: CreateGradeValorRequest) {
     return this.http.post<GradeValor>(`${this.base}/grade/eixos/${eixoId}/valores`, req);
+  }
+
+  atualizarValor(valorId: number, req: UpdateGradeValorRequest) {
+    return this.http.put<GradeValor>(`${this.base}/grade/valores/${valorId}`, req);
   }
 
   obter(produtoId: number) {

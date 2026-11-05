@@ -14,6 +14,7 @@ module.exports = tseslint.config(
     ],
     processor: angular.processInlineTemplates,
     rules: {
+      "no-restricted-globals": ["error", { name: "alert", message: "Use ToastService (core/services/toast.service.ts)." }],
       "@angular-eslint/directive-selector": [
         "error",
         {

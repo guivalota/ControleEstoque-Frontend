@@ -62,7 +62,7 @@ Cada produto tem:
 | **SKU** | Código único do produto — não pode haver dois produtos com o mesmo SKU |
 | **Nome / Descrição** | Identificação do item |
 | **Categoria** | Vínculo obrigatório com uma categoria existente |
-| **Preço unitário** | Valor de referência (não pode ser negativo) |
+| **Preço de venda** | Valor de referência para vender (não pode ser negativo). Só existe para revenda, produto acabado e semiacabado: material, aviamento, embalagem e consumo não têm preço, pois o custo vem das entradas |
 | **Estoque mínimo** | Quantidade abaixo da qual o produto é considerado em alerta |
 | **Ponto de reposição** | Quantidade que dispara a sugestão de "comprar mais" |
 | **Faz parte do estoque** | Permite cadastrar itens que não entram no cálculo de saldo (ex.: serviços) |
@@ -215,7 +215,7 @@ Classifica os produtos em três grupos com base no **valor total movimentado** n
 Resumo executivo com os principais indicadores:
 
 - Total de produtos cadastrados
-- Valor total em estoque
+- Valor total em estoque (saldo × custo médio ponderado das entradas; produto sem nenhuma entrada com valor conta zero)
 - Quantidade de produtos abaixo do estoque mínimo
 - Quantidade de produtos com reposição pendente
 - Movimentações realizadas no dia

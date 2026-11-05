@@ -11,6 +11,8 @@ import { UsuarioEmpresaService } from '../../../core/services/usuario-empresa.se
 import { UsuarioEmpresa } from '../../../core/models/usuario-empresa.model';
 import { PermissaoService } from '../../../core/services/permissao.service';
 import { PedidoCompra, PedidoCompraItem } from '../../../core/models/pedido-compra.model';
+import { ToastService } from '../../../core/services/toast.service';
+import { lerErroApi, textoDoErro } from '../../../core/utils/erros-api';
 
 @Component({
   selector: 'app-pedido-detalhe',
@@ -20,6 +22,7 @@ import { PedidoCompra, PedidoCompraItem } from '../../../core/models/pedido-comp
 })
 export class PedidoDetalheComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
+  private toast = inject(ToastService);
   private pedidoService = inject(PedidoCompraService);
   private impressaoService = inject(ImpressaoService);
   private route = inject(ActivatedRoute);
@@ -109,7 +112,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
       observacao: val.observacao || null
     }).subscribe({
       next: () => { this.saving.set(false); this.getEditModal().hide(); this.carregar(); },
-      error: (err) => { this.saveError.set(err.error?.message ?? 'Erro ao atualizar pedido.'); this.saving.set(false); }
+      error: (err) => { this.saveError.set(textoDoErro(lerErroApi(err, 'Erro ao atualizar pedido.'), 'Erro ao atualizar pedido.')); this.saving.set(false); }
     });
   }
 
@@ -130,7 +133,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
       observacao: val.observacao || null
     }).subscribe({
       next: () => { this.saving.set(false); this.getAddItemModal().hide(); this.carregar(); },
-      error: (err) => { this.saveError.set(err.error?.message ?? 'Erro ao adicionar item.'); this.saving.set(false); }
+      error: (err) => { this.saveError.set(textoDoErro(lerErroApi(err, 'Erro ao adicionar item.'), 'Erro ao adicionar item.')); this.saving.set(false); }
     });
   }
 
@@ -138,7 +141,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
     if (!confirm(`Remover "${item.produtoNome}" do pedido?`)) return;
     this.pedidoService.removeItem(this.pedidoId, item.id).subscribe({
       next: () => this.carregar(),
-      error: (err) => alert(err.error?.message ?? 'Erro ao remover item.')
+      error: err => this.toast.erroApi(err, 'Erro ao remover item.')
     });
   }
 
@@ -146,7 +149,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
     if (!confirm('Cancelar este pedido? Esta ação não pode ser desfeita.')) return;
     this.pedidoService.cancel(this.pedidoId).subscribe({
       next: () => this.carregar(),
-      error: (err) => alert(err.error?.message ?? 'Erro ao cancelar pedido.')
+      error: err => this.toast.erroApi(err, 'Erro ao cancelar pedido.')
     });
   }
 
@@ -173,7 +176,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
     this.impressaoService.imprimirPedido(this.pedidoId).subscribe({
       next: blob => { this.impressaoService.abrirPdf(blob); this.imprimindo.set(false); },
       error: err => {
-        this.impressaoErro.set(err.error?.message ?? 'Erro ao gerar PDF.');
+        this.impressaoErro.set(textoDoErro(lerErroApi(err, 'Erro ao gerar PDF.'), 'Erro ao gerar PDF.'));
         this.imprimindo.set(false);
       }
     });
