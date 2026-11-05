@@ -6,6 +6,9 @@ import { PermissaoService } from '../../core/services/permissao.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { UserService } from '../../core/services/user.service';
 import { lerErroApi } from '../../core/utils/erros-api';
+import { Permissao } from '../../core/models/permissoes';
+import { DESCRICOES_PERMISSOES } from '../../core/models/permissoes-descricoes';
+import { ROTULO_MODULO } from '../../core/models/perfil-acesso.model';
 import { Modal } from 'bootstrap';
 
 function senhasIguais(group: AbstractControl) {
@@ -25,6 +28,21 @@ export class TopbarComponent implements OnDestroy {
   auth = inject(AuthService);
   empresa = inject(EmpresaAtivaService);
   permissao = inject(PermissaoService);
+
+  /** Ações que o perfil permite, em português e por módulo (só aqui e no editor de perfis os nomes aparecem). */
+  meuAcesso = computed(() => {
+    const conjunto = this.permissao.permissoes();
+    if (!conjunto || conjunto.size === 0) return [];
+    const grupos = new Map<string, string[]>();
+    for (const codigo of [...conjunto].sort()) {
+      const modulo = codigo.split('.')[0];
+      const lista = grupos.get(modulo) ?? [];
+      lista.push(DESCRICOES_PERMISSOES[codigo as Permissao] ?? codigo);
+      grupos.set(modulo, lista);
+    }
+    return [...grupos].map(([modulo, itens]) => ({ modulo, rotulo: ROTULO_MODULO[modulo] ?? modulo, itens }));
+  });
+  totalAcessos = computed(() => this.permissao.permissoes()?.size ?? 0);
   theme = inject(ThemeService);
 
   /** Selo: perfil efetivo na empresa ativa (superadmin: role global). Sem empresa ativa não mostra selo. */

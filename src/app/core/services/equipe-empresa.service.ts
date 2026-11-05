@@ -23,8 +23,15 @@ export class EquipeEmpresaService {
     return this.http.post<EquipeSenhaProvisoria>(this.url, req);
   }
 
-  alterarPerfil(usuarioId: string, perfil: PerfilEquipe) {
-    return this.http.put<void>(`${this.url}/${usuarioId}/perfil`, { perfil });
+  /** Texto legado (`admin`…) ou, com número, o id do perfil de acesso da empresa. */
+  alterarPerfil(usuarioId: string, perfil: PerfilEquipe | number) {
+    const corpo = typeof perfil === 'number' ? { perfilId: perfil } : { perfil };
+    return this.http.put<void>(`${this.url}/${usuarioId}/perfil`, corpo);
+  }
+
+  /** Módulos do usuário (nulo = todos os da empresa); só concede o que o próprio ator acessa. */
+  definirModulos(usuarioId: string, modulos: string[] | null) {
+    return this.http.put<void>(`${this.url}/${usuarioId}/modulos`, { modulos });
   }
 
   redefinirSenha(usuarioId: string) {
