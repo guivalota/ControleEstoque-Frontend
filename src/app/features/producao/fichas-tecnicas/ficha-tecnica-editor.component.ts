@@ -41,7 +41,7 @@ const TIPOS_MATERIAL: TipoItem[] = ['materia_prima', 'aviamento', 'embalagem', '
       <p class="text-secondary small">
         {{ produto()!.sku }} ·
         {{ vigente() ? 'versão vigente v' + vigente()!.versao : 'ainda sem ficha' }}
-        @if (vigente() && !permissao.canEdit()) { · somente consulta }
+        @if (vigente() && !permissao.pode('producao.fichas-tecnicas.criar')) { · somente consulta }
       </p>
     }
 
@@ -50,7 +50,7 @@ const TIPOS_MATERIAL: TipoItem[] = ['materia_prima', 'aviamento', 'embalagem', '
     @if (carregando()) {
       <p class="text-secondary">Carregando…</p>
     } @else {
-      @if (permissao.canEdit()) {
+      @if (permissao.pode('producao.fichas-tecnicas.criar')) {
         <div class="position-relative mb-3">
           <input class="form-control" type="search" aria-label="Adicionar material"
                  placeholder="Adicionar material: busque por SKU ou nome" [(ngModel)]="buscaMaterial" (ngModelChange)="buscarMaterial()">
@@ -84,18 +84,18 @@ const TIPOS_MATERIAL: TipoItem[] = ['materia_prima', 'aviamento', 'embalagem', '
                   <td>{{ l.rotulo }} <span class="text-secondary">({{ l.unidade }})</span></td>
                   @if (temVariacoes()) {
                     <td>
-                      <select class="form-select form-select-sm" [(ngModel)]="l.variacaoId" [disabled]="!permissao.canEdit()" aria-label="Variação">
+                      <select class="form-select form-select-sm" [(ngModel)]="l.variacaoId" [disabled]="!permissao.pode('producao.fichas-tecnicas.criar')" aria-label="Variação">
                         <option [ngValue]="null">Todas (base comum)</option>
                         @for (v of variacoes(); track v.produtoId) { <option [ngValue]="v.produtoId">{{ v.sku }}</option> }
                       </select>
                     </td>
                   }
                   <td><input class="form-control form-control-sm" type="number" step="any" min="0" [(ngModel)]="l.quantidade"
-                             [disabled]="!permissao.canEdit()" aria-label="Quantidade"></td>
+                             [disabled]="!permissao.pode('producao.fichas-tecnicas.criar')" aria-label="Quantidade"></td>
                   <td><input class="form-control form-control-sm" type="number" step="any" min="0" max="99.99" [(ngModel)]="l.perdaPercentual"
-                             [disabled]="!permissao.canEdit()" aria-label="Perda percentual"></td>
+                             [disabled]="!permissao.pode('producao.fichas-tecnicas.criar')" aria-label="Perda percentual"></td>
                   <td class="text-end">
-                    @if (permissao.canEdit()) {
+                    @if (permissao.pode('producao.fichas-tecnicas.criar')) {
                       <button type="button" class="btn btn-sm btn-outline-danger" (click)="remover($index)" aria-label="Remover material">Remover</button>
                     }
                   </td>
@@ -106,7 +106,7 @@ const TIPOS_MATERIAL: TipoItem[] = ['materia_prima', 'aviamento', 'embalagem', '
         </div>
       }
 
-      @if (permissao.canEdit()) {
+      @if (permissao.pode('producao.fichas-tecnicas.criar')) {
         <div class="mb-3">
           <label class="form-label" for="obs">Observação da versão</label>
           <input id="obs" class="form-control" maxlength="500" [(ngModel)]="observacao">
@@ -178,7 +178,7 @@ const TIPOS_MATERIAL: TipoItem[] = ['materia_prima', 'aviamento', 'embalagem', '
           @for (v of versoes(); track v.id) {
             <li>v{{ v.versao }}{{ v.vigente ? ' (vigente)' : '' }} · {{ v.quantidadeItens }} materiais · {{ v.criadoEm.slice(0, 10) }}
               @if (v.observacao) { · {{ v.observacao }} }
-              @if (!v.vigente && permissao.canEdit()) { <button type="button" class="btn btn-link btn-sm py-0" (click)="carregarVersao(v.id)">Usar como base</button> }
+              @if (!v.vigente && permissao.pode('producao.fichas-tecnicas.criar')) { <button type="button" class="btn btn-link btn-sm py-0" (click)="carregarVersao(v.id)">Usar como base</button> }
             </li>
           }
         </ul>

@@ -61,17 +61,17 @@ export class ImobOsDetalheComponent implements OnInit {
     return !!sub && sub.toLowerCase() === this.os()?.solicitanteId?.toLowerCase();
   });
 
-  podeAprovar = computed(() => this.permissao.imobCanDelete() && this.os()?.status === 'pendente');
+  podeAprovar = computed(() => this.permissao.pode('imobilizado.ordens-servico.aprovar') && this.os()?.status === 'pendente');
   podeRejeitar = this.podeAprovar;
   podeCancelar = computed(() => {
     const os = this.os();
     if (!os) return false;
-    if (os.status === 'pendente') return this.permissao.imobCanDelete() || (this.permissao.imobCanEdit() && this.ehSolicitante());
-    return os.status === 'aprovada' && os.tipo === 'manutencao' && this.permissao.imobCanDelete();
+    if (os.status === 'pendente') return this.permissao.pode('imobilizado.ordens-servico.aprovar') || (this.permissao.pode('imobilizado.ordens-servico.cancelar') && this.ehSolicitante());
+    return os.status === 'aprovada' && os.tipo === 'manutencao' && this.permissao.pode('imobilizado.ordens-servico.aprovar');
   });
   podeConcluir = computed(() => {
     const os = this.os();
-    return !!os && os.status === 'aprovada' && os.tipo === 'manutencao' && this.permissao.imobCanEdit();
+    return !!os && os.status === 'aprovada' && os.tipo === 'manutencao' && this.permissao.pode('imobilizado.ordens-servico.concluir');
   });
 
   ngOnInit() {

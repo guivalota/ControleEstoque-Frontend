@@ -34,7 +34,7 @@ const ROTULO_STATUS: Record<string, string> = {
         @if (painel(); as p) { <small class="text-muted">Posição em {{ formatarData(p.em) }}</small> }
       </div>
       <div class="d-flex flex-wrap gap-2">
-        @if (permissao.imobCanCreate()) {
+        @if (permissao.pode('imobilizado.bens.criar')) {
           <a routerLink="/imobilizado/bens/novo" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>Novo bem</a>
           <a routerLink="/imobilizado/bens/importar" class="btn btn-sm btn-outline-primary"><i class="bi bi-upload me-1"></i>Importar bens</a>
         }

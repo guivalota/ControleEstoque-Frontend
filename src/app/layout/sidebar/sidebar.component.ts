@@ -4,13 +4,15 @@ import { PermissaoService } from '../../core/services/permissao.service';
 import { EmpresaAtivaService } from '../../core/services/empresa-ativa.service';
 import { EmpresaPerfilService } from '../../core/services/empresa-perfil.service';
 import { VersionService } from '../../core/services/version.service';
+import { Permissao } from '../../core/models/permissoes';
+import { PodeDirective } from '../../shared/permissao/pode.directive';
 import { Offcanvas } from 'bootstrap';
 import { filter, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, PodeDirective],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss'
 })
@@ -21,12 +23,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
   perfilEmpresa = inject(EmpresaPerfilService);
   private router = inject(Router);
 
-  /** Imobilizado no menu: só com o módulo liberado na empresa ativa. */
-  mostrarImobilizado = computed(() => this.empresa.temModulo('imobilizado'));
-  /** Estoque no menu: módulo liberado e perfil que o usa (contador não usa). */
-  mostrarEstoque = computed(() => this.empresa.temModulo('estoque') && this.permissao.podeUsarEstoque());
-  /** Produção no menu: módulo liberado e perfil que usa o Estoque (a Produção consome o Estoque). */
-  mostrarProducao = computed(() => this.empresa.temModulo('producao') && this.permissao.podeUsarEstoque());
+  /** Quem enxerga Configurações: tem alguma das telas das abas (perfil, e-mail, integrações, notificações, histórico, equipe, acesso). */
+  readonly permissoesDeConfiguracoes: readonly Permissao[] = [
+    'core.empresa-perfil.ver', 'core.empresa-email.ver', 'core.empresa-integracoes.ver', 'core.empresa-notificacoes.ver',
+    'core.empresa-configuracoes.ver', 'core.equipe.ver', 'core.acesso.ver'
+  ];
+
+  /** Cada grupo do menu: módulo liberado na empresa ativa E alguma tela dele que o perfil pode ver. */
+  mostrarImobilizado = computed(() => this.empresa.temModulo('imobilizado') && this.permissao.podeUsarModulo('imobilizado'));
+  mostrarEstoque = computed(() => this.empresa.temModulo('estoque') && this.permissao.podeUsarModulo('estoque'));
+  mostrarProducao = computed(() => this.empresa.temModulo('producao') && this.permissao.podeUsarModulo('producao'));
   private routerSub?: Subscription;
 
   /** URL atual (sem query), para abrir sozinho o grupo da página em que o usuário está. */

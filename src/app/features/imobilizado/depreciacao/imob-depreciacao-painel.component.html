@@ -85,7 +85,7 @@
     <div class="card border-0 shadow-sm mb-3">
       <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
         <span class="fw-semibold">Últimos fechamentos</span>
-        @if (p.mesesEncerradosSemFechamento > 0 && permissao.imobCanFecharDepreciacao()) {
+        @if (p.mesesEncerradosSemFechamento > 0 && permissao.pode('imobilizado.depreciacao-periodos.fechar')) {
           <a routerLink="/imobilizado/depreciacao/fechamento" class="btn btn-sm btn-primary">
             Fechar {{ p.proximaCompetenciaAFechar ? formatarMes(p.proximaCompetenciaAFechar) : 'período' }}
           </a>

@@ -347,7 +347,7 @@
             <button class="btn btn-primary btn-sm" (click)="carregarVisaoGeral(1)" [disabled]="loadingGeral()">
               <i class="bi bi-funnel me-1"></i>Filtrar
             </button>
-            @if (permissaoService.canCreate()) {
+            @if (permissaoService.pode('estoque.alertas.estoque-baixo')) {
               <button class="btn btn-outline-warning btn-sm" (click)="enviarAlertaEstoqueBaixo()" [disabled]="enviandoAlerta()">
                 @if (enviandoAlerta()) { <span class="spinner-border spinner-border-sm me-1"></span> }
                 @else { <i class="bi bi-bell me-1"></i> }

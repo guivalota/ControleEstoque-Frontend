@@ -1,7 +1,7 @@
 <div>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-bold mb-0">Lotes</h5>
-    @if (permissao.canCreate()) {
+    @if (permissao.pode('estoque.lotes.criar')) {
       <button class="btn btn-primary btn-sm" (click)="openCreate()">
         <i class="bi bi-plus-lg me-1"></i>Novo Lote
       </button>
@@ -64,10 +64,10 @@
                     @if (empresa.temModulo('producao')) {
                       <a class="btn btn-sm btn-outline-primary me-1" [routerLink]="['/producao/rastreio/lote', l.id]" title="Rastreio (produção)"><i class="bi bi-diagram-3"></i></a>
                     }
-                    @if (permissao.canEdit()) {
+                    @if (permissao.pode('estoque.lotes.editar')) {
                       <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(l)" title="Editar"><i class="bi bi-pencil"></i></button>
                     }
-                    @if (permissao.canDelete()) {
+                    @if (permissao.pode('estoque.lotes.excluir')) {
                       <button class="btn btn-sm btn-outline-danger" (click)="delete(l)" title="Excluir"><i class="bi bi-trash"></i></button>
                     }
                   </td>

@@ -49,15 +49,15 @@
           <i class="bi bi-chevron-down ms-auto sidebar-seta" [class.girada]="aberto('estoque')"></i>
         </button>
         <ul id="sub-estoque" class="nav flex-column sidebar-sub" [class.aberto]="aberto('estoque')">
-          <li><a class="nav-link sidebar-sublink" routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/produtos" routerLinkActive="active">Produtos</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/categorias" routerLinkActive="active">Categorias</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/grade" routerLinkActive="active">Grade (cores e tamanhos)</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/movimentacoes" routerLinkActive="active">Movimentações</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/lotes" routerLinkActive="active">Lotes</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/pedidos-compra" routerLinkActive="active">Pedidos de compra</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/notas-fiscais" routerLinkActive="active">Notas fiscais</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/conferencia" routerLinkActive="active">Conferência</a></li>
+          <li *appPode="'estoque.dashboard.ver'"><a class="nav-link sidebar-sublink" routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
+          <li *appPode="'estoque.produtos.ver'"><a class="nav-link sidebar-sublink" routerLink="/produtos" routerLinkActive="active">Produtos</a></li>
+          <li *appPode="'estoque.categorias.ver'"><a class="nav-link sidebar-sublink" routerLink="/categorias" routerLinkActive="active">Categorias</a></li>
+          <li *appPode="'estoque.grade.ver'"><a class="nav-link sidebar-sublink" routerLink="/grade" routerLinkActive="active">Grade (cores e tamanhos)</a></li>
+          <li *appPode="'estoque.movimentacoes.ver'"><a class="nav-link sidebar-sublink" routerLink="/movimentacoes" routerLinkActive="active">Movimentações</a></li>
+          <li *appPode="'estoque.lotes.ver'"><a class="nav-link sidebar-sublink" routerLink="/lotes" routerLinkActive="active">Lotes</a></li>
+          <li *appPode="'estoque.pedidos-compra.ver'"><a class="nav-link sidebar-sublink" routerLink="/pedidos-compra" routerLinkActive="active">Pedidos de compra</a></li>
+          <li *appPode="'estoque.notas-fiscais.ver'"><a class="nav-link sidebar-sublink" routerLink="/notas-fiscais" routerLinkActive="active">Notas fiscais</a></li>
+          <li *appPode="'estoque.conferencia.ver'"><a class="nav-link sidebar-sublink" routerLink="/conferencia" routerLinkActive="active">Conferência</a></li>
         </ul>
       </li>
     }
@@ -70,11 +70,11 @@
         </button>
         <ul id="sub-producao" class="nav flex-column sidebar-sub" [class.aberto]="aberto('producao')">
           <li><a class="nav-link sidebar-sublink" routerLink="/producao" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Visão geral</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/producao/fichas-tecnicas" routerLinkActive="active">Fichas técnicas</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/producao/ordens" routerLinkActive="active">Ordens de produção</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/producao/necessidade-materiais" routerLinkActive="active">Necessidade de materiais</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/producao/faccao" routerLinkActive="active">Terceirização</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/producao/relatorios" routerLinkActive="active">Relatórios</a></li>
+          <li *appPode="'producao.fichas-tecnicas.ver'"><a class="nav-link sidebar-sublink" routerLink="/producao/fichas-tecnicas" routerLinkActive="active">Fichas técnicas</a></li>
+          <li *appPode="'producao.ordens.ver'"><a class="nav-link sidebar-sublink" routerLink="/producao/ordens" routerLinkActive="active">Ordens de produção</a></li>
+          <li *appPode="'producao.necessidade-materiais.ver'"><a class="nav-link sidebar-sublink" routerLink="/producao/necessidade-materiais" routerLinkActive="active">Necessidade de materiais</a></li>
+          <li *appPode="'producao.faccao-remessas.ver'"><a class="nav-link sidebar-sublink" routerLink="/producao/faccao" routerLinkActive="active">Terceirização</a></li>
+          <li *appPode="'producao.relatorios.ver'"><a class="nav-link sidebar-sublink" routerLink="/producao/relatorios" routerLinkActive="active">Relatórios</a></li>
           <li><a class="nav-link sidebar-sublink" routerLink="/manual/producao" routerLinkActive="active">Manual da Produção</a></li>
         </ul>
       </li>
@@ -88,21 +88,21 @@
         </button>
         <ul id="sub-imob" class="nav flex-column sidebar-sub" [class.aberto]="aberto('imob')">
           <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Visão geral</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/bens" routerLinkActive="active">Bens</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/inventarios" routerLinkActive="active">Inventários</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/ordens-servico" routerLinkActive="active">Ordens de serviço</a></li>
-          <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/depreciacao" routerLinkActive="active">Depreciação</a></li>
+          <li *appPode="'imobilizado.bens.ver'"><a class="nav-link sidebar-sublink" routerLink="/imobilizado/bens" routerLinkActive="active">Bens</a></li>
+          <li *appPode="'imobilizado.inventarios.ver'"><a class="nav-link sidebar-sublink" routerLink="/imobilizado/inventarios" routerLinkActive="active">Inventários</a></li>
+          <li *appPode="'imobilizado.ordens-servico.ver'"><a class="nav-link sidebar-sublink" routerLink="/imobilizado/ordens-servico" routerLinkActive="active">Ordens de serviço</a></li>
+          <li *appPode="'imobilizado.depreciacao-periodos.ver'"><a class="nav-link sidebar-sublink" routerLink="/imobilizado/depreciacao" routerLinkActive="active">Depreciação</a></li>
           <li>
             <button type="button" class="nav-link sidebar-sublink sidebar-grupo w-100 text-start" (click)="alternar('imob-cad')"
                     [attr.aria-expanded]="aberto('imob-cad')" aria-controls="sub-imob-cad">
               Cadastros <i class="bi bi-chevron-down ms-auto sidebar-seta" [class.girada]="aberto('imob-cad')"></i>
             </button>
             <ul id="sub-imob-cad" class="nav flex-column sidebar-sub sidebar-sub-2" [class.aberto]="aberto('imob-cad')">
-              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/locais" routerLinkActive="active">Locais</a></li>
-              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/categorias" routerLinkActive="active">Categorias</a></li>
-              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/grupos" routerLinkActive="active">Grupos</a></li>
-              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/departamentos" routerLinkActive="active">Departamentos</a></li>
-              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/responsaveis" routerLinkActive="active">Responsáveis</a></li>
+              <li *appPode="'imobilizado.locais.ver'"><a class="nav-link sidebar-sublink" routerLink="/imobilizado/locais" routerLinkActive="active">Locais</a></li>
+              <li *appPode="'imobilizado.categorias.ver'"><a class="nav-link sidebar-sublink" routerLink="/imobilizado/categorias" routerLinkActive="active">Categorias</a></li>
+              <li *appPode="'imobilizado.grupos.ver'"><a class="nav-link sidebar-sublink" routerLink="/imobilizado/grupos" routerLinkActive="active">Grupos</a></li>
+              <li *appPode="'imobilizado.departamentos.ver'"><a class="nav-link sidebar-sublink" routerLink="/imobilizado/departamentos" routerLinkActive="active">Departamentos</a></li>
+              <li *appPode="'imobilizado.responsaveis.ver'"><a class="nav-link sidebar-sublink" routerLink="/imobilizado/responsaveis" routerLinkActive="active">Responsáveis</a></li>
             </ul>
           </li>
           <li>
@@ -111,15 +111,15 @@
               Reavaliação <i class="bi bi-chevron-down ms-auto sidebar-seta" [class.girada]="aberto('imob-reav')"></i>
             </button>
             <ul id="sub-imob-reav" class="nav flex-column sidebar-sub sidebar-sub-2" [class.aberto]="aberto('imob-reav')">
-              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/reavaliacao/estados-conservacao" routerLinkActive="active">Estados de conservação</a></li>
-              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/reavaliacao/pesos" routerLinkActive="active">Pesos</a></li>
-              <li><a class="nav-link sidebar-sublink" routerLink="/imobilizado/reavaliacao/escalas" routerLinkActive="active">Escalas VP e VF</a></li>
+              <li *appPode="'imobilizado.estados-conservacao.ver'"><a class="nav-link sidebar-sublink" routerLink="/imobilizado/reavaliacao/estados-conservacao" routerLinkActive="active">Estados de conservação</a></li>
+              <li *appPode="'imobilizado.reavaliacao-parametros.ver'"><a class="nav-link sidebar-sublink" routerLink="/imobilizado/reavaliacao/pesos" routerLinkActive="active">Pesos</a></li>
+              <li *appPode="'imobilizado.reavaliacao-escalas.ver'"><a class="nav-link sidebar-sublink" routerLink="/imobilizado/reavaliacao/escalas" routerLinkActive="active">Escalas VP e VF</a></li>
             </ul>
           </li>
         </ul>
       </li>
     }
-    @if (permissao.canManageUsers()) {
+    @if (permissao.pode('core.equipe.ver')) {
       <li class="nav-item">
         <a class="nav-link sidebar-link" routerLink="/configuracoes/equipe" routerLinkActive="active">
           <i class="bi bi-people me-2"></i>Equipe
@@ -127,19 +127,19 @@
       </li>
     }
 
-    <li class="nav-item">
+    <li class="nav-item" *appPode="'core.fornecedores.ver'">
       <a class="nav-link sidebar-link" routerLink="/fornecedores" routerLinkActive="active">
         <i class="bi bi-truck me-2"></i>Fornecedores
       </a>
     </li>
-    @if (permissao.podeUsarClientes()) {
+    @if (permissao.pode('core.clientes.ver')) {
       <li class="nav-item">
         <a class="nav-link sidebar-link" routerLink="/clientes" routerLinkActive="active">
           <i class="bi bi-person-lines-fill me-2"></i>Clientes
         </a>
       </li>
     }
-    @if (permissao.canManageUsers()) {
+    @if (permissao.pode('estoque.impressoes.historico')) {
       <li class="mt-2 px-2"><small class="text-uppercase fw-semibold" style="color:#475569;font-size:.7rem;letter-spacing:.05em">Admin</small></li>
       <!-- Audit Logs é do painel do super admin (fatia 2), não do menu de empresa -->
       <li class="nav-item">
@@ -154,7 +154,7 @@
 
   <ul class="nav nav-pills flex-column gap-1 mt-auto">
     <!-- Core: visível ao admin da empresa mesmo sem módulos ligados -->
-    @if (!empresa.semAcesso() && permissao.canManageUsers()) {
+    @if (!empresa.semAcesso() && permissao.pode(permissoesDeConfiguracoes)) {
       <li class="nav-item">
         <a class="nav-link sidebar-link" routerLink="/configuracoes" routerLinkActive="active">
           <i class="bi bi-gear me-2"></i>Configurações

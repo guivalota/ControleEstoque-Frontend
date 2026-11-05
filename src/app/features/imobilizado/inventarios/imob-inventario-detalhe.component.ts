@@ -40,11 +40,11 @@ export class ImobInventarioDetalheComponent implements OnInit {
   naoEncontrado = signal(false);
   agindo = signal<Acao | null>(null);
 
-  podeEditar = computed(() => this.permissao.imobCanEdit() && inventarioEditavel(this.inventario()?.status ?? 'concluido'));
-  podeIniciar = computed(() => this.permissao.imobCanEdit() && this.inventario()?.status === 'rascunho');
-  podeCancelar = computed(() => this.permissao.imobCanEdit() && inventarioCancelavel(this.inventario()?.status ?? 'concluido'));
-  podeExcluir = computed(() => this.permissao.imobCanDelete() && inventarioExcluivel(this.inventario()?.status ?? 'concluido'));
-  podeEncerrar = computed(() => this.permissao.imobCanDelete() && this.inventario()?.status === 'em_andamento');
+  podeEditar = computed(() => this.permissao.pode('imobilizado.inventarios.editar') && inventarioEditavel(this.inventario()?.status ?? 'concluido'));
+  podeIniciar = computed(() => this.permissao.pode('imobilizado.inventarios.iniciar') && this.inventario()?.status === 'rascunho');
+  podeCancelar = computed(() => this.permissao.pode('imobilizado.inventarios.cancelar') && inventarioCancelavel(this.inventario()?.status ?? 'concluido'));
+  podeExcluir = computed(() => this.permissao.pode('imobilizado.inventarios.excluir') && inventarioExcluivel(this.inventario()?.status ?? 'concluido'));
+  podeEncerrar = computed(() => this.permissao.pode('imobilizado.inventarios.encerrar') && this.inventario()?.status === 'em_andamento');
   /** Contagem e conciliação existem a partir do início; o relatório também (parcial até encerrar). */
   iniciado = computed(() => this.inventario()?.status !== 'rascunho');
   baixando = signal<'pdf' | 'csv' | null>(null);

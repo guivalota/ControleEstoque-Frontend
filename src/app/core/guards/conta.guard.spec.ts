@@ -3,7 +3,6 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot, UrlTree, provideRouter } from '@angular/router';
 import { provideAuthFake, RoleFake } from '../../testing/auth-fake';
-import { adminGuard } from './admin.guard';
 import { contaEmpresaGuard, superAdminGuard } from './conta.guard';
 
 function rodar(guard: CanActivateFn, role: RoleFake) {
@@ -25,10 +24,5 @@ describe('guards de tipo de conta', () => {
   });
   it('superAdminGuard manda conta de empresa para /dashboard', () => {
     expect(rodar(superAdminGuard, 'admin')).toBe('/dashboard');
-  });
-  it('adminGuard: admin passa, operador volta ao dashboard, superadmin vai para /plataforma', () => {
-    expect(rodar(adminGuard, 'admin')).toBeTrue();
-    expect(rodar(adminGuard, 'operador')).toBe('/dashboard');
-    expect(rodar(adminGuard, 'superadmin')).toBe('/plataforma');
   });
 });

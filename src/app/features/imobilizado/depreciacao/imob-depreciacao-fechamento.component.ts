@@ -51,8 +51,8 @@ export class ImobDepreciacaoFechamentoComponent implements OnInit {
   periodos = computed(() => this.lista()?.periodos.items ?? []);
   /** Mês (`yyyy-MM`) sugerido para fechar: o seguinte ao último fechado. */
   proximoMes = computed(() => this.lista()?.proximaCompetenciaAFechar?.slice(0, 7) ?? null);
-  podeFechar = computed(() => this.permissao.imobCanFecharDepreciacao());
-  podePrevia = computed(() => this.permissao.imobCanPreviaDepreciacao());
+  podeFechar = computed(() => this.permissao.pode(['imobilizado.depreciacao-periodos.fechar', 'imobilizado.depreciacao-periodos.reabrir']));
+  podePrevia = computed(() => this.permissao.pode('imobilizado.depreciacao-previa.ver'));
 
   ngOnInit() {
     this.carregar();

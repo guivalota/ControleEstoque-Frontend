@@ -19,7 +19,7 @@ export function moduloGuard(codigo: string): CanActivateFn {
       map(() => {
         // contador (conjunto de permissões, US-19-19) não usa o Estoque
         if (codigo === 'estoque' && empresa.ativa() && !permissao.podeUsarEstoque()) {
-          empresa.aviso.set('Seu perfil (contador) não acessa o Estoque.');
+          empresa.aviso.set('Seu perfil não acessa o Estoque.');
           return router.createUrlTree([empresa.rotaInicial(codigo)]);
         }
         if (!empresa.ativa() || empresa.temModulo(codigo)) return true;

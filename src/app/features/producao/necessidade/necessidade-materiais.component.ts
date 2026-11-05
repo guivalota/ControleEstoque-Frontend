@@ -21,7 +21,7 @@ import { lerErroApi, textoDoErro } from '../../../core/utils/erros-api';
   template: `
     <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
       <h1 class="h4 mb-0 me-auto">Necessidade de materiais</h1>
-      @if (permissao.canCreate()) {
+      @if (permissao.pode('producao.necessidade-materiais.gerar-pedidos')) {
         <button class="btn btn-primary" [disabled]="gerando() || paraComprar().length === 0" (click)="gerar()">Gerar pedidos de compra</button>
       }
     </div>
@@ -80,7 +80,7 @@ import { lerErroApi, textoDoErro } from '../../../core/utils/erros-api';
                   } @else {
                     {{ l.fornecedorNome ?? '— sem fornecedor' }}
                     @if (l.prazoEntregaDias !== null) { <span class="text-secondary">· {{ l.prazoEntregaDias }} dia(s)</span> }
-                    @if (permissao.canEdit()) {
+                    @if (permissao.pode('producao.materiais.fornecedor-editar')) {
                       <button class="btn btn-link btn-sm py-0" (click)="editar(l)">{{ l.fornecedorId ? 'Trocar' : 'Definir' }}</button>
                       @if (l.fornecedorId) { <button class="btn btn-link btn-sm py-0 text-danger" (click)="remover(l)">Remover</button> }
                     }

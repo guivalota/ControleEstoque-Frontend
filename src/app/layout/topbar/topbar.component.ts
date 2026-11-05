@@ -24,7 +24,7 @@ function senhasIguais(group: AbstractControl) {
 export class TopbarComponent implements OnDestroy {
   auth = inject(AuthService);
   empresa = inject(EmpresaAtivaService);
-  private permissao = inject(PermissaoService);
+  permissao = inject(PermissaoService);
   theme = inject(ThemeService);
 
   /** Selo: perfil efetivo na empresa ativa (superadmin: role global). Sem empresa ativa não mostra selo. */

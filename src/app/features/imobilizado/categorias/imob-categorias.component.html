@@ -8,7 +8,7 @@
           Carregar categorias padrão
         </button>
       }
-      @if (permissao.imobCanEditCategorias()) {
+      @if (permissao.pode('imobilizado.categorias.criar')) {
         <button type="button" class="btn btn-primary btn-sm" (click)="openCreate()">
           <i class="bi bi-plus-lg me-1"></i>Nova categoria
         </button>
@@ -98,13 +98,13 @@
                     }
                   </td>
                   <td class="text-end pe-3 text-nowrap">
-                    @if (permissao.imobCanEditCategorias()) {
+                    @if (permissao.pode('imobilizado.categorias.editar')) {
                       <button type="button" class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(c)"
                               title="Editar" [attr.aria-label]="'Editar ' + c.nome">
                         <i class="bi bi-pencil"></i>
                       </button>
                     }
-                    @if (permissao.imobCanDelete()) {
+                    @if (permissao.pode('imobilizado.categorias.excluir')) {
                       <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="agindo() === c.id"
                               (click)="excluir(c)" title="Excluir" [attr.aria-label]="'Excluir ' + c.nome">
                         <i class="bi bi-trash"></i>

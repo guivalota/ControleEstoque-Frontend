@@ -15,17 +15,17 @@
         <button type="button" class="btn btn-sm btn-outline-secondary" (click)="imprimirEtiqueta()">
           <i class="bi bi-qr-code me-1"></i>Imprimir etiqueta
         </button>
-        @if (permissao.imobCanCreate() && bemEditavel(b.status)) {
+        @if (permissao.pode('imobilizado.ordens-servico.criar') && bemEditavel(b.status)) {
           <a class="btn btn-sm btn-outline-primary" routerLink="/imobilizado/ordens-servico/nova" [queryParams]="{ bemId: b.id }">
             <i class="bi bi-clipboard-plus me-1"></i>Abrir OS
           </a>
         }
-        @if (permissao.imobCanEdit() && bemEditavel(b.status)) {
+        @if (permissao.pode('imobilizado.bens.editar') && bemEditavel(b.status)) {
           <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/imobilizado/bens', b.id, 'editar']">
             <i class="bi bi-pencil me-1"></i>Editar
           </a>
         }
-        @if (permissao.imobCanDelete()) {
+        @if (permissao.pode('imobilizado.bens.excluir')) {
           <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="excluindo()" (click)="excluir()">
             @if (excluindo()) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-trash me-1"></i> }
             Excluir
