@@ -5,5 +5,5 @@ import { PermissaoService } from '../../../core/services/permissao.service';
  * admin e contador (matriz US-19-19; perfil efetivo na empresa ativa). O servidor é a autoridade real.
  */
 export function podeEditarParametros(permissao: PermissaoService): boolean {
-  return permissao.imobCanParametrizar();
+  return permissao.pode(['imobilizado.reavaliacao-parametros.criar', 'imobilizado.reavaliacao-escalas.criar', 'imobilizado.estados-conservacao.editar']);
 }

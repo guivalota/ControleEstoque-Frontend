@@ -15,7 +15,7 @@
   <div class="d-flex align-items-center gap-2">
     @if (selo(); as perfil) {
       <span class="badge d-none d-sm-inline" [class]="roleBadgeClass(perfil)">
-        {{ permissao.perfilNome() ?? roleLabel(perfil) }}
+        {{ roleLabel(perfil) }}
       </span>
     }
 

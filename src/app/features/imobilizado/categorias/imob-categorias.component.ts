@@ -60,7 +60,7 @@ export class ImobCategoriasComponent implements OnInit, OnDestroy {
   bloqueio = signal<Bloqueio | null>(null);
 
   /** Carregar categorias padrão: só admin (perfil efetivo na empresa ativa). */
-  podeCarregarPadrao = () => this.permissao.perfil() === 'admin';
+  podeCarregarPadrao = () => this.permissao.pode('imobilizado.categorias.padrao');
 
   form = this.fb.group({
     codigo: ['', [Validators.maxLength(50)]],

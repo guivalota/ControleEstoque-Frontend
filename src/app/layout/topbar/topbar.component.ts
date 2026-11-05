@@ -48,7 +48,7 @@ export class TopbarComponent implements OnDestroy {
   /** Selo: perfil efetivo na empresa ativa (superadmin: role global). Sem empresa ativa não mostra selo. */
   selo = computed(() => {
     if (this.permissao.isSuperAdmin()) return 'superadmin';
-    return this.empresa.ativa() ? this.permissao.perfil() : undefined;
+    return this.empresa.ativa() ? this.permissao.perfilNome() ?? undefined : undefined;
   });
   private userService = inject(UserService);
   private fb = inject(FormBuilder);
@@ -122,19 +122,13 @@ export class TopbarComponent implements OnDestroy {
 
   roleBadgeClass(role: string | undefined): string {
     const map: Record<string, string> = {
-      admin: 'bg-danger',
-      operador: 'bg-primary',
-      leitura: 'bg-secondary',
       superadmin: 'bg-dark'
     };
-    return map[role ?? ''] ?? 'bg-secondary';
+    return map[role ?? ''] ?? 'bg-primary';
   }
 
   roleLabel(role: string | undefined): string {
     const map: Record<string, string> = {
-      admin: 'Admin',
-      operador: 'Operador',
-      leitura: 'Somente leitura',
       superadmin: 'Super admin'
     };
     return map[role ?? ''] ?? (role ?? '');
