@@ -29,14 +29,16 @@ describe('empresaInterceptor', () => {
     expect(ctrl.expectOne(`${base}/locais`).request.headers.get('X-Empresa-Id')).toBe('5');
   });
 
-  it('envia o header em empresa-ativa (não confundir com empresas/**)', () => {
-    http.get(`${base}/empresa-ativa`).subscribe();
-    expect(ctrl.expectOne(`${base}/empresa-ativa`).request.headers.get('X-Empresa-Id')).toBe('5');
+  it('envia o header em empresa/ativa e empresa/ativa/uso (não confundir com empresa/minhas)', () => {
+    for (const url of ['/api/v1/empresa/ativa', '/api/v1/empresa/ativa/uso']) {
+      http.get(url).subscribe();
+      expect(ctrl.expectOne(url).request.headers.get('X-Empresa-Id')).toBe('5');
+    }
   });
 
-  it('não envia o header em minhas-empresas', () => {
-    http.get(`${base}/minhas-empresas`).subscribe();
-    expect(ctrl.expectOne(`${base}/minhas-empresas`).request.headers.has('X-Empresa-Id')).toBeFalse();
+  it('não envia o header em empresa/minhas', () => {
+    http.get('/api/v1/empresa/minhas').subscribe();
+    expect(ctrl.expectOne('/api/v1/empresa/minhas').request.headers.has('X-Empresa-Id')).toBeFalse();
   });
 
   it('não envia o header na administração de empresas', () => {
@@ -47,7 +49,7 @@ describe('empresaInterceptor', () => {
   });
 
   it('envia o header nas rotas de Estoque, clientes, fornecedores e equipe', () => {
-    for (const url of ['/api/v1/produtos?page=1', '/api/v1/categorias', '/api/v1/movimentacoes', '/api/v1/clientes', '/api/v1/fornecedores/1', '/api/v1/dashboard', '/api/v1/imobilizado/equipe']) {
+    for (const url of ['/api/v1/produtos?page=1', '/api/v1/categorias', '/api/v1/movimentacoes', '/api/v1/clientes', '/api/v1/fornecedores/1', '/api/v1/dashboard', '/api/v1/equipe']) {
       http.get(url).subscribe();
       expect(ctrl.expectOne(url).request.headers.get('X-Empresa-Id')).toBe('5');
     }

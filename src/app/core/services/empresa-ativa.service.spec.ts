@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { EmpresaAtivaService } from './empresa-ativa.service';
 import { ImobEmpresa } from '../models/imob-empresa.model';
 
-const URL = '/api/v1/imobilizado/minhas-empresas';
+const URL = '/api/v1/empresa/minhas';
 
 const empresa = (id: number): ImobEmpresa => ({
   id, razaoSocial: `Empresa ${id} Ltda`, nomeFantasia: null, cnpj: '11222333000181', ativo: true, criadoEm: '2026-10-22T14:03:11Z'
@@ -171,7 +171,7 @@ describe('EmpresaAtivaService (carga da sessao e modulos)', () => {
     localStorage.setItem('imob.empresaBloqueadaId', '7');
     service.carregar().subscribe();
     http.expectOne(URL).flush([]);
-    const sonda = http.expectOne('/api/v1/imobilizado/empresa-ativa');
+    const sonda = http.expectOne('/api/v1/empresa/ativa');
     expect(sonda.request.headers.get('X-Empresa-Id')).toBe('7');
     sonda.flush({ error: 'Empresa bloqueada. Fale com o administrador.', codigo: 'empresa_bloqueada' }, { status: 403, statusText: 'Forbidden' });
     expect(service.semAcesso()).toBeTrue();
@@ -185,7 +185,7 @@ describe('EmpresaAtivaService (carga da sessao e modulos)', () => {
     localStorage.setItem('imob.empresaBloqueadaId', '7');
     service.carregar().subscribe();
     http.expectOne(URL).flush([]);
-    http.expectOne('/api/v1/imobilizado/empresa-ativa').flush({ error: 'Sem acesso à empresa informada.' }, { status: 403, statusText: 'Forbidden' });
+    http.expectOne('/api/v1/empresa/ativa').flush({ error: 'Sem acesso à empresa informada.' }, { status: 403, statusText: 'Forbidden' });
     expect(service.bloqueadaMsg()).toBe('');
     expect(localStorage.getItem('imob.empresaBloqueadaId')).toBeNull();
   });

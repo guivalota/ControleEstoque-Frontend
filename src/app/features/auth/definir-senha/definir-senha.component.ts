@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { UpdateMyProfileRequest } from '../../../core/models/user.model';
 import { ThemeService } from '../../../core/services/theme.service';
 import { UserService } from '../../../core/services/user.service';
 import { lerErroApi } from '../../../core/utils/erros-api';
@@ -39,8 +40,12 @@ export class DefinirSenhaComponent {
   error = signal('');
   showPassword = signal(false);
 
+  /** Troca voluntária pede a senha atual; a forçada (provisória) não. */
+  pedeSenhaAtual = !this.auth.precisaTrocarSenha();
+
   form = this.fb.group({
-    novaSenha: ['', [Validators.required, passwordStrength]],
+    senhaAtual: ['', this.pedeSenhaAtual ? [Validators.required] : []],
+    novaSenha:['', [Validators.required, passwordStrength]],
     confirmarSenha: ['', Validators.required]
   }, { validators: passwordsMatch });
 
@@ -53,7 +58,9 @@ export class DefinirSenhaComponent {
     this.error.set('');
 
     // O back exige nome e email em PUT v1/users/me; a senha vai junto.
-    this.userService.updateMe({ nome: user.nome, email: user.email, senha: this.form.value.novaSenha! }).subscribe({
+    const req: UpdateMyProfileRequest = { nome: user.nome, email: user.email, senha: this.form.value.novaSenha! };
+    if (this.pedeSenhaAtual) req.senhaAtual = this.form.value.senhaAtual!;
+    this.userService.updateMe(req).subscribe({
       next: () => {
         // O back revoga todos os refresh tokens ao trocar a senha e não devolve tokens novos:
         // não há refresh possível. Encerra a sessão local e pede novo login com a senha nova.

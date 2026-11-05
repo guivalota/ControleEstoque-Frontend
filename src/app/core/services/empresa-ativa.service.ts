@@ -64,7 +64,7 @@ export class EmpresaAtivaService {
     this.carregando.set(true);
     this.erroCarregar.set(false);
 
-    return this.http.get<ImobEmpresa[]>(`${environment.apiUrl}/v1/imobilizado/minhas-empresas`).pipe(
+    return this.http.get<ImobEmpresa[]>(`${environment.apiUrl}/v1/empresa/minhas`).pipe(
       switchMap(lista => lista.length === 0 ? this.verificarBloqueio().pipe(map(() => lista)) : of(lista)),
       tap(lista => {
         this.empresas.set(lista);
@@ -116,7 +116,7 @@ export class EmpresaAtivaService {
   private verificarBloqueio(): Observable<void> {
     const id = this.lerBloqueio();
     if (id === null) return of(undefined);
-    return this.http.get(`${environment.apiUrl}/v1/imobilizado/empresa-ativa`, { headers: { 'X-Empresa-Id': String(id) } }).pipe(
+    return this.http.get(`${environment.apiUrl}/v1/empresa/ativa`, { headers: { 'X-Empresa-Id': String(id) } }).pipe(
       map(() => { this.guardarBloqueio(null); }),
       catchError(err => {
         const corpo = err?.error as { error?: unknown; codigo?: unknown } | null;

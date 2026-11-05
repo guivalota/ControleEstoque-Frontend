@@ -42,7 +42,7 @@ describe('guards da área Imobilizado', () => {
       let liberado: unknown;
       (TestBed.runInInjectionContext(() => imobilizadoGuard(rota(), estado)) as Observable<boolean>)
         .subscribe(v => liberado = v);
-      ctrl.expectOne('/api/v1/imobilizado/minhas-empresas').flush([]);
+      ctrl.expectOne('/api/v1/empresa/minhas').flush([]);
       expect(liberado).toBeTrue();
       expect(empresa.semAcesso()).toBeTrue();
       ctrl.verify();

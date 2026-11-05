@@ -91,13 +91,19 @@
             </div>
           </div>
 
-          <div class="mb-1">
+          <div class="mb-3">
             <label class="form-label fw-medium">Confirmar Nova Senha</label>
             <input type="password" class="form-control" formControlName="confirmarSenha"
               [class.is-invalid]="form.errors?.['senhasDiferentes'] && f('confirmarSenha').touched" />
             @if (form.errors?.['senhasDiferentes'] && f('confirmarSenha').touched) {
               <div class="invalid-feedback d-block">As senhas não coincidem.</div>
             }
+          </div>
+
+          <div class="mb-1">
+            <label class="form-label fw-medium">Senha atual</label>
+            <input type="password" class="form-control" formControlName="senhaAtual"
+              autocomplete="current-password" placeholder="Obrigatória para trocar a senha" />
           </div>
         </div>
 

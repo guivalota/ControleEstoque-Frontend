@@ -39,7 +39,7 @@ describe('DefinirSenhaComponent', () => {
   afterEach(() => ctrl.verify());
 
   it('rejeita senha fraca e divergente sem chamar a API', () => {
-    comp.form.setValue({ novaSenha: 'fraca', confirmarSenha: 'outra' });
+    comp.form.patchValue({ novaSenha: 'fraca', confirmarSenha: 'outra' });
     comp.submit();
     expect(comp.field('novaSenha').hasError('passwordStrength')).toBeTrue();
     expect(comp.form.hasError('passwordsMismatch')).toBeTrue();
@@ -48,12 +48,12 @@ describe('DefinirSenhaComponent', () => {
   });
 
   it('aceita senha forte e confirmação igual', () => {
-    comp.form.setValue({ novaSenha: 'Senha@123', confirmarSenha: 'Senha@123' });
+    comp.form.patchValue({ novaSenha: 'Senha@123', confirmarSenha: 'Senha@123' });
     expect(comp.form.valid).toBeTrue();
   });
 
   it('envia PUT users/me com nome, email e senha, encerra a sessão local e vai ao login sem refresh', () => {
-    comp.form.setValue({ novaSenha: 'Senha@123', confirmarSenha: 'Senha@123' });
+    comp.form.patchValue({ novaSenha: 'Senha@123', confirmarSenha: 'Senha@123' });
     comp.submit();
     const req = ctrl.expectOne('/api/v1/users/me');
     expect(req.request.method).toBe('PUT');
@@ -66,7 +66,7 @@ describe('DefinirSenhaComponent', () => {
   });
 
   it('mostra o erro do servidor e libera o botão', () => {
-    comp.form.setValue({ novaSenha: 'Senha@123', confirmarSenha: 'Senha@123' });
+    comp.form.patchValue({ novaSenha: 'Senha@123', confirmarSenha: 'Senha@123' });
     comp.submit();
     ctrl.expectOne('/api/v1/users/me').flush({ error: 'Senha inválida.' }, { status: 400, statusText: 'Bad' });
     expect(comp.error()).toBe('Senha inválida.');
@@ -76,7 +76,7 @@ describe('DefinirSenhaComponent', () => {
   });
 
   it('401 no PUT encerra a sessão local e leva ao login', () => {
-    comp.form.setValue({ novaSenha: 'Senha@123', confirmarSenha: 'Senha@123' });
+    comp.form.patchValue({ novaSenha: 'Senha@123', confirmarSenha: 'Senha@123' });
     comp.submit();
     ctrl.expectOne('/api/v1/users/me').flush({}, { status: 401, statusText: 'Unauthorized' });
     expect(authFake.encerrarSessaoLocal).toHaveBeenCalled();
@@ -96,5 +96,38 @@ describe('DefinirSenhaComponent', () => {
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(texto).toContain('Alterar minha senha');
     expect(texto).toContain('Cancelar');
+  });
+  describe('troca voluntária (senha atual)', () => {
+    beforeEach(() => {
+      authFake.precisaTrocarSenha.and.returnValue(false);
+      fixture = TestBed.createComponent(DefinirSenhaComponent);
+      comp = fixture.componentInstance;
+    });
+
+    it('exige a senha atual e não chama a API sem ela', () => {
+      comp.form.patchValue({ novaSenha: 'Senha@123', confirmarSenha: 'Senha@123' });
+      comp.submit();
+      expect(comp.field('senhaAtual').hasError('required')).toBeTrue();
+      ctrl.expectNone('/api/v1/users/me');
+    });
+
+    it('envia senhaAtual no PUT users/me', () => {
+      comp.form.patchValue({ senhaAtual: 'Antiga@123', novaSenha: 'Senha@123', confirmarSenha: 'Senha@123' });
+      comp.submit();
+      const req = ctrl.expectOne('/api/v1/users/me');
+      expect(req.request.body).toEqual({ nome: 'Ana', email: 'ana@x.com', senha: 'Senha@123', senhaAtual: 'Antiga@123' });
+      req.flush({});
+    });
+
+    it('mostra o campo Senha atual', () => {
+      fixture.detectChanges();
+      expect((fixture.nativeElement as HTMLElement).querySelector('#senhaAtual')).not.toBeNull();
+    });
+  });
+
+  it('troca forçada não mostra nem exige a senha atual', () => {
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('#senhaAtual')).toBeNull();
+    expect(comp.form.get('senhaAtual')!.valid).toBeTrue();
   });
 });

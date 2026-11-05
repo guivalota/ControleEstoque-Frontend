@@ -31,7 +31,7 @@ O **ControleEstoque** é um sistema para gerenciar o estoque de uma empresa de p
 
 ### Meu perfil
 
-Cada usuário pode visualizar e atualizar seus próprios dados em "Meu perfil" (nome, e-mail, senha), sem depender de um administrador.
+Cada usuário pode visualizar e atualizar seus próprios dados em "Meu perfil" (nome, e-mail, senha), sem depender de um administrador. Para trocar a senha é preciso informar também a **senha atual**; no primeiro acesso com senha provisória ela não é pedida.
 
 ### Perfis de acesso
 

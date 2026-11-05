@@ -30,4 +30,6 @@ export interface UpdateMyProfileRequest {
   nome?: string | null;
   email?: string | null;
   senha?: string | null;
+  /** Obrigatória ao trocar a senha, exceto na troca forçada (senha provisória). */
+  senhaAtual?: string | null;
 }

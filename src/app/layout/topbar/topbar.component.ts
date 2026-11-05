@@ -46,8 +46,9 @@ export class TopbarComponent implements OnDestroy {
     nome: ['', [Validators.required, Validators.maxLength(255)]],
     email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]],
     senha: ['', [Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/)]],
-    confirmarSenha: ['']
-  }, { validators: senhasIguais });
+    confirmarSenha: [''],
+    senhaAtual: ['']
+  },{ validators: senhasIguais });
 
   private getModal(): Modal {
     if (!this.perfilModal) this.perfilModal = new Modal(this.perfilModalEl.nativeElement);
@@ -60,7 +61,8 @@ export class TopbarComponent implements OnDestroy {
       nome: user?.nome ?? '',
       email: user?.email ?? '',
       senha: '',
-      confirmarSenha: ''
+      confirmarSenha: '',
+      senhaAtual: ''
     });
     this.saveError.set('');
     this.saveSuccess.set(false);
@@ -73,9 +75,13 @@ export class TopbarComponent implements OnDestroy {
     this.saveError.set('');
     this.saveSuccess.set(false);
 
-    const { nome, email, senha } = this.form.value;
+    const { nome, email, senha, senhaAtual } = this.form.value;
     const req: Record<string, string> = { nome: nome!, email: email! };
-    if (senha) req['senha'] = senha;
+    if (senha) {
+      if (!senhaAtual) { this.saveError.set('Informe a senha atual para trocar a senha.'); this.saving.set(false); return; }
+      req['senha'] = senha;
+      req['senhaAtual'] = senhaAtual;
+    }
 
     this.userService.updateMe(req).subscribe({
       next: () => {
