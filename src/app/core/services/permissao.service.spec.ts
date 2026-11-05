@@ -74,9 +74,13 @@ describe('PermissaoService (E25)', () => {
     expect(criar('leitura', ['estoque.produtos.ver', 'core.empresa.uso']).p.somenteLeitura()).toBeTrue();
   });
 
-  it('somenteLeitura é falso quando há alguma ação de escrita', () => {
+  it('somenteLeitura: exportar e imprimir não contam como escrita (perfil Leitura real)', () => {
+    expect(criar('leitura', ['estoque.produtos.ver', 'imobilizado.bens.exportar', 'producao.faccao-remessas.romaneio']).p.somenteLeitura()).toBeTrue();
+  });
+
+  it('somenteLeitura é falso quando há alguma ação de escrita, mesmo com prefixo', () => {
     TestBed.resetTestingModule();
-    expect(criar('operador', ['estoque.produtos.ver', 'estoque.produtos.criar']).p.somenteLeitura()).toBeFalse();
+    expect(criar('operador', ['estoque.produtos.ver', 'estoque.pedidos-compra.itens-criar']).p.somenteLeitura()).toBeFalse();
   });
 
   it('somenteLeitura é falso sem empresa ativa', () => {

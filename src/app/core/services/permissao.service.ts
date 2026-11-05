@@ -3,8 +3,8 @@ import { AuthService } from './auth.service';
 import { EmpresaAtivaService } from './empresa-ativa.service';
 import { Permissao } from '../models/permissoes';
 
-/** Ações de consulta: um perfil que só tem estas está em "somente leitura". */
-const ACOES_DE_CONSULTA = new Set(['ver', 'uso', 'historico']);
+/** Ações que gravam dados (`criar`, `editar`, `excluir`, também com prefixo: `itens-criar`): quem não tem nenhuma está em "somente leitura". */
+const ACAO_DE_ESCRITA = /(^|-)(criar|editar|excluir)$/;
 
 /**
  * Permissões do usuário na empresa ativa (E25, DSG-27). A única fonte é a lista `permissoes` que o servidor devolve em
@@ -45,10 +45,10 @@ export class PermissaoService {
     return false;
   }
 
-  /** Há empresa ativa e o perfil só consulta (nenhuma ação além de ver). */
+  /** Há empresa ativa e o perfil não cria, edita nem exclui nada (pode consultar, exportar, imprimir). */
   somenteLeitura = computed(() => {
     const conjunto = this.permissoes();
     if (this.empresa.ativa() === null || conjunto.size === 0) return false;
-    return [...conjunto].every(c => ACOES_DE_CONSULTA.has(c.slice(c.lastIndexOf('.') + 1)));
+    return ![...conjunto].some(c => ACAO_DE_ESCRITA.test(c.slice(c.lastIndexOf('.') + 1)));
   });
 }
