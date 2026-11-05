@@ -124,7 +124,7 @@ export class CorteOrdemComponent {
 
   podeCortar() {
     const status = this.ordem().status;
-    return this.permissao.canEdit() && (status === 'liberada' || status === 'em_producao');
+    return this.permissao.pode('producao.ordens.cortes') && (status === 'liberada' || status === 'em_producao');
   }
 
   pct(valor: number | null) {

@@ -92,7 +92,7 @@ describe('guards de carga da empresa e de modulo', () => {
   it('moduloGuard do estoque barra o contador e manda para o Imobilizado', () => {
     const c = { ...emp(1, ['estoque', 'imobilizado']), perfil: 'contador' as const };
     expect(rodar(moduloGuard('estoque'), [c])).toBe('/imobilizado');
-    expect(empresa.aviso()).toContain('contador');
+    expect(empresa.aviso()).toContain('perfil');
   });
 
   it('moduloGuard sem nenhum modulo cai no cadastro Core', () => {

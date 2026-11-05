@@ -105,6 +105,24 @@
             <input type="password" class="form-control" formControlName="senhaAtual"
               autocomplete="current-password" placeholder="Obrigatória para trocar a senha" />
           </div>
+
+          @if (meuAcesso().length > 0) {
+            <hr />
+            <div class="small">
+              <div class="fw-medium mb-1"><i class="bi bi-shield-check me-1"></i>Meu acesso
+                @if (permissao.perfilNome()) { <span class="text-muted fw-normal">— perfil {{ permissao.perfilNome() }}</span> }
+              </div>
+              <details>
+                <summary class="text-muted">O que meu perfil permite ({{ totalAcessos() }} ações)</summary>
+                @for (g of meuAcesso(); track g.modulo) {
+                  <div class="fw-medium mt-2">{{ g.rotulo }}</div>
+                  <ul class="mb-0 ps-3">
+                    @for (item of g.itens; track item) { <li>{{ item }}</li> }
+                  </ul>
+                }
+              </details>
+            </div>
+          }
         </div>
 
         <div class="modal-footer">

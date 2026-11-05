@@ -71,7 +71,7 @@ interface LinhaApontar {
         </div>
       }
 
-      @if (permissao.canEdit() && !terminal()) {
+      @if (permissao.pode(['producao.ordens.liberar', 'producao.ordens.iniciar', 'producao.ordens.cancelar']) && !terminal()) {
         <div class="d-flex flex-wrap gap-2 mb-3">
           @if (o.status === 'planejada') { <button class="btn btn-primary" [disabled]="agindo()" (click)="liberar(false)">Liberar (reservar materiais)</button> }
           @if (o.status === 'liberada') { <button class="btn btn-primary" [disabled]="agindo()" (click)="iniciar()">Iniciar produção</button> }
@@ -106,7 +106,7 @@ interface LinhaApontar {
         <app-lotes-ordem [ordem]="o" />
       }
 
-      @if (o.status === 'em_producao' && permissao.canEdit()) {
+      @if (o.status === 'em_producao' && permissao.pode(['producao.ordens.apontamentos', 'producao.ordens.concluir'])) {
         <div class="card card-body mb-3">
           <h2 class="h6">Apontar produção</h2>
           <p class="small text-secondary mb-2">Informe as peças boas. Os materiais são baixados pelo consumo da ficha (com a perda prevista) e as peças entram no estoque, tudo de uma vez.</p>

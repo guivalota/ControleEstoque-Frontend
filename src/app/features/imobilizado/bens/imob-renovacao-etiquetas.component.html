@@ -55,7 +55,7 @@
               }
             </div>
           </div>
-          @if (permissao.imobCanDelete()) {
+          @if (permissao.pode('imobilizado.bens.codigo-anterior')) {
             <button type="button" class="btn" [class.btn-outline-danger]="!e.oculto" [class.btn-outline-primary]="e.oculto"
                     [disabled]="alterando()" (click)="alternarVirada()">
               @if (alterando()) { <span class="spinner-border spinner-border-sm me-1"></span> }
@@ -69,7 +69,7 @@
     </div>
   </div>
 
-  @if (permissao.imobCanDelete()) {
+  @if (permissao.pode('imobilizado.bens.de-para')) {
     <!-- De-para -->
     <div class="card border-0 shadow-sm mb-3">
       <div class="card-body">

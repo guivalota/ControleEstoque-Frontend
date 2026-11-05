@@ -36,7 +36,7 @@ describe('SidebarComponent (menu por modulos)', () => {
     expect(tem(el, '/imobilizado')).toBeFalse();
     expect(tem(el, '/clientes')).toBeTrue();
     expect(tem(el, '/fornecedores')).toBeTrue();
-    expect(tem(el, '/usuarios')).toBeTrue();
+    expect(tem(el, '/configuracoes/equipe')).toBeTrue();
   });
 
   it('com producao: mostra o grupo Produção; sem o módulo, o grupo não aparece', () => {
@@ -67,7 +67,7 @@ describe('SidebarComponent (menu por modulos)', () => {
     expect(tem(el, '/imobilizado')).toBeTrue();
     expect(tem(el, '/clientes')).toBeFalse(); // a API responde 403 ao contador
     expect(tem(el, '/fornecedores')).toBeTrue(); // ele lê fornecedores (cadastro de bens)
-    expect(tem(el, '/usuarios')).toBeFalse();
+    expect(tem(el, '/configuracoes/equipe')).toBeFalse();
     expect(tem(el, '/configuracoes')).toBeFalse();
   });
 
@@ -109,7 +109,7 @@ describe('SidebarComponent (menu por modulos)', () => {
     expect(tem(el, '/clientes')).toBeFalse();
     expect(tem(el, '/fornecedores')).toBeFalse();
     expect(tem(el, '/produtos')).toBeFalse();
-    expect(tem(el, '/usuarios')).toBeFalse();
+    expect(tem(el, '/configuracoes/equipe')).toBeFalse();
     expect(tem(el, '/manual')).toBeTrue();
   });
 

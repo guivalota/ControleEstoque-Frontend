@@ -124,7 +124,7 @@
     }
 
     <!-- Gerar variações -->
-    @if (permissao.canCreate()) {
+    @if (permissao.pode('estoque.produtos.gerar-grade')) {
       <div class="card border-0 shadow-sm">
         <div class="card-header bg-body fw-semibold small">Gerar variações</div>
         <div class="card-body">

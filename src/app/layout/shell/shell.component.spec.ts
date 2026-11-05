@@ -36,16 +36,16 @@ describe('ShellComponent (estados da empresa ativa)', () => {
     expect(Array.from(el().querySelectorAll('main button')).some(b => b.textContent?.includes('Sair'))).toBeTrue();
   });
 
-  it('conta cliente com perfil admin na empresa: selo Admin e sem banner de leitura', () => {
+  it('conta cliente com perfil admin na empresa: selo com o nome do perfil e sem banner de leitura', () => {
     const { empresa, fixture, el } = criar();
-    empresa.empresas.set([{ id: 1, razaoSocial: 'X', cnpj: '', ativo: true, criadoEm: '', perfil: 'admin', modulos: ['estoque'] }]);
+    empresa.empresas.set([{ id: 1, razaoSocial: 'X', cnpj: '', ativo: true, criadoEm: '', perfil: 'admin', perfilNome: 'Administrador', modulos: ['estoque'] }]);
     empresa.id.set(1);
     empresa.carregado.set(true);
     fixture.detectChanges();
     const texto = el().textContent ?? '';
-    expect(el().querySelector('app-topbar .badge')?.textContent?.trim()).toBe('Admin');
+    expect(el().querySelector('app-topbar .badge')?.textContent?.trim()).toBe('Administrador');
     expect(texto).not.toContain('Modo somente leitura');
-    expect(el().querySelector('a[href="/usuarios"]')).not.toBeNull();
+    expect(el().querySelector('a[href="/configuracoes/equipe"]')).not.toBeNull();
   });
 
   it('não oferece "Trocar empresa", mesmo com 2 vínculos legados (usa a primeira)', () => {

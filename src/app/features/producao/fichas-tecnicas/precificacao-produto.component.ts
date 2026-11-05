@@ -26,13 +26,13 @@ const MOEDA = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL
       <div class="row g-2 align-items-end mb-2">
         <div class="col-6 col-md-3">
           <label class="form-label small mb-1" for="margem">Margem desejada (%)</label>
-          <input id="margem" class="form-control form-control-sm" type="number" min="0" max="99.99" step="any" [(ngModel)]="margem" [disabled]="!permissao.canEdit()">
+          <input id="margem" class="form-control form-control-sm" type="number" min="0" max="99.99" step="any" [(ngModel)]="margem" [disabled]="!permissao.pode('producao.produtos.precificacao-editar')">
         </div>
         <div class="col-6 col-md-3">
           <label class="form-label small mb-1" for="despesas">Despesas de venda (%)</label>
-          <input id="despesas" class="form-control form-control-sm" type="number" min="0" max="99.99" step="any" [(ngModel)]="despesas" [disabled]="!permissao.canEdit()">
+          <input id="despesas" class="form-control form-control-sm" type="number" min="0" max="99.99" step="any" [(ngModel)]="despesas" [disabled]="!permissao.pode('producao.produtos.precificacao-editar')">
         </div>
-        @if (permissao.canEdit()) {
+        @if (permissao.pode('producao.produtos.precificacao-editar')) {
           <div class="col-auto">
             <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="salvando()" (click)="salvar()">Salvar e recalcular</button>
           </div>

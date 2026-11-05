@@ -57,7 +57,7 @@ export class ImobInventarioFormComponent implements OnInit {
     const i = this.inventario();
     return i !== null && !inventarioEditavel(i.status);
   });
-  podeEscolherEquipe = computed(() => this.permissao.canManageUsers());
+  podeEscolherEquipe = computed(() => this.permissao.pode('core.equipe.ver'));
 
   /** Data-base não pode ser futura (o servidor valida no fuso de São Paulo). */
   readonly hoje = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);

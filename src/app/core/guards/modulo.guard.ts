@@ -17,9 +17,9 @@ export function moduloGuard(codigo: string): CanActivateFn {
     const dono = inject(AuthService).currentUser()?.sub ?? '';
     return empresa.garantirCarregada(dono).pipe(
       map(() => {
-        // contador (conjunto de permissões, US-19-19) não usa o Estoque
-        if (codigo === 'estoque' && empresa.ativa() && !permissao.podeUsarEstoque()) {
-          empresa.aviso.set('Seu perfil (contador) não acessa o Estoque.');
+        // perfil sem nenhuma tela do Estoque (ex.: contador) não o usa
+        if (codigo === 'estoque' && empresa.ativa() && !permissao.podeUsarModulo('estoque')) {
+          empresa.aviso.set('Seu perfil não acessa o Estoque.');
           return router.createUrlTree([empresa.rotaInicial(codigo)]);
         }
         if (!empresa.ativa() || empresa.temModulo(codigo)) return true;

@@ -118,7 +118,7 @@ core/services/empresa-ativa.service.ts    # active company state (signals); no p
 core/services/imob-{empresa,local,categoria,responsavel,bem}.service.ts   # stateless: return Observables, no signals
 core/interceptors/empresa.interceptor.ts  # X-Empresa-Id + 403 handling
 core/guards/empresa-ativa.guard.ts        # imobilizadoGuard (loads companies) + empresaAtivaGuard (canActivateChild)
-core/guards/escrita.guard.ts              # create/edit routes: admin/operador only
+core/guards/permissao.guard.ts            # rotas por permissão (data.permissao)
 core/utils/                               # cnpj, erros-api, http-params, imob-formato (BRL/date/%/vida útil), historico-formato, local-arvore, validadores, download
 features/imobilizado/
   shell/        # area header (active company), tabs, "sem acesso" screen
@@ -153,7 +153,7 @@ Estoque também tem `lotes` (CRUD + validade; params PascalCase) e `loteId` opci
 
 ### Conventions specific to this area
 
-- Roles via `PermissaoService`. No Imobilizado use `imobCanCreate`/`imobCanEdit`/`imobCanDelete` (perfil **efetivo** = `EmpresaAtiva.perfil` como o servidor devolve em `minhas-empresas`/`empresa-ativa`; **não** recombinar com a role do token: conta cliente tem role global `leitura` e perfil admin no vínculo). O banner "somente leitura" do shell usa esse perfil dentro de `/imobilizado`. `canCreate`/`canEdit`/`canDelete` ficam para o Estoque. Hide write buttons **and** protect routes (`adminGuard`, `escritaGuard`); the backend is the real authority.
+- **Permissões (E25, DSG-27):** a única fonte é `PermissaoService.pode('modulo.recurso.acao' | [..])` (lista = OU), alimentada pela lista `permissoes` que o servidor devolve em `empresa/ativa`/`empresa/minhas`; os códigos são o tipo `Permissao` (`core/models/permissoes.ts`, gerado do catálogo do back; `permissoes-descricoes.ts` traz o texto em português). Esconda botões com `*appPode='codigo'`/`[appPodeDesabilitar]`, proteja rotas com `permissaoGuard` + `data: { permissao }` (o servidor é a autoridade real) e use `podeUsarModulo(m)` para menus. Não existem mais `canCreate/imobCan*/isContador`. Nos specs, `provideAuthFake(role)` deriva as permissões do perfil-modelo (admin/operador/leitura/contador) quando a empresa não informa `permissoes`; informe `permissoes` para testar perfis personalizados. Perfis e matriz: `features/configuracoes/perfis`.
 - 403 com `{ error }` (perfil, equipe do inventário, dono da OS) mantém a tela e mostra a mensagem; só `Sem acesso à empresa...` (ou 403 sem mensagem) aciona `perdeuAcesso()`.
 - OS (`ordens-servico`): abrir não altera o bem; aprovar (admin) aplica o efeito; manutenção fica `aprovada` até concluir. Depreciação: valores e memória de cálculo vêm prontos do servidor (não recalcular); ajuda é Markdown renderizado por `renderizarMarkdown` (HTML cru é escapado). Competências usam `yyyy-MM` na rota.
 - Errors: `lerErroApi()` handles both `{ error }` (business rule) and ASP.NET `errors` (per field); `aplicarErroNoForm()` puts them on form controls (keyword → field map for `{ error }` messages). Export errors arrive as `Blob` — `ImobBemService.exportar` rebuilds them.

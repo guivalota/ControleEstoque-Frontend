@@ -1,63 +1,54 @@
 import { Injectable, inject, computed } from '@angular/core';
 import { AuthService } from './auth.service';
 import { EmpresaAtivaService } from './empresa-ativa.service';
-import { ImobPerfil } from '../models/imob-empresa.model';
+import { Permissao } from '../models/permissoes';
 
+/** Ações de consulta: um perfil que só tem estas está em "somente leitura". */
+const ACOES_DE_CONSULTA = new Set(['ver', 'uso', 'historico']);
+
+/**
+ * Permissões do usuário na empresa ativa (E25, DSG-27). A única fonte é a lista `permissoes` que o servidor devolve em
+ * `empresa/ativa` e `empresa/minhas` (perfil ∩ módulos liberados); telas, rotas e menu perguntam por `pode()`.
+ */
 @Injectable({ providedIn: 'root' })
 export class PermissaoService {
   private auth = inject(AuthService);
-  private empresa = inject(EmpresaAtivaService);
+  protected empresa = inject(EmpresaAtivaService);
 
   role = computed(() => this.auth.currentUser()?.role);
 
-  /** Super administrador: administra a plataforma e nunca acessa módulos de negócio (sem permissão de escrita em nada de empresa). */
+  /** Super administrador: administra a plataforma e nunca acessa módulos de negócio (sem permissão em nada de empresa). */
   isSuperAdmin = computed(() => this.role() === 'superadmin');
 
+  /** Permissões efetivas na empresa ativa; vazio enquanto não há empresa ativa (nada é permitido). */
+  permissoes = computed<ReadonlySet<string>>(() => {
+    if (this.isSuperAdmin()) return new Set<string>();
+    return new Set(this.empresa.ativa()?.permissoes ?? []);
+  });
+
+  /** Nome do perfil do usuário nesta empresa (ex.: "Cadastrador"), para mostrar na interface. */
+  perfilNome = computed(() => this.empresa.ativa()?.perfilNome ?? null);
+
   /**
-   * Perfil efetivo na empresa ativa, como o servidor devolve em `perfil`
-   * (plataforma: menor entre role global e vínculo; conta cliente: o do vínculo).
-   * Não recombinar com a role do token: a conta cliente tem role global `leitura`.
-   * Sem perfil informado pelo servidor vale a role global. Superadmin não tem perfil de negócio.
+   * O usuário pode? Com uma lista, basta uma (OU). Lida dentro de `computed`/`effect`/templates, reage à troca de empresa e ao
+   * recarregamento do perfil.
    */
-  perfil = computed<ImobPerfil | undefined>(
-    () => this.isSuperAdmin() ? undefined : this.empresa.ativa()?.perfil ?? (this.role() as ImobPerfil | undefined)
-  );
+  pode(codigo: Permissao | readonly Permissao[]): boolean {
+    const lista: readonly Permissao[] = typeof codigo === 'string' ? [codigo] : codigo;
+    const conjunto = this.permissoes();
+    return lista.some(c => conjunto.has(c));
+  }
 
-  /** admin e operador podem criar/editar qualquer registro */
-  canCreate = computed(() => this.perfil() === 'admin' || this.perfil() === 'operador');
-  canEdit   = this.canCreate;
+  /** Algum módulo de negócio (`estoque`, `imobilizado`, `producao`): o usuário tem alguma tela de consulta dele? */
+  podeUsarModulo(modulo: 'estoque' | 'imobilizado' | 'producao'): boolean {
+    for (const c of this.permissoes()) if (c.startsWith(modulo + '.') && c.endsWith('.ver')) return true;
+    return false;
+  }
 
-  /** somente admin pode excluir */
-  canDelete = computed(() => this.perfil() === 'admin');
-
-  /** somente admin acessa o módulo de usuários */
-  canManageUsers = this.canDelete;
-
-  /** Perfil contador (conjunto de permissões, não um degrau): só Imobilizado contábil/parâmetros, nunca Estoque nem cadastros. */
-  isContador = computed(() => this.perfil() === 'contador');
-
-  /** Estoque (módulo e telas): o contador não usa. */
-  podeUsarEstoque = computed(() => !this.isContador());
-
-  /** Clientes (Core): a API não lista para o contador (403); o menu e a rota o escondem. Fornecedores ele lê (usa no cadastro de bens). */
-  podeUsarClientes = computed(() => !this.isContador());
-
-  /** Categorias do Imobilizado (vida útil, residual): admin, contador e operador (legado). */
-  imobCanEditCategorias = computed(() => ['admin', 'contador', 'operador'].includes(this.perfil() ?? ''));
-
-  /** Prévia de depreciação: admin, contador e operador. */
-  imobCanPreviaDepreciacao = computed(() => ['admin', 'contador', 'operador'].includes(this.perfil() ?? ''));
-
-  /** Fechar e reabrir período de depreciação: admin e contador. */
-  imobCanFecharDepreciacao = computed(() => this.perfil() === 'admin' || this.perfil() === 'contador');
-
-  /** Estados de conservação, pesos e escalas VP/VF: admin e contador. */
-  imobCanParametrizar = this.imobCanFecharDepreciacao;
-
-  /** Imobilizado: mesmo perfil efetivo da empresa ativa. */
-  perfilImob = this.perfil;
-
-  imobCanCreate = this.canCreate;
-  imobCanEdit = this.canCreate;
-  imobCanDelete = this.canDelete;
+  /** Há empresa ativa e o perfil só consulta (nenhuma ação além de ver). */
+  somenteLeitura = computed(() => {
+    const conjunto = this.permissoes();
+    if (this.empresa.ativa() === null || conjunto.size === 0) return false;
+    return [...conjunto].every(c => ACOES_DE_CONSULTA.has(c.slice(c.lastIndexOf('.') + 1)));
+  });
 }

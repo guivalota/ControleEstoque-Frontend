@@ -84,7 +84,7 @@ interface LinhaDevolucao {
         </ul>
       }
 
-      @if (r.status !== 'concluida' && permissao.canEdit()) {
+      @if (r.status !== 'concluida' && permissao.pode('producao.faccao-remessas.retornos')) {
         <div class="card card-body mb-3">
           <h2 class="h6">Registrar retorno</h2>
           @for (l of linhas; track $index) {

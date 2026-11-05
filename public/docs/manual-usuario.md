@@ -31,7 +31,7 @@ O **ControleEstoque** é um sistema para gerenciar o estoque de uma empresa de p
 
 ### Meu perfil
 
-Cada usuário pode visualizar e atualizar seus próprios dados em "Meu perfil" (nome, e-mail, senha), sem depender de um administrador. Para trocar a senha é preciso informar também a **senha atual**; no primeiro acesso com senha provisória ela não é pedida.
+Cada usuário pode visualizar e atualizar seus próprios dados em "Meu perfil" (nome, e-mail, senha), sem depender de um administrador. Ao final da janela, **Meu acesso** mostra o nome do seu perfil e, em português, tudo o que ele permite (por módulo). Para trocar a senha é preciso informar também a **senha atual**; no primeiro acesso com senha provisória ela não é pedida.
 
 ### Perfis de acesso
 
@@ -309,3 +309,18 @@ Sim — exclusões são "suaves" (*soft delete*): o registro fica marcado como r
 
 **Recebi um erro genérico "Ocorreu um erro inesperado"**
 Isso indica um problema interno. Anote a hora exata e o que estava fazendo, e acione o suporte técnico — o erro fica registrado nos logs do sistema para investigação.
+
+## Equipe da empresa
+
+O administrador da empresa gerencia os usuários em **Configurações → Equipe** (também pelo item **Equipe** do menu): cria o usuário informando nome, e-mail e **perfil** (escolhido entre os perfis da empresa), e o sistema mostra uma **senha provisória uma única vez** (copie e entregue ao usuário; no primeiro acesso ele define a senha definitiva). Ali também é possível alterar o perfil, redefinir a senha (encerra as sessões do usuário), desativar ou reativar o acesso e consultar o histórico de ações. A empresa nunca fica sem um administrador ativo.
+
+Quem tem a permissão de gerir acessos também escolhe, na mesma tela, os **módulos** que cada pessoa enxerga (lápis na coluna *Módulos*; "Todos os da empresa" libera os que a empresa tiver). Só é possível liberar módulos que você mesmo acessa.
+
+## Perfis e permissões
+
+Cada empresa monta os próprios perfis em **Configurações → Perfis**. Um perfil é um conjunto de permissões; a pessoa só vê as telas e botões que o perfil dela permite.
+
+- **Perfis padrão:** toda empresa já nasce com **Administrador** (tem tudo, não pode ser alterado), **Operador** e **Leitura**. O Operador e a Leitura podem ser ajustados e, se necessário, voltam ao modelo com **Restaurar o padrão**; o nome deles não muda e eles não são excluídos.
+- **Criar, copiar, editar:** use **Novo perfil** ou o ícone de copiar (parte de um perfil existente). No editor, a matriz mostra módulo × recurso × ação. Marque uma ação para liberá-la; o sistema marca junto o que ela exige (por exemplo, "criar" exige "ver"), e a coluna "Tudo" e o ícone no título da coluna marcam linhas e colunas inteiras. Ações **sensíveis** (excluir, aprovar, fechar período, credenciais) aparecem destacadas. Permissões marcadas com cadeado são essenciais para entrar no sistema e não podem ser retiradas.
+- **Limites:** só se concede o que você mesmo tem. Perfil em uso não pode ser inativado nem excluído; troque antes o perfil das pessoas.
+- **Atribuir:** em **Configurações → Equipe**, escolha o perfil de cada pessoa. Quem não tiver acesso à tela de Perfis vê a lista de ações do próprio perfil em **Meu perfil → Meu acesso**.

@@ -43,5 +43,5 @@ export class ShellComponent {
   chaveEmpresa = computed(() => this.naImobilizado() ? 0 : this.empresa.id());
 
   /** Vale o perfil na empresa ativa (a conta cliente tem role global leitura mas o poder vem do vínculo). */
-  somenteLeitura = computed(() => this.empresa.ativa() !== null && this.permissao.perfil() === 'leitura');
+  somenteLeitura = computed(() => this.permissao.somenteLeitura());
 }

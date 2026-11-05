@@ -41,7 +41,7 @@ export class ManualComponent {
       { chave: 'estoque', titulo: 'Estoque', icone: 'bi-box-seam', arquivo: 'docs/manual-usuario.md', visivel: true },
       {
         chave: 'producao', titulo: 'Produção', icone: 'bi-scissors', arquivo: 'docs/manual-producao.md',
-        visivel: this.empresa.temModulo('producao') && this.permissao.podeUsarEstoque()
+        visivel: this.empresa.temModulo('producao') && this.permissao.podeUsarModulo('estoque')
       }
     ];
     return todos.filter(m => m.visivel);

@@ -1,7 +1,7 @@
 <div>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-bold mb-0">Categorias</h5>
-    @if (permissao.canCreate()) {
+    @if (permissao.pode('estoque.categorias.criar')) {
       <button class="btn btn-primary btn-sm" (click)="openCreate()">
         <i class="bi bi-plus-lg me-1"></i>Nova Categoria
       </button>
@@ -40,12 +40,12 @@
                     }
                   </td>
                   <td class="text-end pe-3">
-                    @if (permissao.canEdit()) {
+                    @if (permissao.pode('estoque.categorias.editar')) {
                       <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(c)" title="Editar">
                         <i class="bi bi-pencil"></i>
                       </button>
                     }
-                    @if (permissao.canDelete()) {
+                    @if (permissao.pode('estoque.categorias.excluir')) {
                       <button class="btn btn-sm btn-outline-danger" (click)="delete(c)" title="Excluir">
                         <i class="bi bi-trash"></i>
                       </button>

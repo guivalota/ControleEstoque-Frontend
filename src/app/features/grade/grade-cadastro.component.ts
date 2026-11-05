@@ -37,8 +37,8 @@ export class GradeCadastroComponent implements OnInit {
   novoEixo = { codigo: '', nome: '' };
 
   /** Valores e eixos: admin e operador; criar/alterar eixo: só admin (como o servidor). */
-  podeValores = computed(() => this.permissao.canCreate());
-  podeEixos = computed(() => this.permissao.canDelete());
+  podeValores = computed(() => this.permissao.pode('estoque.grade.valores-criar'));
+  podeEixos = computed(() => this.permissao.pode('estoque.grade.eixos-criar'));
 
   ngOnInit() {
     this.carregar();

@@ -25,7 +25,7 @@ import { lerErroApi, textoDoErro } from '../../../core/utils/erros-api';
         <input class="form-control" type="search" placeholder="Buscar por SKU ou nome" aria-label="Buscar ficha"
                [(ngModel)]="busca" (ngModelChange)="buscarComAtraso()">
       </div>
-      @if (permissao.canCreate()) {
+      @if (permissao.pode('producao.fichas-tecnicas.criar')) {
         <div class="col-12 col-md-7 position-relative">
           <input class="form-control" type="search" placeholder="Nova ficha: busque o produto acabado ou semiacabado"
                  aria-label="Produto da nova ficha" [(ngModel)]="buscaProduto" (ngModelChange)="buscarProdutoComAtraso()">
@@ -59,7 +59,7 @@ import { lerErroApi, textoDoErro } from '../../../core/utils/erros-api';
                 <td class="text-end">{{ f.quantidadeItens }}</td>
                 <td class="text-end">
                   <a class="btn btn-sm btn-outline-primary" [routerLink]="['/producao/fichas-tecnicas/produto', f.produtoId]">
-                    {{ permissao.canEdit() ? 'Abrir' : 'Ver' }}
+                    {{ permissao.pode('producao.fichas-tecnicas.criar') ? 'Abrir' : 'Ver' }}
                   </a>
                 </td>
               </tr>

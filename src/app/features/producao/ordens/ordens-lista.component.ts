@@ -24,7 +24,7 @@ const CLASSE_STATUS: Record<StatusOrdemProducao, string> = {
   template: `
     <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
       <h1 class="h4 mb-0 me-auto">Ordens de produção</h1>
-      @if (permissao.canCreate()) {
+      @if (permissao.pode('producao.ordens.criar')) {
         <a class="btn btn-primary" routerLink="/producao/ordens/nova">Nova ordem</a>
       }
     </div>

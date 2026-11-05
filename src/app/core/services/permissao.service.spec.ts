@@ -1,84 +1,86 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { ImobPerfil } from '../models/imob-empresa.model';
-import { provideAuthFake, RoleFake } from '../../testing/auth-fake';
+import { signal } from '@angular/core';
+import { AuthService } from './auth.service';
 import { EmpresaAtivaService } from './empresa-ativa.service';
 import { PermissaoService } from './permissao.service';
 
-function criar(role: RoleFake, perfil?: ImobPerfil) {
-  TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideAuthFake(role)] });
+/** Usa o `PermissaoService` de verdade (o `provideAuthFake` dos outros specs o substitui por um que deriva do papel). */
+function criar(role: string, permissoes?: string[], perfilNome?: string) {
+  TestBed.configureTestingModule({
+    providers: [
+      provideHttpClient(), provideHttpClientTesting(),
+      { provide: AuthService, useValue: { currentUser: signal({ role, nome: 'F', email: 'f@x.com' }), isSuperAdmin: () => role === 'superadmin' } }
+    ]
+  });
   const empresa = TestBed.inject(EmpresaAtivaService);
-  empresa.empresas.set([{ id: 1, razaoSocial: 'X', nomeFantasia: 'X', cnpj: '', ativo: true, criadoEm: '', perfil }]);
-  empresa.id.set(1);
-  return TestBed.inject(PermissaoService);
+  if (permissoes) {
+    empresa.empresas.set([{ id: 1, razaoSocial: 'X', nomeFantasia: 'X', cnpj: '', ativo: true, criadoEm: '', permissoes, perfilNome }]);
+    empresa.id.set(1);
+  }
+  return { p: TestBed.inject(PermissaoService), empresa };
 }
 
-describe('PermissaoService (Imobilizado)', () => {
-  it('usa o perfil da empresa devolvido pelo servidor, mesmo com role global leitura (conta cliente)', () => {
-    const p = criar('leitura', 'admin');
-    expect(p.perfilImob()).toBe('admin');
-    expect(p.imobCanCreate()).toBeTrue();
-    expect(p.imobCanDelete()).toBeTrue();
+describe('PermissaoService (E25)', () => {
+  it('pode() vale só o que o servidor informou, sem olhar o papel do token', () => {
+    const { p } = criar('leitura', ['imobilizado.locais.ver', 'imobilizado.locais.criar'], 'Cadastrador');
+
+    expect(p.pode('imobilizado.locais.criar')).toBeTrue();
+    expect(p.pode('imobilizado.locais.excluir')).toBeFalse();
+    expect(p.pode('estoque.produtos.ver')).toBeFalse();
+    expect(p.perfilNome()).toBe('Cadastrador');
   });
 
-  it('perfil leitura na empresa bloqueia escrita', () => {
-    const p = criar('admin', 'leitura');
-    expect(p.perfilImob()).toBe('leitura');
-    expect(p.imobCanEdit()).toBeFalse();
+  it('com uma lista basta uma permissão (OU)', () => {
+    const { p } = criar('operador', ['estoque.lotes.ver']);
+
+    expect(p.pode(['estoque.produtos.ver', 'estoque.lotes.ver'])).toBeTrue();
+    expect(p.pode(['estoque.produtos.ver', 'estoque.produtos.editar'])).toBeFalse();
   });
 
-  it('operador não exclui', () => {
-    const p = criar('admin', 'operador');
-    expect(p.imobCanCreate()).toBeTrue();
-    expect(p.imobCanDelete()).toBeFalse();
+  it('sem empresa ativa (ou sem o campo `permissoes`) nada é permitido', () => {
+    const { p } = criar('admin');
+
+    expect(p.pode('estoque.produtos.ver')).toBeFalse();
+    expect(p.permissoes().size).toBe(0);
   });
 
-  it('sem perfil informado vale a role global', () => {
-    expect(criar('operador').perfilImob()).toBe('operador');
-  });
-});
+  it('super administrador nunca pode nada de empresa', () => {
+    const { p } = criar('superadmin', ['estoque.produtos.ver']);
 
-describe('PermissaoService (super administrador)', () => {
-  it('reconhece superadmin sem conceder escrita nem perfil de negócio', () => {
-    const p = criar('superadmin');
-    expect(p.isSuperAdmin()).toBeTrue();
-    expect(p.canCreate()).toBeFalse();
-    expect(p.canDelete()).toBeFalse();
-    expect(p.canManageUsers()).toBeFalse();
-    expect(p.perfilImob()).toBeUndefined();
-    expect(p.imobCanEdit()).toBeFalse();
-  });
-});
-
-describe('PermissaoService (Estoque pelo perfil da empresa ativa)', () => {
-  it('conta cliente com role global leitura e perfil admin pode escrever, excluir e gerir usuarios', () => {
-    const p = criar('leitura', 'admin');
-    expect(p.canCreate()).toBeTrue();
-    expect(p.canEdit()).toBeTrue();
-    expect(p.canDelete()).toBeTrue();
-    expect(p.canManageUsers()).toBeTrue();
+    expect(p.pode('estoque.produtos.ver')).toBeFalse();
+    expect(p.permissoes().size).toBe(0);
   });
 
-  it('perfil leitura na empresa bloqueia tudo, mesmo com role global admin', () => {
-    const p = criar('admin', 'leitura');
-    expect(p.canCreate()).toBeFalse();
-    expect(p.canEdit()).toBeFalse();
-    expect(p.canDelete()).toBeFalse();
-    expect(p.canManageUsers()).toBeFalse();
+  it('reage à troca de empresa e ao recarregamento das permissões', () => {
+    const { p, empresa } = criar('operador', ['estoque.produtos.ver']);
+    expect(p.pode('estoque.produtos.editar')).toBeFalse();
+
+    empresa.empresas.update(l => l.map(e => ({ ...e, permissoes: ['estoque.produtos.ver', 'estoque.produtos.editar'] })));
+
+    expect(p.pode('estoque.produtos.editar')).toBeTrue();
   });
 
-  it('perfil operador escreve mas nao exclui nem gere usuarios', () => {
-    const p = criar('leitura', 'operador');
-    expect(p.canCreate()).toBeTrue();
-    expect(p.canDelete()).toBeFalse();
-    expect(p.canManageUsers()).toBeFalse();
+  it('podeUsarModulo: precisa de alguma tela de consulta do módulo', () => {
+    const { p } = criar('leitura', ['imobilizado.bens.ver', 'estoque.produtos.criar', 'core.clientes.ver']);
+
+    expect(p.podeUsarModulo('imobilizado')).toBeTrue();
+    expect(p.podeUsarModulo('estoque')).toBeFalse(); // só "criar", sem nenhuma tela de consulta
+    expect(p.podeUsarModulo('producao')).toBeFalse();
   });
 
-  it('sem empresa ativa vale a role global', () => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideAuthFake('admin')] });
-    const p = TestBed.inject(PermissaoService);
-    expect(p.canCreate()).toBeTrue();
-    expect(p.canManageUsers()).toBeTrue();
+  it('somenteLeitura: só ações de consulta, e só com empresa ativa', () => {
+    expect(criar('leitura', ['estoque.produtos.ver', 'core.empresa.uso']).p.somenteLeitura()).toBeTrue();
+  });
+
+  it('somenteLeitura é falso quando há alguma ação de escrita', () => {
+    TestBed.resetTestingModule();
+    expect(criar('operador', ['estoque.produtos.ver', 'estoque.produtos.criar']).p.somenteLeitura()).toBeFalse();
+  });
+
+  it('somenteLeitura é falso sem empresa ativa', () => {
+    TestBed.resetTestingModule();
+    expect(criar('leitura').p.somenteLeitura()).toBeFalse();
   });
 });

@@ -67,7 +67,7 @@ export class ImobDepreciacaoPainelComponent implements OnInit {
   destino(a: AlertaDepreciacao): DestinoAlerta | null {
     const d = DESTINOS[a.destino];
     if (!d) return null;
-    return d.exige === 'admin' && !this.permissao.imobCanDelete() ? null : d;
+    return d.exige === 'admin' && !this.permissao.pode(['imobilizado.depreciacao-periodos.fechar', 'imobilizado.depreciacao-periodos.reabrir']) ? null : d;
   }
 
   nomeStatus(nome: string): string {

@@ -9,6 +9,11 @@ export interface ImobEmpresa {
   perfil?: ImobPerfil;
   /** Códigos dos módulos contratados/liberados para a empresa (ex.: `estoque`, `imobilizado`). */
   modulos?: string[];
+  /** Perfil do usuário na empresa (E25): id e nome (ex.: "Cadastrador"). */
+  perfilId?: number | null;
+  perfilNome?: string | null;
+  /** Permissões efetivas (perfil ∩ módulos liberados), como `modulo.recurso.acao`. Ausente = servidor antigo. */
+  permissoes?: string[];
 }
 
 /** `contador` NÃO é um degrau da escada admin > operador > leitura: é um conjunto de permissões (matriz em DSG-14, US-19-19). */

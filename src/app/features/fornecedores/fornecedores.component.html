@@ -1,7 +1,7 @@
 <div>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-bold mb-0">Fornecedores</h5>
-    @if (permissao.canCreate()) {
+    @if (permissao.pode('core.fornecedores.criar')) {
       <button class="btn btn-primary btn-sm" (click)="openCreate()">
         <i class="bi bi-plus-lg me-1"></i>Novo Fornecedor
       </button>
@@ -37,7 +37,7 @@
           <button class="btn btn-outline-secondary btn-sm" (click)="limparFiltros()">
             <i class="bi bi-x-lg"></i>
           </button>
-          @if (permissao.canCreate()) {
+          @if (permissao.pode('core.fornecedores.criar')) {
             <button class="btn btn-outline-secondary btn-sm" (click)="imprimir()" [disabled]="imprimindo()" title="Imprimir lista">
               @if (imprimindo()) { <span class="spinner-border spinner-border-sm"></span> }
               @else { <i class="bi bi-printer"></i> }
@@ -84,12 +84,12 @@
                     }
                   </td>
                   <td class="text-end pe-3">
-                    @if (permissao.canEdit()) {
+                    @if (permissao.pode('core.fornecedores.editar')) {
                       <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(f)" title="Editar">
                         <i class="bi bi-pencil"></i>
                       </button>
                     }
-                    @if (permissao.canDelete()) {
+                    @if (permissao.pode('core.fornecedores.excluir')) {
                       <button class="btn btn-sm btn-outline-danger" (click)="delete(f)" title="Excluir">
                         <i class="bi bi-trash"></i>
                       </button>
