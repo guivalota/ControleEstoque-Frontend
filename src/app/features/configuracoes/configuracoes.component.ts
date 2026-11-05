@@ -10,6 +10,7 @@ export interface AbaConfiguracao {
 /** Abas de Configurações da empresa (E17). As telas de cada story se plugam como filhas lazy em `configuracoes.routes.ts`. */
 export const ABAS_CONFIGURACOES: AbaConfiguracao[] = [
   { caminho: 'perfil', titulo: 'Perfil', icone: 'bi-building' },
+  { caminho: 'equipe', titulo: 'Equipe', icone: 'bi-people' },
   { caminho: 'fiscal', titulo: 'Fiscal', icone: 'bi-receipt' },
   { caminho: 'integracoes', titulo: 'Integrações', icone: 'bi-plug' },
   { caminho: 'email', titulo: 'E-mail', icone: 'bi-envelope' },

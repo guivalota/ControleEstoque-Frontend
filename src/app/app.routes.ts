@@ -161,9 +161,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/lotes/lotes.component').then(m => m.LotesComponent)
       },
       {
+        // Antiga tela "Usuários" (chamava v1/users, só do super admin): a equipe da empresa agora é Configurações → Equipe.
         path: 'usuarios',
-        canActivate: [adminGuard],
-        loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent)
+        pathMatch: 'full',
+        redirectTo: 'configuracoes/equipe'
       },
       {
         path: 'fornecedores',

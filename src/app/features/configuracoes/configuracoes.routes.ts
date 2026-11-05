@@ -7,6 +7,7 @@ const emConstrucao = () =>
 /** Telas reais por aba; aba sem tela cai no placeholder. */
 const TELAS: Record<string, () => Promise<unknown>> = {
   perfil: () => import('./perfil/perfil.component').then(m => m.PerfilComponent),
+  equipe: () => import('./equipe/equipe.component').then(m => m.EquipeComponent),
   fiscal: () => import('./fiscal/fiscal.component').then(m => m.FiscalComponent),
   integracoes: () => import('./integracoes/integracoes.component').then(m => m.IntegracoesComponent),
   email: () => import('./email/email.component').then(m => m.EmailComponent),

@@ -309,3 +309,7 @@ Sim — exclusões são "suaves" (*soft delete*): o registro fica marcado como r
 
 **Recebi um erro genérico "Ocorreu um erro inesperado"**
 Isso indica um problema interno. Anote a hora exata e o que estava fazendo, e acione o suporte técnico — o erro fica registrado nos logs do sistema para investigação.
+
+## Equipe da empresa
+
+O administrador da empresa gerencia os usuários em **Configurações → Equipe** (também pelo item **Equipe** do menu): cria o usuário informando nome, e-mail e perfil, e o sistema mostra uma **senha provisória uma única vez** (copie e entregue ao usuário; no primeiro acesso ele define a senha definitiva). Ali também é possível alterar o perfil, redefinir a senha (encerra as sessões do usuário), desativar ou reativar o acesso e consultar o histórico de ações. A empresa nunca fica sem um administrador ativo.

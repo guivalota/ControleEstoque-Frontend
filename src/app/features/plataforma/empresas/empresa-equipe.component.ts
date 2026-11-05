@@ -1,7 +1,12 @@
 import { Component, OnInit, inject, input, signal, viewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { EquipeEmpresaService } from '../../../core/services/equipe-empresa.service';
 import { PlataformaEquipeService } from '../../../core/services/plataforma-equipe.service';
-import { EquipeEvento, EquipeMembro, PerfilEquipe } from '../../../core/models/plataforma-equipe.model';
+import {
+  CriarEquipeMembro, EquipeEvento, EquipeMembro, EquipeSenhaProvisoria, PerfilEquipe
+} from '../../../core/models/plataforma-equipe.model';
+import { PagedResult } from '../../../core/models/paged-result.model';
+import { Observable } from 'rxjs';
 import { AJUDA_PERFIS, PERFIS_IMOB, ROTULO_PERFIL } from '../../../core/models/imob-empresa.model';
 import { aplicarErroNoForm, lerErroApi } from '../../../core/utils/erros-api';
 import { formatarDataHora } from '../../../core/utils/imob-formato';
@@ -10,7 +15,20 @@ import { ConfirmDialogComponent } from '../../imobilizado/shared/confirm-dialog.
 
 const PAGE_SIZE = 20;
 
-/** Aba "Equipe" da empresa no painel do super admin: criar, perfil inline, redefinir senha, ativar/desativar, histórico. */
+/** Operações de equipe, as mesmas para a rota do super admin (com empresa) e para a do admin da empresa ativa. */
+interface EquipeApi {
+  listar(): Observable<EquipeMembro[]>;
+  criar(req: CriarEquipeMembro): Observable<EquipeSenhaProvisoria>;
+  alterarPerfil(usuarioId: string, perfil: PerfilEquipe): Observable<void>;
+  redefinirSenha(usuarioId: string): Observable<EquipeSenhaProvisoria>;
+  definirAtivo(usuarioId: string, ativo: boolean): Observable<void>;
+  eventos(page: number, pageSize: number): Observable<PagedResult<EquipeEvento>>;
+}
+
+/**
+ * Equipe da empresa: criar, perfil inline, redefinir senha, ativar/desativar, histórico. Com `empresaId` é a aba do super
+ * admin no painel da Plataforma; sem ele, é a tela do administrador da empresa ativa (Configurações → Equipe).
+ */
 @Component({
   selector: 'app-empresa-equipe',
   standalone: true,
@@ -165,11 +183,13 @@ const PAGE_SIZE = 20;
 })
 export class EmpresaEquipeComponent implements OnInit {
   private fb = inject(FormBuilder);
-  private service = inject(PlataformaEquipeService);
+  private plataforma = inject(PlataformaEquipeService);
+  private propria = inject(EquipeEmpresaService);
   private senhaModal = viewChild.required(SenhaProvisoriaModalComponent);
   private confirmar = viewChild.required(ConfirmDialogComponent);
 
-  empresaId = input.required<number>();
+  /** Informado pelo super admin; ausente = equipe da empresa ativa (admin da empresa). */
+  empresaId = input<number | null>(null);
 
   readonly perfis: PerfilEquipe[] = PERFIS_IMOB;
   readonly rotulo = ROTULO_PERFIL;
@@ -190,6 +210,19 @@ export class EmpresaEquipeComponent implements OnInit {
   erroEventos = signal('');
   feedback = signal('');
 
+  private get api(): EquipeApi {
+    const id = this.empresaId();
+    if (id === null) return this.propria;
+    return {
+      listar: () => this.plataforma.listar(id),
+      criar: req => this.plataforma.criar(id, req),
+      alterarPerfil: (u, p) => this.plataforma.alterarPerfil(id, u, p),
+      redefinirSenha: u => this.plataforma.redefinirSenha(id, u),
+      definirAtivo: (u, a) => this.plataforma.definirAtivo(id, u, a),
+      eventos: (page, size) => this.plataforma.eventos(id, page, size)
+    };
+  }
+
   form = this.fb.group({
     nome: ['', [Validators.required, Validators.maxLength(255)]],
     email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]],
@@ -204,7 +237,7 @@ export class EmpresaEquipeComponent implements OnInit {
   carregar() {
     this.loading.set(true);
     this.erroLista.set('');
-    this.service.listar(this.empresaId()).subscribe({
+    this.api.listar().subscribe({
       next: m => { this.membros.set(m); this.loading.set(false); },
       error: err => { this.erroLista.set(lerErroApi(err, 'Erro ao carregar a equipe.').mensagem); this.loading.set(false); }
     });
@@ -212,7 +245,7 @@ export class EmpresaEquipeComponent implements OnInit {
 
   carregarEventos(page: number) {
     this.erroEventos.set('');
-    this.service.eventos(this.empresaId(), page, PAGE_SIZE).subscribe({
+    this.api.eventos(page, PAGE_SIZE).subscribe({
       next: r => { this.eventos.set(r.items); this.totalEventos.set(r.total); this.pagina.set(page); },
       error: err => this.erroEventos.set(lerErroApi(err, 'Erro ao carregar o histórico.').mensagem)
     });
@@ -223,7 +256,7 @@ export class EmpresaEquipeComponent implements OnInit {
     this.salvando.set(true);
     this.erro.set('');
     const v = this.form.getRawValue();
-    this.service.criar(this.empresaId(), { nome: v.nome!.trim(), email: v.email!.trim(), perfil: v.perfil! }).subscribe({
+    this.api.criar({ nome: v.nome!.trim(), email: v.email!.trim(), perfil: v.perfil! }).subscribe({
       next: res => {
         this.salvando.set(false);
         this.novo.set(false);
@@ -248,7 +281,7 @@ export class EmpresaEquipeComponent implements OnInit {
     this.agindo.set(m.usuarioId);
     this.erro.set('');
     this.feedback.set('');
-    this.service.alterarPerfil(this.empresaId(), m.usuarioId, perfil).subscribe({
+    this.api.alterarPerfil(m.usuarioId, perfil).subscribe({
       next: () => {
         this.agindo.set(null);
         this.membros.update(l => l.map(x => x.usuarioId === m.usuarioId ? { ...x, perfil } : x));
@@ -272,7 +305,7 @@ export class EmpresaEquipeComponent implements OnInit {
     if (!ok) return;
     this.agindo.set(m.usuarioId);
     this.erro.set('');
-    this.service.redefinirSenha(this.empresaId(), m.usuarioId).subscribe({
+    this.api.redefinirSenha(m.usuarioId).subscribe({
       next: res => {
         this.agindo.set(null);
         this.senhaModal().abrir({
@@ -302,7 +335,7 @@ export class EmpresaEquipeComponent implements OnInit {
     }
     this.agindo.set(m.usuarioId);
     this.erro.set('');
-    this.service.definirAtivo(this.empresaId(), m.usuarioId, ativar).subscribe({
+    this.api.definirAtivo(m.usuarioId, ativar).subscribe({
       next: () => {
         this.agindo.set(null);
         this.membros.update(l => l.map(x => x.usuarioId === m.usuarioId ? { ...x, ativo: ativar } : x));

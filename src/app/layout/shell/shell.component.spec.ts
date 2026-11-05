@@ -45,7 +45,7 @@ describe('ShellComponent (estados da empresa ativa)', () => {
     const texto = el().textContent ?? '';
     expect(el().querySelector('app-topbar .badge')?.textContent?.trim()).toBe('Admin');
     expect(texto).not.toContain('Modo somente leitura');
-    expect(el().querySelector('a[href="/usuarios"]')).not.toBeNull();
+    expect(el().querySelector('a[href="/configuracoes/equipe"]')).not.toBeNull();
   });
 
   it('não oferece "Trocar empresa", mesmo com 2 vínculos legados (usa a primeira)', () => {

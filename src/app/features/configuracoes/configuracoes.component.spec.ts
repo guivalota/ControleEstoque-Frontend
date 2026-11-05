@@ -14,11 +14,11 @@ describe('Configurações (casca com abas lazy)', () => {
     ]
   }));
 
-  it('lista as seis abas', async () => {
+  it('lista as sete abas', async () => {
     const h = await RouterTestingHarness.create('/configuracoes/perfil');
     const links = Array.from((h.routeNativeElement as HTMLElement).querySelectorAll('nav a')).map(a => a.textContent!.trim());
     expect(links).toEqual(ABAS_CONFIGURACOES.map(a => a.titulo));
-    expect(links.length).toBe(6);
+    expect(links.length).toBe(7);
   });
 
   it('/configuracoes abre a aba Perfil', async () => {
