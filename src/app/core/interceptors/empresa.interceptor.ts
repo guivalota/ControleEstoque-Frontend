@@ -6,7 +6,7 @@ import { ToastService } from '../services/toast.service';
 
 const API = /\/v1\//;
 // Rotas sem [RequerEmpresa] (não enviam o header); toda outra rota /v1/** é dado de empresa.
-const SEM_EMPRESA = /\/v1\/(auth|users|plataforma|audit-logs|version|imobilizado\/(minhas-empresas|empresas|depreciacao\/ajuda))(?:[/?]|$)/;
+const SEM_EMPRESA = /\/v1\/(auth|users|plataforma|audit-logs|version|empresa\/minhas|imobilizado\/(empresas|depreciacao\/ajuda))(?:[/?]|$)/;
 
 function perdeuVinculo(err: HttpErrorResponse): boolean {
   const msg = (err.error as { error?: unknown } | null)?.error;

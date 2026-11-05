@@ -9,7 +9,7 @@ import { moduloGuard } from './modulo.guard';
 import { EmpresaAtivaService } from '../services/empresa-ativa.service';
 import { ImobEmpresa } from '../models/imob-empresa.model';
 
-const URL = '/api/v1/imobilizado/minhas-empresas';
+const URL = '/api/v1/empresa/minhas';
 const emp = (id: number, modulos: string[]): ImobEmpresa =>
   ({ id, razaoSocial: 'X', cnpj: '', ativo: true, criadoEm: '', perfil: 'admin', modulos });
 

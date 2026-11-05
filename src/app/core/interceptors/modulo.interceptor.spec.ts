@@ -7,7 +7,7 @@ import { empresaInterceptor } from './empresa.interceptor';
 import { EmpresaAtivaService } from '../services/empresa-ativa.service';
 import { ImobEmpresa } from '../models/imob-empresa.model';
 
-const MINHAS = '/api/v1/imobilizado/minhas-empresas';
+const MINHAS = '/api/v1/empresa/minhas';
 const emp = (modulos: string[]): ImobEmpresa =>
   ({ id: 1, razaoSocial: 'X', cnpj: '', ativo: true, criadoEm: '', perfil: 'admin', modulos });
 
