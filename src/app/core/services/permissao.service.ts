@@ -40,7 +40,7 @@ export class PermissaoService {
   }
 
   /** Algum módulo de negócio (`estoque`, `imobilizado`, `producao`): o usuário tem alguma tela de consulta dele? */
-  podeUsarModulo(modulo: 'estoque' | 'imobilizado' | 'producao'): boolean {
+  podeUsarModulo(modulo: 'estoque' | 'imobilizado' | 'producao' | 'financeiro'): boolean {
     for (const c of this.permissoes()) if (c.startsWith(modulo + '.') && c.endsWith('.ver')) return true;
     return false;
   }

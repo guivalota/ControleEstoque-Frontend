@@ -63,6 +63,18 @@ export const routes: Routes = [
     canActivate: [authGuard, contaEmpresaGuard, cargaEmpresaGuard],
     children: [
       {
+        path: 'financeiro',
+        canActivate: [moduloGuard('financeiro'), permissaoGuard],
+        data: { permissao: 'financeiro.status.ver' },
+        loadComponent: () => import('./features/financeiro/financeiro-inicio.component').then(m => m.FinanceiroInicioComponent)
+      },
+      {
+        path: 'financeiro/cadastros',
+        canActivate: [moduloGuard('financeiro'), permissaoGuard],
+        data: { permissao: 'financeiro.cadastros.ver' },
+        loadComponent: () => import('./features/financeiro/cadastros/cadastros-financeiro.component').then(m => m.CadastrosFinanceiroComponent)
+      },
+      {
         path: 'producao',
         canActivate: [moduloGuard('producao'), permissaoGuard],
         data: { permissao: 'producao.dashboard.ver' },

@@ -10,7 +10,8 @@ const ACOES_SENSIVEIS = new Set(['excluir', 'aprovar', 'rejeitar', 'encerrar', '
 /** Permissões administrativas do Core: só o Administrador-modelo. */
 const SO_ADMIN = [
   'core.acesso.', 'core.equipe.', 'core.empresa-credenciais.', 'core.empresa-email.', 'core.empresa-integracoes.',
-  'core.empresa-notificacoes.', 'core.empresa-perfil.', 'core.empresa-configuracoes.', 'core.empresa-logo.editar', 'core.empresa-logo.excluir'
+  'core.empresa-notificacoes.', 'core.empresa-perfil.', 'core.empresa-configuracoes.', 'core.empresa-logo.editar', 'core.empresa-logo.excluir',
+  'financeiro.cadastros.editar', 'financeiro.importacoes.', 'financeiro.aprovacao.'
 ];
 /** Telas contábeis: o Operador-modelo só consulta. */
 const CONTABIL = ['imobilizado.estados-conservacao.', 'imobilizado.reavaliacao-escalas.', 'imobilizado.reavaliacao-parametros.', 'imobilizado.depreciacao-previa.'];
@@ -19,7 +20,7 @@ const CONTABIL = ['imobilizado.estados-conservacao.', 'imobilizado.reavaliacao-e
 const CONTADOR = new Set<string>([
   'imobilizado.categorias.criar', 'imobilizado.categorias.editar', 'imobilizado.depreciacao-previa.ver',
   'imobilizado.depreciacao-periodos.fechar', 'imobilizado.depreciacao-periodos.reabrir',
-  'imobilizado.estados-conservacao.criar', 'imobilizado.estados-conservacao.editar', 'imobilizado.estados-conservacao.excluir',
+  'financeiro.relatorios.exportar', 'imobilizado.estados-conservacao.criar', 'imobilizado.estados-conservacao.editar', 'imobilizado.estados-conservacao.excluir',
   'imobilizado.estados-conservacao.padrao', 'imobilizado.reavaliacao-escalas.criar', 'imobilizado.reavaliacao-parametros.criar'
 ]);
 

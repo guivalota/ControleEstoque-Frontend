@@ -52,6 +52,16 @@ describe('SidebarComponent (menu por modulos)', () => {
     expect(tem(semModulo, '/manual/producao')).toBeFalse();
   });
 
+  it('com financeiro: mostra o grupo Financeiro e os Cadastros; sem o módulo, o grupo não aparece', () => {
+    const el = criar(['financeiro']);
+    expect(tem(el, '/financeiro')).toBeTrue();
+    expect(tem(el, '/financeiro/cadastros')).toBeTrue();
+    expect(tem(el, '/produtos')).toBeFalse();
+    TestBed.resetTestingModule();
+    const semModulo = criar(['estoque']);
+    expect(tem(semModulo, '/financeiro')).toBeFalse();
+  });
+
   it('so imobilizado: esconde Estoque, mostra Imobilizado e Core', () => {
     const el = criar(['imobilizado']);
     expect(tem(el, '/produtos')).toBeFalse();
