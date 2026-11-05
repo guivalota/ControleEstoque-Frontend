@@ -48,7 +48,7 @@ O módulo precisa estar contratado pela empresa. Sem ele, o menu **Produção** 
 
 **Material** — todo item de estoque que entra na peça: matéria-prima (tecido), aviamento (botão, zíper, etiqueta), embalagem, consumo. Cada item tem um **tipo** e uma **unidade** (m, un, kg...), definidos no cadastro de produtos.
 
-**Grade** — tamanho e cor do produto acabado. Cada combinação (ex.: P / Branco) é uma **variação**, com SKU e saldo próprios. As ordens são lançadas **por tamanho**.
+**Grade** — tamanho e cor do produto acabado. Cada combinação (ex.: P / Branco) é uma **variação**, com SKU e saldo próprios. As ordens são lançadas **por tamanho**. As cores e os tamanhos disponíveis ficam em **Estoque → Grade (cores e tamanhos)**: ali você cria uma cor nova, renomeia, muda a ordem em que aparecem e **inativa** as que não usa mais (valor inativo some das próximas grades, mas as variações já criadas continuam). O código do valor não muda depois de criado, porque faz parte do SKU. Só o administrador cria ou inativa um eixo novo (por exemplo, Acabamento).
 
 **Ficha técnica** — a "receita" do produto: quanto de cada material vai em uma peça, com **perda %** e valores de mão de obra e custos indiretos. Tem uma base comum e pode ter consumo próprio de uma variação (ex.: o tamanho G gasta mais tecido). É **versionada**: alterar cria uma nova versão e a anterior continua intacta.
 

@@ -35,7 +35,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private manual = signal<Record<string, boolean>>({});
 
   private static readonly ROTAS_GRUPO: Record<string, string> = {
-    estoque: '/dashboard,/produtos,/categorias,/movimentacoes,/lotes,/pedidos-compra,/notas-fiscais,/conferencia',
+    estoque: '/dashboard,/produtos,/categorias,/grade,/movimentacoes,/lotes,/pedidos-compra,/notas-fiscais,/conferencia',
     producao: '/producao',
     imob: '/imobilizado',
     'imob-cad': '/imobilizado/locais,/imobilizado/categorias,/imobilizado/grupos,/imobilizado/departamentos,/imobilizado/responsaveis',

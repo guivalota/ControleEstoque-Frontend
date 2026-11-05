@@ -146,6 +146,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/categorias/categorias.component').then(m => m.CategoriasComponent)
       },
       {
+        path: 'grade',
+        canActivate: [moduloGuard('estoque')],
+        loadComponent: () => import('./features/grade/grade-cadastro.component').then(m => m.GradeCadastroComponent)
+      },
+      {
         path: 'movimentacoes',
         canActivate: [moduloGuard('estoque')],
         loadComponent: () => import('./features/movimentacoes/movimentacoes.component').then(m => m.MovimentacoesComponent)
