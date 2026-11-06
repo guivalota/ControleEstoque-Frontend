@@ -1,0 +1,1 @@
+var a={vencimentos:"Vencimentos",aging:"Aging (atrasos por faixa)","por-categoria":"T\xEDtulos por categoria","extrato-pessoa":"Extrato por pessoa"},r={aguardando:"Aguardando confirma\xE7\xE3o",automatico:"Entra sozinho",erro:"Falhou"};export{a,r as b};
