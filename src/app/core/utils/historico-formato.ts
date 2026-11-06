@@ -4,6 +4,7 @@ import { formatarData, formatarMoeda } from './imob-formato';
 const ROTULOS: Record<string, string> = {
   criacao: 'Cadastro',
   exclusao: 'Exclusão',
+  replicado_de: 'Replicado do bem',
   plaqueta: 'Plaqueta',
   plaqueta_anterior: 'Plaqueta anterior',
   descricao: 'Descrição',
