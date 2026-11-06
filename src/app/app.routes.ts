@@ -63,6 +63,72 @@ export const routes: Routes = [
     canActivate: [authGuard, contaEmpresaGuard, cargaEmpresaGuard],
     children: [
       {
+        path: 'financeiro',
+        canActivate: [moduloGuard('financeiro'), permissaoGuard],
+        data: { permissao: 'financeiro.status.ver' },
+        loadComponent: () => import('./features/financeiro/financeiro-inicio.component').then(m => m.FinanceiroInicioComponent)
+      },
+      {
+        path: 'financeiro/cadastros',
+        canActivate: [moduloGuard('financeiro'), permissaoGuard],
+        data: { permissao: 'financeiro.cadastros.ver' },
+        loadComponent: () => import('./features/financeiro/cadastros/cadastros-financeiro.component').then(m => m.CadastrosFinanceiroComponent)
+      },
+      {
+        path: 'financeiro/titulos',
+        canActivate: [moduloGuard('financeiro'), permissaoGuard],
+        data: { permissao: 'financeiro.titulos.ver' },
+        loadComponent: () => import('./features/financeiro/titulos/titulos-lista.component').then(m => m.TitulosListaComponent)
+      },
+      {
+        path: 'financeiro/titulos/novo',
+        canActivate: [moduloGuard('financeiro'), permissaoGuard],
+        data: { permissao: 'financeiro.titulos.criar' },
+        loadComponent: () => import('./features/financeiro/titulos/titulo-form.component').then(m => m.TituloFormComponent)
+      },
+      {
+        path: 'financeiro/titulos/:id/editar',
+        canActivate: [moduloGuard('financeiro'), permissaoGuard],
+        data: { permissao: 'financeiro.titulos.editar' },
+        loadComponent: () => import('./features/financeiro/titulos/titulo-form.component').then(m => m.TituloFormComponent)
+      },
+      {
+        path: 'financeiro/titulos/:id',
+        canActivate: [moduloGuard('financeiro'), permissaoGuard],
+        data: { permissao: 'financeiro.titulos.ver' },
+        loadComponent: () => import('./features/financeiro/titulos/titulo-detalhe.component').then(m => m.TituloDetalheComponent)
+      },
+      {
+        path: 'financeiro/contas-fixas',
+        canActivate: [moduloGuard('financeiro'), permissaoGuard],
+        data: { permissao: 'financeiro.titulos.ver' },
+        loadComponent: () => import('./features/financeiro/recorrencias/contas-fixas.component').then(m => m.ContasFixasComponent)
+      },
+      {
+        path: 'financeiro/fluxo-caixa',
+        canActivate: [moduloGuard('financeiro'), permissaoGuard],
+        data: { permissao: 'financeiro.relatorios.ver' },
+        loadComponent: () => import('./features/financeiro/fluxo-caixa/fluxo-caixa.component').then(m => m.FluxoCaixaComponent)
+      },
+      {
+        path: 'financeiro/relatorios',
+        canActivate: [moduloGuard('financeiro'), permissaoGuard],
+        data: { permissao: 'financeiro.relatorios.ver' },
+        loadComponent: () => import('./features/financeiro/relatorios/relatorios-financeiro.component').then(m => m.RelatoriosFinanceiroComponent)
+      },
+      {
+        path: 'financeiro/importacoes',
+        canActivate: [moduloGuard('financeiro'), permissaoGuard],
+        data: { permissao: 'financeiro.importacoes.gerenciar' },
+        loadComponent: () => import('./features/financeiro/importacoes/importacoes.component').then(m => m.ImportacoesComponent)
+      },
+      {
+        path: 'aprovacoes',
+        canActivate: [permissaoGuard],
+        data: { permissao: 'core.aprovacoes.ver' },
+        loadComponent: () => import('./features/aprovacoes/aprovacoes.component').then(m => m.AprovacoesComponent)
+      },
+      {
         path: 'producao',
         canActivate: [moduloGuard('producao'), permissaoGuard],
         data: { permissao: 'producao.dashboard.ver' },

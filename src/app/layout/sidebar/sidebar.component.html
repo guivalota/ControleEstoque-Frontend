@@ -79,6 +79,25 @@
         </ul>
       </li>
     }
+    @if (mostrarFinanceiro()) {
+      <li class="nav-item">
+        <button type="button" class="nav-link sidebar-link sidebar-grupo w-100 text-start" (click)="alternar('financeiro')"
+                [class.ativo]="rotaEm('/financeiro')" [attr.aria-expanded]="aberto('financeiro')" aria-controls="sub-financeiro">
+          <i class="bi bi-cash-coin me-2"></i>Financeiro
+          <i class="bi bi-chevron-down ms-auto sidebar-seta" [class.girada]="aberto('financeiro')"></i>
+        </button>
+        <ul id="sub-financeiro" class="nav flex-column sidebar-sub" [class.aberto]="aberto('financeiro')">
+          <li><a class="nav-link sidebar-sublink" routerLink="/financeiro" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Visão geral</a></li>
+          <li *appPode="'financeiro.titulos.ver'"><a class="nav-link sidebar-sublink" routerLink="/financeiro/titulos" routerLinkActive="active">Títulos</a></li>
+          <li *appPode="'financeiro.titulos.ver'"><a class="nav-link sidebar-sublink" routerLink="/financeiro/contas-fixas" routerLinkActive="active">Contas fixas</a></li>
+          <li *appPode="'financeiro.relatorios.ver'"><a class="nav-link sidebar-sublink" routerLink="/financeiro/fluxo-caixa" routerLinkActive="active">Fluxo de caixa</a></li>
+          <li *appPode="'financeiro.relatorios.ver'"><a class="nav-link sidebar-sublink" routerLink="/financeiro/relatorios" routerLinkActive="active">Relatórios</a></li>
+          <li *appPode="'financeiro.importacoes.gerenciar'"><a class="nav-link sidebar-sublink" routerLink="/financeiro/importacoes" routerLinkActive="active">Importações</a></li>
+          <li *appPode="'financeiro.cadastros.ver'"><a class="nav-link sidebar-sublink" routerLink="/financeiro/cadastros" routerLinkActive="active">Cadastros</a></li>
+          <li><a class="nav-link sidebar-sublink" routerLink="/manual/financeiro" routerLinkActive="active">Manual do Financeiro</a></li>
+        </ul>
+      </li>
+    }
     @if (mostrarImobilizado()) {
       <li class="nav-item">
         <button type="button" class="nav-link sidebar-link sidebar-grupo w-100 text-start" (click)="alternar('imob')"
@@ -119,6 +138,11 @@
         </ul>
       </li>
     }
+    <li class="nav-item" *appPode="'core.aprovacoes.ver'">
+      <a class="nav-link sidebar-link" routerLink="/aprovacoes" routerLinkActive="active">
+        <i class="bi bi-check2-square me-2"></i>Aprovações
+      </a>
+    </li>
     @if (permissao.pode('core.equipe.ver')) {
       <li class="nav-item">
         <a class="nav-link sidebar-link" routerLink="/configuracoes/equipe" routerLinkActive="active">

@@ -33,6 +33,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   mostrarImobilizado = computed(() => this.empresa.temModulo('imobilizado') && this.permissao.podeUsarModulo('imobilizado'));
   mostrarEstoque = computed(() => this.empresa.temModulo('estoque') && this.permissao.podeUsarModulo('estoque'));
   mostrarProducao = computed(() => this.empresa.temModulo('producao') && this.permissao.podeUsarModulo('producao'));
+  mostrarFinanceiro = computed(() => this.empresa.temModulo('financeiro') && this.permissao.podeUsarModulo('financeiro'));
   private routerSub?: Subscription;
 
   /** URL atual (sem query), para abrir sozinho o grupo da página em que o usuário está. */
@@ -43,6 +44,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private static readonly ROTAS_GRUPO: Record<string, string> = {
     estoque: '/dashboard,/produtos,/categorias,/grade,/movimentacoes,/lotes,/pedidos-compra,/notas-fiscais,/conferencia',
     producao: '/producao',
+    financeiro: '/financeiro',
     imob: '/imobilizado',
     'imob-cad': '/imobilizado/locais,/imobilizado/categorias,/imobilizado/grupos,/imobilizado/departamentos,/imobilizado/responsaveis',
     'imob-reav': '/imobilizado/reavaliacao'
