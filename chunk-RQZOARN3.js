@@ -1,0 +1,1 @@
+import{F as o,L as s,n as i,u as n}from"./chunk-QPWPGHNE.js";var a=100;function T(r){return r(1,a).pipe(n(e=>({res:e,page:1})),s(({res:e,page:t})=>{let p=t*a;return e.items.length>0&&e.items.length>=a&&p<e.total?r(t+1,a).pipe(n(m=>({res:m,page:t+1}))):i}),o((e,{res:t})=>e.concat(t.items??[]),[]))}export{T as a};
