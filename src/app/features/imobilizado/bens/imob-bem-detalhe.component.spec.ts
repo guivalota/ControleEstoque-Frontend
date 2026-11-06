@@ -273,4 +273,31 @@ describe('ImobBemDetalheComponent', () => {
       expect(texto()).toContain('Vendido');
     });
   });
+
+  describe('campos customizados', () => {
+    it('mostra os valores formatados (data, número, texto) e marca o campo inativo', () => {
+      montar();
+      carregar(bem({
+        camposCustomizados: [
+          { campoId: 1, nome: 'Cor', tipo: 'texto', ativo: true, valor: 'Azul' },
+          { campoId: 2, nome: 'Peso (kg)', tipo: 'numero', ativo: true, valor: '1234.5' },
+          { campoId: 3, nome: 'Garantia até', tipo: 'data', ativo: true, valor: '2026-03-10' },
+          { campoId: 4, nome: 'Antigo', tipo: 'texto', ativo: false, valor: 'velho' }
+        ]
+      }));
+      const bloco = el().querySelector('[data-testid="campos-customizados"]')!;
+      const t = (bloco.textContent ?? '').replace(/\s+/g, ' ');
+      expect(t).toContain('Campos adicionais');
+      expect(t).toContain('CorAzul');
+      expect(t).toContain('Peso (kg)1.234,5');
+      expect(t).toContain('Garantia até10/03/2026');
+      expect(t).toContain('Antigoinativovelho');
+    });
+
+    it('sem valores gravados não mostra o bloco', () => {
+      montar();
+      carregar(bem({ camposCustomizados: [] }));
+      expect(el().querySelector('[data-testid="campos-customizados"]')).toBeNull();
+    });
+  });
 });

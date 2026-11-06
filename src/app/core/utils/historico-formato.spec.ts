@@ -6,6 +6,22 @@ const entrada = (id: number, extra: Partial<ImobBemHistorico> = {}): ImobBemHist
   criadoEm: '2026-10-22T14:03:11Z', ...extra
 });
 
+import { formatarValorHistorico as formatarValorCampoCf, rotuloCampoHistorico as rotuloCf } from './historico-formato';
+
+describe('historico-formato: campos customizados (cf:)', () => {
+  it('o rótulo é o nome do campo, que vem no próprio código', () => {
+    expect(rotuloCf('cf:Cor')).toBe('Cor');
+    expect(rotuloCf('cf:Garantia até')).toBe('Garantia até');
+    expect(rotuloCf('cf:')).toBe('Campo customizado');
+  });
+
+  it('data aaaa-MM-dd vira dd/MM/aaaa e o resto fica como está', () => {
+    expect(formatarValorCampoCf('cf:Garantia até', '2026-03-10')).toBe('10/03/2026');
+    expect(formatarValorCampoCf('cf:Cor', 'Azul')).toBe('Azul');
+    expect(formatarValorCampoCf('cf:Cor', null)).toBe('—');
+  });
+});
+
 describe('rotuloCampoHistorico', () => {
   it('traduz os campos conhecidos', () => {
     expect(rotuloCampoHistorico('local_id')).toBe('Local');

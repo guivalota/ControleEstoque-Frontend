@@ -112,6 +112,34 @@
           @for (g of grupos(); track g.id) { <option [ngValue]="g.id">{{ g.nome }}{{ g.ativo ? '' : ' (inativo)' }}</option> }
         </select>
       </div>
+      @if (campos().length) {
+        <div class="col-6 col-md-4">
+          <label for="bemCampo" class="form-label small mb-1">Campo customizado</label>
+          <select id="bemCampo" class="form-select form-select-sm" formControlName="campoId">
+            <option [ngValue]="null">(nenhum)</option>
+            @for (c of campos(); track c.id) { <option [ngValue]="c.id">{{ c.nome }}</option> }
+          </select>
+        </div>
+        @let cs = campoSelecionado();
+        @if (cs) {
+          <div class="col-6 col-md-4">
+            <label for="bemCampoValor" class="form-label small mb-1">Valor de “{{ cs.nome }}”</label>
+            @switch (cs.tipo) {
+              @case ('lista') {
+                <select id="bemCampoValor" class="form-select form-select-sm" formControlName="campoValor" (change)="aplicar(1)">
+                  <option value="">Qualquer valor</option>
+                  @for (o of cs.opcoes; track o) { <option [value]="o">{{ o }}</option> }
+                </select>
+              }
+              @case ('data') { <input id="bemCampoValor" type="date" class="form-control form-control-sm" formControlName="campoValor" (change)="aplicar(1)"> }
+              @default {
+                <input id="bemCampoValor" type="text" class="form-control form-control-sm" formControlName="campoValor"
+                       [placeholder]="cs.tipo === 'texto' ? 'Contém… (vazio = qualquer valor)' : 'Valor exato (vazio = qualquer valor)'" (change)="aplicar(1)">
+              }
+            }
+          </div>
+        }
+      }
       <div class="col-6 col-md-2">
         <label for="bemCompraDe" class="form-label small mb-1">Compra de</label>
         <input id="bemCompraDe" type="date" class="form-control form-control-sm" formControlName="compraDe"

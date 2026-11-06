@@ -8,6 +8,9 @@ import { ImobCategoriaService } from '../../../core/services/imob-categoria.serv
 import { ImobLocalService } from '../../../core/services/imob-local.service';
 import { ImobDepartamentoService } from '../../../core/services/imob-departamento.service';
 import { ImobGrupoService } from '../../../core/services/imob-grupo.service';
+import { ImobCampoCustomizadoService } from '../../../core/services/imob-campo-customizado.service';
+import { ImobCampoCustomizado } from '../../../core/models/imob-campo-customizado.model';
+import { camposDaCategoria, erroDoValorCampo, valorParaEdicao } from '../../../core/utils/campo-customizado';
 import { ImobGrupo } from '../../../core/models/imob-grupo.model';
 import { ImobDepartamento } from '../../../core/models/imob-departamento.model';
 import { FornecedorService } from '../../../core/services/fornecedor.service';
@@ -53,6 +56,7 @@ export class ImobBemFormComponent implements OnInit {
   private localService = inject(ImobLocalService);
   private departamentoService = inject(ImobDepartamentoService);
   private grupoService = inject(ImobGrupoService);
+  private campoService = inject(ImobCampoCustomizadoService);
   private fornecedorService = inject(FornecedorService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -66,6 +70,13 @@ export class ImobBemFormComponent implements OnInit {
   categorias = signal<ImobCategoria[]>([]);
   grupos = signal<ImobGrupo[]>([]);
   departamentos = signal<ImobDepartamento[]>([]);
+  /** Campos customizados ativos da empresa (E27); os que valem para a categoria escolhida aparecem no formulário. */
+  campos = signal<ImobCampoCustomizado[]>([]);
+  /** Valor digitado de cada campo customizado, por id (data aaaa-MM-dd; número como o usuário digitou). */
+  valoresCampos = signal<Record<number, string>>({});
+  errosCampos = signal<Record<number, string>>({});
+  /** Valores que o bem já tinha ao abrir a edição: um campo obrigatório que já tinha valor não pode ser esvaziado. */
+  private valoresOriginais: Record<number, string> = {};
   /** Fornecedores ativos do cadastro da empresa (opcional: o nome também pode ser digitado, PEND-065). */
   fornecedores = signal<Fornecedor[]>([]);
   arvore = signal<ImobLocalArvore[]>([]);
@@ -99,8 +110,12 @@ export class ImobBemFormComponent implements OnInit {
     observacao: ['', [Validators.maxLength(2000)]]
   });
 
-  private categoriaId = toSignal(this.form.controls.categoriaId.valueChanges, { initialValue: null });
+  /** Categoria escolhida; na edição o form é preenchido sem emitir evento, então o carregamento também a atualiza. */
+  private categoriaId = signal<number | null>(null);
   categoriaSelecionada = computed(() => this.categorias().find(c => c.id === this.categoriaId()) ?? null);
+
+  /** Campos customizados que valem para a categoria escolhida. */
+  camposDoBem = computed(() => camposDaCategoria(this.campos(), this.categoriaId()));
 
   private grupoFiltro = toSignal(this.form.controls.grupoId.valueChanges, { initialValue: null as number | null });
 
@@ -130,7 +145,7 @@ export class ImobBemFormComponent implements OnInit {
   });
 
   constructor() {
-    this.form.controls.categoriaId.valueChanges.subscribe(() => { this.aplicarSugestoes(); this.sincronizarGrupo(); });
+    this.form.controls.categoriaId.valueChanges.subscribe(v => { this.categoriaId.set(v); this.aplicarSugestoes(); this.sincronizarGrupo(); });
     // Trocar o grupo para outro que não contém a categoria escolhida limpa a categoria
     this.form.controls.grupoId.valueChanges.subscribe(g => {
       const cat = this.categoriaSelecionada();
@@ -159,6 +174,10 @@ export class ImobBemFormComponent implements OnInit {
       error: () => this.grupos.set([]) // o filtro por grupo é opcional
     });
     this.virada.carregar();
+    this.campoService.listar().subscribe({
+      next: lista => this.campos.set(lista),
+      error: () => this.campos.set([]) // os campos adicionais são opcionais aqui
+    });
     this.categoriaService.listar({ pageSize: 100 }).subscribe({
       next: res => { this.categorias.set(res.items); this.aplicarSugestoes(); },
       error: () => this.erroCarga.set('Não foi possível carregar as categorias.')
@@ -188,7 +207,12 @@ export class ImobBemFormComponent implements OnInit {
             fornecedorId: bem.fornecedorId ?? null, fornecedorNome: bem.fornecedorNome ?? '', numeroDocumentoAquisicao: bem.numeroDocumentoAquisicao ?? '',
             numeroSerie: bem.numeroSerie ?? '', observacao: bem.observacao ?? ''
           }, { emitEvent: false });
+          this.categoriaId.set(bem.categoriaId);
           this.form.controls.grupoId.setValue(bem.grupoId ?? null);
+          const atuais: Record<number, string> = {};
+          for (const v of bem.camposCustomizados ?? []) atuais[v.campoId] = valorParaEdicao(v.tipo, v.valor);
+          this.valoresOriginais = { ...atuais };
+          this.valoresCampos.set(atuais);
           if (this.bloqueado()) this.form.disable({ emitEvent: false });
           this.loading.set(false);
         },
@@ -217,10 +241,35 @@ export class ImobBemFormComponent implements OnInit {
     return !this.edicao && !!this.categoriaSelecionada() && !this.vidaTocada;
   }
 
+  // ---- campos customizados ----
+
+  valorCampo(id: number): string { return this.valoresCampos()[id] ?? ''; }
+
+  definirCampo(id: number, valor: string) {
+    this.valoresCampos.update(v => ({ ...v, [id]: valor }));
+    this.errosCampos.update(e => { const { [id]: _, ...resto } = e; void _; return resto; });
+  }
+
+  /** Confere os campos adicionais antes de enviar; devolve o que vai no corpo ou `null` se há erro (mostrado no campo). */
+  private camposParaEnvio(): { campoId: number; valor: string | null }[] | null {
+    const erros: Record<number, string> = {};
+    const itens: { campoId: number; valor: string | null }[] = [];
+    for (const c of this.camposDoBem()) {
+      const bruto = this.valorCampo(c.id).trim();
+      const erro = erroDoValorCampo(c, bruto);
+      if (erro) erros[c.id] = erro;
+      else if (c.obrigatorio && bruto === '' && (!this.edicao || (this.valoresOriginais[c.id] ?? '') !== '')) erros[c.id] = 'Campo obrigatório.';
+      itens.push({ campoId: c.id, valor: bruto === '' ? null : bruto });
+    }
+    this.errosCampos.set(erros);
+    return Object.keys(erros).length ? null : itens;
+  }
+
   // ---- envio ----
 
   save() {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    const campos = this.camposParaEnvio();
+    if (this.form.invalid || campos === null) { this.form.markAllAsTouched(); return; }
     this.saving.set(true);
     this.saveError.set('');
 
@@ -245,7 +294,9 @@ export class ImobBemFormComponent implements OnInit {
       fornecedorNome: texto(v.fornecedorNome),
       numeroDocumentoAquisicao: texto(v.numeroDocumentoAquisicao),
       numeroSerie: texto(v.numeroSerie),
-      observacao: texto(v.observacao)
+      observacao: texto(v.observacao),
+      // campos adicionais: na edição vão todos os que valem para a categoria (vazio limpa); sem campos, a lista é omitida
+      ...(this.camposDoBem().length ? { camposCustomizados: campos } : {})
     };
 
     // depois da virada o campo some e o servidor mantém o valor guardado; vazio é omitido

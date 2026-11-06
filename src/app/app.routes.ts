@@ -442,6 +442,12 @@ export const routes: Routes = [
             loadComponent: () => import('./features/imobilizado/grupos/imob-grupos.component').then(m => m.ImobGruposComponent)
           },
           {
+            path: 'campos-customizados',
+            canActivate: [permissaoGuard],
+            data: { permissao: 'imobilizado.campos-customizados.ver' },
+            loadComponent: () => import('./features/imobilizado/campos-customizados/imob-campos-customizados.component').then(m => m.ImobCamposCustomizadosComponent)
+          },
+          {
             path: 'departamentos',
             canActivate: [permissaoGuard],
             data: { permissao: 'imobilizado.departamentos.ver' },

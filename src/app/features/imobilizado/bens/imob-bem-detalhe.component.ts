@@ -13,6 +13,7 @@ import { ReplicarImobBemResultado } from '../../../core/models/imob-bem.model';
 import { ImobBemHistoricoComponent } from './imob-bem-historico.component';
 import { ImobBemDepreciacaoComponent } from './imob-bem-depreciacao.component';
 import { ImobBemFotosComponent } from './imob-bem-fotos.component';
+import { formatarValorCampo } from '../../../core/utils/campo-customizado';
 
 type Aba = 'dados' | 'fotos' | 'historico' | 'depreciacao';
 const ABAS: Aba[] = ['dados', 'fotos', 'historico', 'depreciacao'];
@@ -42,6 +43,7 @@ export class ImobBemDetalheComponent implements OnInit {
   formatarData = formatarData;
   formatarDataHora = formatarDataHora;
   formatarVidaUtil = formatarVidaUtil;
+  formatarCampo = formatarValorCampo;
   bemEditavel = bemEditavel;
 
   bem = signal<ImobBem | null>(null);

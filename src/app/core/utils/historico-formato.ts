@@ -31,6 +31,7 @@ const VALORES = new Set(['valor_aquisicao', 'valor_residual']);
 /** Rótulo amigável do campo; campos desconhecidos (ex.: status, futuros) viram "Campo x y". */
 export function rotuloCampoHistorico(campo: string): string {
   if (ROTULOS[campo]) return ROTULOS[campo];
+  if (campo.startsWith('cf:')) return campo.slice(3) || 'Campo customizado'; // campo customizado: o nome vem no próprio código
   const texto = campo.replace(/_/g, ' ').trim();
   return texto ? texto.charAt(0).toUpperCase() + texto.slice(1) : '—';
 }
@@ -48,6 +49,7 @@ export function formatarValorHistorico(campo: string, valor: string | null | und
   }
   if (STATUS_BEM.has(campo)) return ROTULO_STATUS_BEM[valor as ImobBemStatus] ?? valor;
   if (campo === 'data_aquisicao') return formatarData(valor);
+  if (campo.startsWith('cf:') && /^\d{4}-\d{2}-\d{2}$/.test(valor)) return formatarData(valor);
   return valor;
 }
 

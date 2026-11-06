@@ -46,7 +46,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     producao: '/producao',
     financeiro: '/financeiro',
     imob: '/imobilizado',
-    'imob-cad': '/imobilizado/locais,/imobilizado/categorias,/imobilizado/grupos,/imobilizado/departamentos,/imobilizado/responsaveis',
+    'imob-cad': '/imobilizado/locais,/imobilizado/categorias,/imobilizado/grupos,/imobilizado/departamentos,/imobilizado/responsaveis,/imobilizado/campos-customizados',
     'imob-reav': '/imobilizado/reavaliacao'
   };
 

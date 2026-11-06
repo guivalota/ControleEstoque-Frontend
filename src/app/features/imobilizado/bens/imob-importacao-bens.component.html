@@ -37,7 +37,7 @@
           <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="baixandoModelo()" (click)="baixarModelo('csv')">
             <i class="bi bi-filetype-csv me-1"></i>Modelo CSV
           </button>
-          <span class="text-muted small ms-2">Máx. 5 MB e 20.000 linhas. Excel (.xlsx) ou CSV. Se a planilha tiver várias abas, use a chamada “Bens”.</span>
+          <span class="text-muted small ms-2">Máx. 5 MB e 20.000 linhas. Excel (.xlsx) ou CSV. Se a planilha tiver várias abas, use a chamada “Bens”. Colunas com o nome de um campo customizado ativo são importadas como valores do campo.</span>
         </div>
 
         <div class="row g-3 align-items-end">
@@ -80,6 +80,9 @@
           }
           @for (aviso of rel.avisos ?? []; track aviso) {
             <div class="alert alert-info py-2 small" role="status">{{ aviso }}</div>
+          }
+          @if (rel.camposCustomizadosReconhecidos?.length) {
+            <div class="alert alert-info py-2 small" role="status">Campos customizados reconhecidos: {{ rel.camposCustomizadosReconhecidos!.join(', ') }}.</div>
           }
           @if (rel.colunasIgnoradas.length) {
             <div class="alert alert-info py-2 small">Colunas ignoradas: {{ rel.colunasIgnoradas.join(', ') }}.</div>

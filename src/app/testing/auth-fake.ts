@@ -14,7 +14,7 @@ const SO_ADMIN = [
   'financeiro.cadastros.editar', 'financeiro.importacoes.', 'financeiro.aprovacao.'
 ];
 /** Telas contábeis: o Operador-modelo só consulta. */
-const CONTABIL = ['imobilizado.estados-conservacao.', 'imobilizado.reavaliacao-escalas.', 'imobilizado.reavaliacao-parametros.', 'imobilizado.depreciacao-previa.'];
+const CONTABIL = ['imobilizado.campos-customizados.', 'imobilizado.estados-conservacao.', 'imobilizado.reavaliacao-escalas.', 'imobilizado.reavaliacao-parametros.', 'imobilizado.depreciacao-previa.'];
 
 /** O que o perfil comum "Contador" faz além de consultar o Imobilizado (contábil). */
 const CONTADOR = new Set<string>([

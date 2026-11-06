@@ -9,11 +9,13 @@ import { ImobBem } from '../../../core/models/imob-bem.model';
 import { ImobCategoria } from '../../../core/models/imob-categoria.model';
 import { provideAuthFake } from '../../../testing/auth-fake';
 
+import { ImobCampoCustomizado } from '../../../core/models/imob-campo-customizado.model';
 const BENS = '/api/v1/imobilizado/bens';
 const CATEGORIAS = '/api/v1/imobilizado/categorias';
 const ARVORE = '/api/v1/imobilizado/locais/arvore';
 const DEPARTAMENTOS = '/api/v1/imobilizado/departamentos';
 const GRUPOS = '/api/v1/imobilizado/grupos';
+const CAMPOS = '/api/v1/imobilizado/campos-customizados';
 
 const bem = (id: number, extra: Partial<ImobBem> = {}): ImobBem => ({
   id, plaqueta: `NB-000${id}`, descricao: `Notebook ${id}`, categoriaId: 3, categoriaNome: 'Informática',
@@ -37,7 +39,7 @@ describe('ImobBensComponent', () => {
   const responder = (items: ImobBem[], req: TestRequest = listagem(), total = items.length) =>
     req.flush({ items, page: 1, pageSize: 50, total });
 
-  async function montar(role: 'admin' | 'operador' | 'leitura' = 'admin', query: Params = {}, itens: ImobBem[] = [bem(1), bem(2, { plaqueta: 'MS-0002', responsavelId: null, responsavelNome: null })]) {
+  async function montar(role: 'admin' | 'operador' | 'leitura' = 'admin', query: Params = {}, itens: ImobBem[] = [bem(1), bem(2, { plaqueta: 'MS-0002', responsavelId: null, responsavelNome: null })], campos: ImobCampoCustomizado[] = []) {
     TestBed.configureTestingModule({
       imports: [ImobBensComponent],
       providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), provideAuthFake(role)]
@@ -51,6 +53,7 @@ describe('ImobBensComponent', () => {
     const req = listagem();
     responder(itens, req);
     ctrl.expectOne('/api/v1/imobilizado/bens/codigo-anterior').flush({ oculto: false, bensComCodigoAnterior: 0 });
+    ctrl.expectOne(CAMPOS).flush(campos);
     ctrl.expectOne(r => r.url === CATEGORIAS).flush({
       items: [categoria(3, 'Informática'), categoria(4, 'Móveis', false)], page: 1, pageSize: 100, total: 2
     });
@@ -133,6 +136,7 @@ describe('ImobBensComponent', () => {
       expect(el().textContent).toContain('Carregando');
       responder([]);
       ctrl.expectOne('/api/v1/imobilizado/bens/codigo-anterior').flush({ oculto: false, bensComCodigoAnterior: 0 });
+      ctrl.expectOne(CAMPOS).flush([]);
       ctrl.expectOne(r => r.url === CATEGORIAS).flush({ items: [], page: 1, pageSize: 100, total: 0 });
       ctrl.expectOne(ARVORE).flush([]);
       ctrl.expectOne(r => r.url === GRUPOS).flush({ items: [], page: 1, pageSize: 100, total: 0 });
@@ -456,6 +460,52 @@ describe('ImobBensComponent', () => {
       expect(acoes()).not.toContain('Editar NB-0001');
       expect(acoes()).not.toContain('Editar NB-0002');
       expect(acoes()).toContain('Editar NB-0003');
+    });
+  });
+
+  describe('filtro por campo customizado', () => {
+    const def = (id: number, nome: string, tipo: ImobCampoCustomizado['tipo'], opcoes: string[] = []): ImobCampoCustomizado => ({
+      id, nome, tipo, obrigatorio: false, opcoes, categoriaId: null, ativo: true, ordem: id, bensComValor: 0
+    });
+    const CAMPOS_FILTRO = [def(1, 'Cor', 'texto'), def(2, 'Estado', 'lista', ['Novo', 'Usado']), def(3, 'Garantia até', 'data')];
+
+    it('sem campos cadastrados o filtro não aparece', async () => {
+      await montar();
+      expect(el().querySelector('#bemCampo')).toBeNull();
+    });
+
+    it('lista os campos, escolher um mostra o controle do valor do tipo e aplica pela URL', async () => {
+      await montar('admin', {}, [bem(1)], CAMPOS_FILTRO);
+      expect(Array.from(el().querySelectorAll('#bemCampo option')).map(o => o.textContent?.trim())).toEqual(['(nenhum)', 'Cor', 'Estado', 'Garantia até']);
+      expect(el().querySelector('#bemCampoValor')).toBeNull();
+
+      await navegando(() => comp.filtros.controls.campoId.setValue(2));
+      responder([bem(1)]);
+      fixture.detectChanges();
+      expect(el().querySelector('select#bemCampoValor')).not.toBeNull();
+      expect(Array.from(el().querySelectorAll('#bemCampoValor option')).map(o => o.textContent?.trim())).toEqual(['Qualquer valor', 'Novo', 'Usado']);
+    });
+
+    it('envia campoId e campoValor ao servidor a partir da URL', async () => {
+      const req = await montar('admin', { campoId: '1', campoValor: 'azul' }, [], CAMPOS_FILTRO);
+      expect(req.request.params.get('campoId')).toBe('1');
+      expect(req.request.params.get('campoValor')).toBe('azul');
+      expect(comp.filtros.controls.campoId.value).toBe(1);
+      expect(comp.filtros.controls.campoValor.value).toBe('azul');
+      expect(comp.temFiltro()).toBeTrue();
+    });
+
+    it('só campoId (sem valor) pede os bens que têm algum valor; campoValor sem campo é ignorado', async () => {
+      const so = await montar('admin', { campoId: '3' }, [], CAMPOS_FILTRO);
+      expect(so.request.params.get('campoId')).toBe('3');
+      expect(so.request.params.has('campoValor')).toBeFalse();
+    });
+
+    it('trocar o campo limpa o valor digitado', async () => {
+      await montar('admin', { campoId: '1', campoValor: 'azul' }, [], CAMPOS_FILTRO);
+      await navegando(() => comp.filtros.controls.campoId.setValue(3));
+      responder([]);
+      expect(comp.filtros.controls.campoValor.value).toBe('');
     });
   });
 });

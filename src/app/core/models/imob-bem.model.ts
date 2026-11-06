@@ -1,3 +1,5 @@
+import { ImobBemCampoValor, ImobBemCampoValorEnviado } from './imob-campo-customizado.model';
+
 export type ImobBemStatus = 'ativo' | 'em_manutencao' | 'baixado' | 'vendido' | 'extraviado';
 
 export const ROTULO_STATUS_BEM: Record<ImobBemStatus, string> = {
@@ -50,6 +52,8 @@ export interface ImobBem {
   numeroSerie?: string | null;
   observacao?: string | null;
   criadoEm: string; atualizadoEm: string;
+  /** Valores dos campos customizados. Só vem no detalhe, no cadastro e na edição; na lista é nulo. */
+  camposCustomizados?: ImobBemCampoValor[] | null;
 }
 
 export interface SalvarImobBem {
@@ -58,6 +62,8 @@ export interface SalvarImobBem {
   dataAquisicao?: string | null; valorAquisicao?: number | null;
   valorResidual?: number; vidaUtilMeses?: number;
   fornecedorId?: number; fornecedorNome?: string; numeroDocumentoAquisicao?: string; numeroSerie?: string; observacao?: string;
+  /** Omitido (edição): os valores atuais ficam como estão. Informado: cada item grava (vazio limpa). */
+  camposCustomizados?: ImobBemCampoValorEnviado[];
 }
 
 export type ImobBemOrdenarPor = 'plaqueta' | 'dataAquisicao' | 'valorAquisicao';
@@ -74,6 +80,8 @@ export interface ImobBemFiltro {
   responsavelId?: number; departamentoId?: number; grupoId?: number; status?: ImobBemStatus; dadosCompletos?: boolean;
   /** Data de aquisição (yyyy-MM-dd), limites inclusivos. */
   compraDe?: string; compraAte?: string;
+  /** Campo customizado (E27): sem `campoValor` traz os bens que têm algum valor nele. */
+  campoId?: number; campoValor?: string;
   ordenarPor?: ImobBemOrdenarPor; direcao?: ImobBemDirecao;
   page?: number; pageSize?: number;
 }

@@ -112,6 +112,19 @@
         </dl>
       </div>
     </div>
+    @if (b.camposCustomizados?.length) {
+      <div class="card border-0 shadow-sm mt-3" data-testid="campos-customizados">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-3">Campos adicionais</h6>
+          <dl class="row mb-0">
+            @for (c of b.camposCustomizados!; track c.campoId) {
+              <dt class="col-sm-3">{{ c.nome }}@if (!c.ativo) { <span class="badge bg-secondary-subtle text-secondary ms-1">inativo</span> }</dt>
+              <dd class="col-sm-9 text-break">{{ formatarCampo(c.tipo, c.valor) }}</dd>
+            }
+          </dl>
+        </div>
+      </div>
+    }
     </div>
 
     @if (fotosVisitada()) {
