@@ -416,6 +416,10 @@ export const routes: Routes = [
             loadComponent: () => import('./features/imobilizado/depreciacao/imob-depreciacao-relatorios.component').then(m => m.ImobDepreciacaoRelatoriosComponent)
           },
           {
+            path: 'relatorios',
+            loadComponent: () => import('./features/imobilizado/relatorios/imob-relatorios.component').then(m => m.ImobRelatoriosComponent)
+          },
+          {
             path: 'depreciacao/ajuda',
             loadComponent: () => import('./features/imobilizado/depreciacao/imob-depreciacao-ajuda.component').then(m => m.ImobDepreciacaoAjudaComponent)
           },
