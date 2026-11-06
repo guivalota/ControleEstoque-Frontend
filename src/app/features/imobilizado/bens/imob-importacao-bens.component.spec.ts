@@ -73,11 +73,44 @@ describe('ImobImportacaoBensComponent', () => {
     expect(botao.disabled).toBeTrue();
   });
 
-  it('recusa arquivo que não é .csv sem chamar a API', () => {
+  it('recusa arquivo que não é planilha .xlsx nem CSV sem chamar a API', () => {
     montar();
-    escolher(new File(['x'], 'planilha.xlsx'));
+    escolher(new File(['x'], 'documento.pdf'));
     expect(comp.arquivo()).toBeNull();
-    expect(texto()).toContain('Envie um arquivo .csv');
+    expect(texto()).toContain('Envie uma planilha .xlsx ou um arquivo .csv');
+  });
+
+  it('recusa .xls antigo orientando a salvar como .xlsx', () => {
+    montar();
+    escolher(new File(['x'], 'planilha.xls'));
+    expect(comp.arquivo()).toBeNull();
+    expect(texto()).toContain('.xls (Excel antigo)');
+  });
+
+  it('aceita .xlsx e .xlsm e envia o arquivo na validação', () => {
+    montar();
+    const planilha = new File(['PK'], 'bens.xlsx');
+    const req = validar(relatorio({ formato: 'xlsx' }), planilha);
+    expect((req.request.body as FormData).get('arquivo') as File).toEqual(jasmine.objectContaining({ name: 'bens.xlsx' }));
+    escolher(new File(['PK'], 'bens.xlsm'));
+    expect(comp.arquivo()?.name).toBe('bens.xlsm');
+  });
+
+  it('mostra os avisos do relatório (ex.: várias abas)', () => {
+    montar();
+    validar(relatorio({ formato: 'xlsx', avisos: ["A planilha tem 2 abas; foi lida a aba 'Dados'."] }), new File(['PK'], 'bens.xlsx'));
+    expect(texto()).toContain("A planilha tem 2 abas; foi lida a aba 'Dados'.");
+  });
+
+  it('baixa o modelo Excel pedindo formato=xlsx', () => {
+    montar();
+    const nomes: string[] = [];
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:x');
+    spyOn(HTMLAnchorElement.prototype, 'click').and.callFake(function (this: HTMLAnchorElement) { nomes.push(this.download); });
+    comp.baixarModelo('xlsx');
+    const req = ctrl.expectOne(`${BASE}/modelo?formato=xlsx`);
+    req.flush(new Blob(['x']));
+    expect(nomes).toEqual(['modelo-importacao-bens.xlsx']);
   });
 
   it('baixa o modelo via blob', () => {

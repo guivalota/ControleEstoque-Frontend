@@ -3,7 +3,7 @@
     <a routerLink="/imobilizado/bens" class="btn btn-sm btn-outline-secondary" aria-label="Voltar para a lista de bens">
       <i class="bi bi-arrow-left"></i>
     </a>
-    <h6 class="fw-bold mb-0">Importar bens (CSV)</h6>
+    <h6 class="fw-bold mb-0">Importar bens (Excel ou CSV)</h6>
   </div>
 
   @if (erro()) {
@@ -30,17 +30,20 @@
       <div class="card-body">
         <div class="mb-3">
           <span class="fw-semibold me-2">1.</span>
-          <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="baixandoModelo()" (click)="baixarModelo()">
-            @if (baixandoModelo()) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-download me-1"></i> }
-            Baixar modelo
+          <button type="button" class="btn btn-outline-secondary btn-sm me-1" [disabled]="baixandoModelo()" (click)="baixarModelo('xlsx')">
+            @if (baixandoModelo()) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-file-earmark-excel me-1"></i> }
+            Modelo Excel (.xlsx)
           </button>
-          <span class="text-muted small ms-2">Máx. 5 MB e 20.000 linhas. Só CSV.</span>
+          <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="baixandoModelo()" (click)="baixarModelo('csv')">
+            <i class="bi bi-filetype-csv me-1"></i>Modelo CSV
+          </button>
+          <span class="text-muted small ms-2">Máx. 5 MB e 20.000 linhas. Excel (.xlsx) ou CSV. Se a planilha tiver várias abas, use a chamada “Bens”.</span>
         </div>
 
         <div class="row g-3 align-items-end">
           <div class="col-12 col-md-5">
-            <label for="impArquivo" class="form-label small mb-1"><span class="fw-semibold">2.</span> Arquivo CSV</label>
-            <input #campoArquivo id="impArquivo" type="file" accept=".csv,text/csv" class="form-control form-control-sm"
+            <label for="impArquivo" class="form-label small mb-1"><span class="fw-semibold">2.</span> Arquivo (.xlsx ou .csv)</label>
+            <input #campoArquivo id="impArquivo" type="file" accept=".xlsx,.xlsm,.csv,text/csv" class="form-control form-control-sm"
                    [class.is-invalid]="erroArquivo()" [disabled]="ocupado()" (change)="escolherArquivo($event)">
             <div class="invalid-feedback">{{ erroArquivo() }}</div>
           </div>
@@ -74,6 +77,9 @@
               {{ rel.linhasComDadosIncompletos }} bem(ns) ficarão com “dados incompletos” (sem data ou valor de aquisição)
               e ficam fora da depreciação até serem completados.
             </div>
+          }
+          @for (aviso of rel.avisos ?? []; track aviso) {
+            <div class="alert alert-info py-2 small" role="status">{{ aviso }}</div>
           }
           @if (rel.colunasIgnoradas.length) {
             <div class="alert alert-info py-2 small">Colunas ignoradas: {{ rel.colunasIgnoradas.join(', ') }}.</div>
