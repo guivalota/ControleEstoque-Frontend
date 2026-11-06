@@ -92,3 +92,15 @@ export interface ImobBemHistorico {
   osNumero?: number | null;
   criadoEm: string;
 }
+
+/** Replicar bem (E27 / US-27-02): o front sempre manda a lista de plaquetas já gerada. */
+export interface ReplicarImobBem {
+  plaquetas: string[];
+}
+
+export interface ReplicarImobBemResultado {
+  origemId: number;
+  origemPlaqueta: string;
+  total: number;
+  bens: ImobBem[];
+}

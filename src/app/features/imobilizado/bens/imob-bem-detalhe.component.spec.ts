@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angul
 import { ImobBemDetalheComponent } from './imob-bem-detalhe.component';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 import { ImobBem } from '../../../core/models/imob-bem.model';
+import { Modal } from 'bootstrap';
 import { provideAuthFake } from '../../../testing/auth-fake';
 
 const URL_BEM = '/api/v1/imobilizado/bens/42';
@@ -230,6 +231,26 @@ describe('ImobBemDetalheComponent', () => {
       carregar();
       expect(acoes()).toContain('Editar');
       expect(acoes()).not.toContain('Excluir');
+    });
+
+    it('leitura não vê Replicar; operador e admin veem', () => {
+      montar('leitura');
+      carregar();
+      expect(acoes()).not.toContain('Replicar');
+      TestBed.resetTestingModule();
+      montar('operador');
+      carregar();
+      expect(acoes()).toContain('Replicar');
+    });
+
+    it('Replicar abre o diálogo com a plaqueta do bem', () => {
+      spyOn(Modal.prototype, 'show').and.stub();
+      montar('operador');
+      carregar();
+      const botao = Array.from(el().querySelectorAll('button')).find(b => (b.textContent ?? '').includes('Replicar'))!;
+      botao.click();
+      fixture.detectChanges();
+      expect(texto()).toContain('Replicar bem NB-0001');
     });
 
     it('admin edita e exclui', () => {
