@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { RelatorioImportacao, ResultadoImportacao } from '../models/imob-importacao.model';
@@ -12,12 +12,13 @@ export class ImobImportacaoService {
   private url = `${environment.apiUrl}/v1/imobilizado/bens/importacao`;
 
   /** Baixa via HttpClient (e não `<a href>`) por causa do X-Empresa-Id. */
-  modelo(): Observable<ArquivoExportado> {
-    return this.http.get(`${this.url}/modelo`, { responseType: 'blob', observe: 'response' }).pipe(
+  modelo(formato: 'csv' | 'xlsx' = 'csv'): Observable<ArquivoExportado> {
+    const params = formato === 'xlsx' ? new HttpParams().set('formato', 'xlsx') : new HttpParams();
+    return this.http.get(`${this.url}/modelo`, { params, responseType: 'blob', observe: 'response' }).pipe(
       map(res => ({
         blob: res.body as Blob,
         nome: /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(res.headers.get('Content-Disposition') ?? '')?.[1]
-          ?? 'modelo-importacao-bens.csv'
+          ?? `modelo-importacao-bens.${formato}`
       })),
       catchError(erroDeBlob)
     );

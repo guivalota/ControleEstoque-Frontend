@@ -6,6 +6,8 @@ export interface ImobEtiquetaModelo {
   etiquetaLarguraMm: number;
   etiquetaAlturaMm: number;
   etiquetasPorPagina: number;
+  /** Traz o Code 128 da plaqueta além do QR (modelos *-barras). */
+  comBarras?: boolean;
 }
 
 /** Máximo de etiquetas por pedido aceito pelo servidor. */

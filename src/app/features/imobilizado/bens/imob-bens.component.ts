@@ -9,6 +9,8 @@ import { ImobCategoriaService } from '../../../core/services/imob-categoria.serv
 import { ImobLocalService } from '../../../core/services/imob-local.service';
 import { ImobDepartamentoService } from '../../../core/services/imob-departamento.service';
 import { ImobGrupoService } from '../../../core/services/imob-grupo.service';
+import { ImobCampoCustomizadoService } from '../../../core/services/imob-campo-customizado.service';
+import { ImobCampoCustomizado } from '../../../core/models/imob-campo-customizado.model';
 import { ImobGrupo } from '../../../core/models/imob-grupo.model';
 import { ImobDepartamento } from '../../../core/models/imob-departamento.model';
 import { PermissaoService } from '../../../core/services/permissao.service';
@@ -59,6 +61,7 @@ export class ImobBensComponent implements OnInit {
   private localService = inject(ImobLocalService);
   private departamentoService = inject(ImobDepartamentoService);
   private grupoService = inject(ImobGrupoService);
+  private campoService = inject(ImobCampoCustomizadoService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   permissao = inject(PermissaoService);
@@ -86,6 +89,8 @@ export class ImobBensComponent implements OnInit {
   categorias = signal<ImobCategoria[]>([]);
   departamentos = signal<ImobDepartamento[]>([]);
   grupos = signal<ImobGrupo[]>([]);
+  /** Campos customizados ativos (E27) para o filtro por campo. */
+  campos = signal<ImobCampoCustomizado[]>([]);
   erroPeriodo = signal('');
   arvore = signal<ImobLocalArvore[]>([]);
 
@@ -117,6 +122,8 @@ export class ImobBensComponent implements OnInit {
     grupoId: [null as number | null],
     compraDe: [''],
     compraAte: [''],
+    campoId: [null as number | null],
+    campoValor: [''],
     ordenarPor: ['' as ImobBemOrdenarPor | ''],
     direcao: ['asc' as ImobBemDirecao],
     status: ['' as ImobBemStatus | ''],
@@ -131,6 +138,8 @@ export class ImobBensComponent implements OnInit {
 
     // selects e seletores aplicam na hora; a busca por texto só ao enviar o formulário
     const c = this.filtros.controls;
+    // trocar o campo do filtro limpa o valor (o tipo pode ser outro)
+    c.campoId.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => { c.campoValor.setValue('', { emitEvent: false }); this.aplicar(1); });
     merge(c.localId.valueChanges, c.incluirSublocais.valueChanges, c.categoriaId.valueChanges,
       c.responsavelId.valueChanges, c.departamentoId.valueChanges, c.grupoId.valueChanges, c.compraDe.valueChanges, c.compraAte.valueChanges,
       c.ordenarPor.valueChanges, c.direcao.valueChanges, c.status.valueChanges, c.pendentes.valueChanges)
@@ -140,6 +149,7 @@ export class ImobBensComponent implements OnInit {
 
   ngOnInit() {
     this.virada.carregar();
+    this.campoService.listar().subscribe({ next: l => this.campos.set(l), error: () => undefined });
     this.categoriaService.listar({ pageSize: 100 }).subscribe({
       next: res => this.categorias.set(res.items),
       error: () => undefined
@@ -176,6 +186,8 @@ export class ImobBensComponent implements OnInit {
       grupoId: idDaQuery(params, 'grupoId') ?? undefined,
       compraDe: dataDaQuery(params, 'compraDe'),
       compraAte: dataDaQuery(params, 'compraAte'),
+      campoId: idDaQuery(params, 'campoId') ?? undefined,
+      campoValor: idDaQuery(params, 'campoId') !== null ? params.get('campoValor')?.trim() || undefined : undefined,
       ordenarPor: ordenarPor ?? undefined,
       direcao: ordenarPor && params.get('direcao') === 'desc' ? 'desc' : undefined,
       status: status && STATUS_BEM.includes(status) ? status : undefined,
@@ -193,6 +205,8 @@ export class ImobBensComponent implements OnInit {
       grupoId: filtro.grupoId ?? null,
       compraDe: filtro.compraDe ?? '',
       compraAte: filtro.compraAte ?? '',
+      campoId: filtro.campoId ?? null,
+      campoValor: filtro.campoValor ?? '',
       ordenarPor: filtro.ordenarPor === 'plaqueta' ? '' : filtro.ordenarPor ?? '',
       direcao: filtro.direcao ?? 'asc',
       status: filtro.status ?? '',
@@ -213,6 +227,8 @@ export class ImobBensComponent implements OnInit {
       grupoId: v.grupoId,
       compraDe: v.compraDe || null,
       compraAte: v.compraAte || null,
+      campoId: v.campoId,
+      campoValor: v.campoId !== null ? v.campoValor?.trim() || null : null,
       ordenarPor: v.ordenarPor || (v.direcao === 'desc' ? 'plaqueta' : null),
       direcao: v.direcao === 'desc' ? 'desc' : null,
       status: v.status || null,
@@ -246,10 +262,15 @@ export class ImobBensComponent implements OnInit {
   limparFiltros() {
     this.filtros.reset({
       busca: '', localId: null, incluirSublocais: true, categoriaId: null, responsavelId: null, departamentoId: null, grupoId: null,
-      compraDe: '', compraAte: '', ordenarPor: '', direcao: 'asc', status: '', pendentes: false
+      compraDe: '', compraAte: '', campoId: null, campoValor: '', ordenarPor: '', direcao: 'asc', status: '', pendentes: false
     }, { emitEvent: false });
     this.erroPeriodo.set('');
     this.aplicar(1);
+  }
+
+  /** Campo customizado escolhido no filtro (define o controle do valor). */
+  campoSelecionado(): ImobCampoCustomizado | null {
+    return this.campos().find(c => c.id === this.filtros.controls.campoId.value) ?? null;
   }
 
   temFiltro(): boolean {

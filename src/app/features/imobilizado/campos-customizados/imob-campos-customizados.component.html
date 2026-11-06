@@ -1,0 +1,177 @@
+<div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+      <h6 class="fw-bold mb-0">Campos customizados</h6>
+      <div class="text-muted small">Campos próprios do seu patrimônio, no cadastro, na lista, na exportação e na importação do bem. {{ campos().length }} de {{ maximo }}.</div>
+    </div>
+    @if (permissao.pode('imobilizado.campos-customizados.criar')) {
+      <button type="button" class="btn btn-primary btn-sm" [disabled]="atingiuLimite()" (click)="openCreate()"
+              [title]="atingiuLimite() ? 'Limite de ' + maximo + ' campos atingido' : ''">
+        <i class="bi bi-plus-lg me-1"></i>Novo campo
+      </button>
+    }
+  </div>
+
+  @if (feedback()) {
+    <div class="alert alert-success alert-dismissible py-2" role="status">
+      {{ feedback() }}
+      <button type="button" class="btn-close" aria-label="Fechar" (click)="feedback.set('')"></button>
+    </div>
+  }
+  @if (erro()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
+      <span>{{ erro() }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="carregar()">Tentar novamente</button>
+    </div>
+  }
+  @if (bloqueio(); as b) {
+    <app-bloqueio-exclusao
+      [mensagem]="b.mensagem"
+      [permiteDesativar]="b.campo.ativo"
+      [filtroBens]="b.campo.bensComValor > 0 ? { campoId: b.campo.id } : null"
+      [desativando]="agindo() === b.campo.id"
+      (desativar)="desativar()"
+      (fechar)="bloqueio.set(null)" />
+  }
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading()) {
+        <div class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Carregando...</div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Nome</th>
+                <th>Tipo</th>
+                <th>Vale para</th>
+                <th>Obrigatório</th>
+                <th class="text-end">Bens com valor</th>
+                <th>Situação</th>
+                <th class="text-end pe-3">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of campos(); track c.id) {
+                <tr>
+                  <td class="ps-3">
+                    {{ c.nome }}
+                    @if (c.tipo === 'lista') { <div class="text-muted small text-truncate" style="max-width: 22rem" [title]="c.opcoes.join(', ')">{{ c.opcoes.join(', ') }}</div> }
+                  </td>
+                  <td>{{ rotuloTipo[c.tipo] }}</td>
+                  <td>{{ c.categoriaNome || 'Todas as categorias' }}</td>
+                  <td>{{ c.obrigatorio ? 'Sim' : 'Não' }}</td>
+                  <td class="text-end">{{ c.bensComValor }}</td>
+                  <td>
+                    @if (c.ativo) { <span class="badge bg-success-subtle text-success">Ativo</span> }
+                    @else { <span class="badge bg-secondary-subtle text-secondary">Inativo</span> }
+                  </td>
+                  <td class="text-end pe-3 text-nowrap">
+                    @if (permissao.pode('imobilizado.campos-customizados.editar')) {
+                      <button type="button" class="btn btn-sm btn-outline-secondary me-1" (click)="openEdit(c)"
+                              title="Editar" [attr.aria-label]="'Editar ' + c.nome">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                    }
+                    @if (permissao.pode('imobilizado.campos-customizados.excluir')) {
+                      <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="agindo() === c.id"
+                              (click)="excluir(c)" title="Excluir" [attr.aria-label]="'Excluir ' + c.nome">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>Nenhum campo customizado</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+  <p class="text-muted small mt-2 mb-0">
+    O nome do campo vira o cabeçalho da coluna na exportação e na importação do bem; não pode repetir uma coluna do cadastro (como “Local”).
+  </p>
+</div>
+
+<app-confirm-dialog />
+
+<div class="modal fade" #modalEl tabindex="-1" aria-labelledby="campoModalTitulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" [formGroup]="form" (submit)="$event.preventDefault(); save()" novalidate>
+      <div class="modal-header">
+        <h5 class="modal-title" id="campoModalTitulo">{{ editingId() !== null ? 'Editar campo' : 'Novo campo' }}</h5>
+        <button type="button" class="btn-close" aria-label="Fechar" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        @if (saveError()) { <div class="alert alert-danger py-2" role="alert">{{ saveError() }}</div> }
+
+        <div class="mb-3">
+          <label for="campoNome" class="form-label">Nome *</label>
+          <input id="campoNome" class="form-control" formControlName="nome" [attr.maxlength]="maxNome" [class.is-invalid]="erroCampo('nome')">
+          <div class="invalid-feedback">{{ erroCampo('nome') }}</div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-md-6">
+            <label for="campoTipo" class="form-label">Tipo *</label>
+            <select id="campoTipo" class="form-select" formControlName="tipo">
+              @for (t of tipos; track t) { <option [value]="t">{{ rotuloTipo[t] }}</option> }
+            </select>
+            @if (editingId() !== null) { <div class="form-text">O tipo não muda depois de criado.</div> }
+          </div>
+          <div class="col-12 col-md-6">
+            <label for="campoCategoria" class="form-label">Vale para</label>
+            <select id="campoCategoria" class="form-select" formControlName="categoriaId">
+              <option [ngValue]="null">Todas as categorias</option>
+              @for (cat of categorias(); track cat.id) { <option [ngValue]="cat.id">{{ cat.nome }}</option> }
+            </select>
+          </div>
+        </div>
+
+        @if (ehLista()) {
+          <div class="mb-3">
+            <label for="campoOpcoes" class="form-label">Opções * <span class="text-muted small">(uma por linha)</span></label>
+            <textarea id="campoOpcoes" rows="5" class="form-control" formControlName="opcoesTexto" [class.is-invalid]="erroOpcoes() && form.controls.opcoesTexto.touched"></textarea>
+            <div class="invalid-feedback">{{ erroOpcoes() }}</div>
+            @if (editingId() !== null) { <div class="form-text">Uma opção que algum bem usa não pode ser removida.</div> }
+          </div>
+        }
+
+        <div class="row g-3 align-items-end">
+          <div class="col-6">
+            <label for="campoOrdem" class="form-label">Ordem</label>
+            <input id="campoOrdem" type="number" min="0" max="1000" class="form-control" formControlName="ordem" [class.is-invalid]="erroCampo('ordem')">
+            <div class="invalid-feedback">{{ erroCampo('ordem') }}</div>
+          </div>
+          <div class="col-6">
+            <div class="form-check">
+              <input id="campoObrigatorio" type="checkbox" class="form-check-input" formControlName="obrigatorio">
+              <label for="campoObrigatorio" class="form-check-label">Obrigatório</label>
+            </div>
+            @if (editingId() !== null) {
+              <div class="form-check">
+                <input id="campoAtivo" type="checkbox" class="form-check-input" formControlName="ativo">
+                <label for="campoAtivo" class="form-check-label">Ativo</label>
+              </div>
+            }
+          </div>
+        </div>
+        <div class="form-text mt-2">
+          Obrigatório vale no cadastro e na importação; bens antigos sem valor continuam editáveis, mas um valor existente não pode ser apagado.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

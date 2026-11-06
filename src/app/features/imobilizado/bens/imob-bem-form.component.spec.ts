@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angul
 import { ImobBemFormComponent } from './imob-bem-form.component';
 import { ImobBem } from '../../../core/models/imob-bem.model';
 import { ImobCategoria } from '../../../core/models/imob-categoria.model';
+import { ImobCampoCustomizado } from '../../../core/models/imob-campo-customizado.model';
 import { hojeIso } from '../../../core/utils/validadores';
 
 const BENS = '/api/v1/imobilizado/bens';
@@ -49,7 +50,7 @@ describe('ImobBemFormComponent', () => {
     campo(id).dispatchEvent(new Event('input'));
   }
 
-  function montar(id: string | null = null, categorias = CATEGORIAS, depoisDeCriar?: () => void) {
+  function montar(id: string | null = null, categorias = CATEGORIAS, depoisDeCriar?: () => void, campos: ImobCampoCustomizado[] = []) {
     TestBed.configureTestingModule({
       imports: [ImobBemFormComponent],
       providers: [
@@ -64,6 +65,7 @@ describe('ImobBemFormComponent', () => {
     depoisDeCriar?.();
     fixture.detectChanges();
     ctrl.expectOne('/api/v1/imobilizado/bens/codigo-anterior').flush({ oculto: false, bensComCodigoAnterior: 0 });
+    ctrl.expectOne('/api/v1/imobilizado/campos-customizados').flush(campos);
     ctrl.expectOne(r => r.url === '/api/v1/imobilizado/categorias').flush({ items: categorias, page: 1, pageSize: 100, total: categorias.length });
     ctrl.expectOne(r => r.url === '/api/v1/imobilizado/grupos').flush({ items: GRUPOS, page: 1, pageSize: 100, total: GRUPOS.length });
     ctrl.expectOne(r => r.url === '/api/v1/imobilizado/departamentos').flush({
@@ -449,6 +451,153 @@ describe('ImobBemFormComponent', () => {
         { error: 'O bem não pode ser editado.' }, { status: 400, statusText: 'Bad Request' });
       expect(comp.saveError()).toBe('O bem não pode ser editado.');
       expect(navegar).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('campos customizados', () => {
+    const def = (id: number, nome: string, extra: Partial<ImobCampoCustomizado> = {}): ImobCampoCustomizado => ({
+      id, nome, tipo: 'texto', obrigatorio: false, opcoes: [], categoriaId: null, ativo: true, ordem: id, bensComValor: 0, ...extra
+    });
+    const CAMPOS = [
+      def(1, 'Cor'),
+      def(2, 'Peso (kg)', { tipo: 'numero' }),
+      def(3, 'Garantia até', { tipo: 'data' }),
+      def(4, 'Estado', { tipo: 'lista', opcoes: ['Novo', 'Usado'] }),
+      def(5, 'Só TI', { categoriaId: 3 }),
+      def(6, 'Só Móveis', { categoriaId: 4 })
+    ];
+    const rotulos = () => Array.from(el().querySelectorAll('[data-testid="campos-customizados"] label')).map(l => l.textContent?.replace(/\s+/g, ' ').trim());
+    const selecionar = (id: string, valor: string) => { campo(id).value = valor; campo(id).dispatchEvent(new Event('change')); };
+
+    it('mostra os campos que valem para a categoria escolhida', () => {
+      montar(null, CATEGORIAS, undefined, CAMPOS);
+      fixture.detectChanges();
+      expect(rotulos()).toEqual(['Cor', 'Peso (kg)', 'Garantia até', 'Estado']);
+
+      comp.form.patchValue({ categoriaId: 3 });
+      fixture.detectChanges();
+      expect(rotulos()).toEqual(['Cor', 'Peso (kg)', 'Garantia até', 'Estado', 'Só TI']);
+
+      comp.form.patchValue({ categoriaId: 4 });
+      fixture.detectChanges();
+      expect(rotulos()).toContain('Só Móveis');
+      expect(rotulos()).not.toContain('Só TI');
+    });
+
+    it('sem campos cadastrados não mostra a seção nem envia a lista', () => {
+      montar();
+      fixture.detectChanges();
+      expect(el().querySelector('[data-testid="campos-customizados"]')).toBeNull();
+      preencherCadastro();
+      comp.save();
+      const post = ctrl.expectOne(r => r.method === 'POST' && r.url === BENS);
+      expect('camposCustomizados' in post.request.body).toBeFalse();
+      post.flush(bem({ id: 90 }), { status: 201, statusText: 'Created' });
+    });
+
+    it('envia o valor de cada campo da categoria (vazio vai como null)', () => {
+      montar(null, CATEGORIAS, undefined, CAMPOS);
+      fixture.detectChanges();
+      preencherCadastro();
+      fixture.detectChanges();
+      digitar('campoCustom1', ' Azul ');
+      digitar('campoCustom2', '12,5');
+      digitar('campoCustom3', '2026-03-10');
+      selecionar('campoCustom4', 'Usado');
+
+      comp.save();
+
+      const post = ctrl.expectOne(r => r.method === 'POST' && r.url === BENS);
+      expect(post.request.body.camposCustomizados).toEqual([
+        { campoId: 1, valor: 'Azul' }, { campoId: 2, valor: '12,5' }, { campoId: 3, valor: '2026-03-10' }, { campoId: 4, valor: 'Usado' },
+        { campoId: 5, valor: null }
+      ]);
+      post.flush(bem({ id: 91 }), { status: 201, statusText: 'Created' });
+    });
+
+    it('campo obrigatório vazio no cadastro bloqueia o envio e mostra o erro no campo', () => {
+      montar(null, CATEGORIAS, undefined, [def(1, 'Responsável técnico', { obrigatorio: true })]);
+      fixture.detectChanges();
+      preencherCadastro();
+      fixture.detectChanges();
+      expect(rotulos()).toEqual(['Responsável técnico *']);
+
+      comp.save();
+      fixture.detectChanges();
+
+      ctrl.expectNone(r => r.method === 'POST');
+      expect(el().querySelector('[data-testid="campos-customizados"]')!.textContent).toContain('Campo obrigatório.');
+      digitar('campoCustom1', 'Ana');
+      fixture.detectChanges();
+      expect(el().querySelector('[data-testid="campos-customizados"]')!.textContent).not.toContain('Campo obrigatório.');
+      comp.save();
+      ctrl.expectOne(r => r.method === 'POST' && r.url === BENS).flush(bem({ id: 92 }), { status: 201, statusText: 'Created' });
+    });
+
+    it('valor que não bate com o tipo bloqueia o envio', () => {
+      montar(null, CATEGORIAS, undefined, CAMPOS);
+      fixture.detectChanges();
+      preencherCadastro();
+      fixture.detectChanges();
+      digitar('campoCustom2', 'pesado');
+
+      comp.save();
+      fixture.detectChanges();
+
+      ctrl.expectNone(r => r.method === 'POST');
+      expect(el().textContent).toContain('Informe um número');
+    });
+
+    it('edição: carrega os valores gravados, permite limpar um opcional e manda tudo no PUT', () => {
+      montar('42', CATEGORIAS, () => undefined, CAMPOS);
+      ctrl.expectOne(`${BENS}/42`).flush(bem({
+        camposCustomizados: [
+          { campoId: 1, nome: 'Cor', tipo: 'texto', ativo: true, valor: 'Azul' },
+          { campoId: 2, nome: 'Peso (kg)', tipo: 'numero', ativo: true, valor: '12.5' }
+        ]
+      }));
+      fixture.detectChanges();
+      ctrl.expectOne('/api/v1/imobilizado/responsaveis/12').flush({ id: 12, nome: 'Ana Souza', matricula: 'M100', ativo: true, criadoEm: '' });
+      fixture.detectChanges();
+      expect(campo('campoCustom1').value).toBe('Azul');
+      expect(campo('campoCustom2').value).toBe('12,5');
+
+      digitar('campoCustom2', '');
+      comp.save();
+
+      const put = ctrl.expectOne(r => r.method === 'PUT' && r.url === `${BENS}/42`);
+      expect(put.request.body.camposCustomizados).toEqual([
+        { campoId: 1, valor: 'Azul' }, { campoId: 2, valor: null }, { campoId: 3, valor: null }, { campoId: 4, valor: null }, { campoId: 5, valor: null }
+      ]);
+      put.flush(bem());
+    });
+
+    it('edição: obrigatório que já tinha valor não pode ser apagado; bem antigo sem valor segue editável', () => {
+      const obrig = [def(1, 'Responsável técnico', { obrigatorio: true })];
+      montar('42', CATEGORIAS, () => undefined, obrig);
+      ctrl.expectOne(`${BENS}/42`).flush(bem({ camposCustomizados: [{ campoId: 1, nome: 'Responsável técnico', tipo: 'texto', ativo: true, valor: 'Ana' }] }));
+      fixture.detectChanges();
+      ctrl.expectOne('/api/v1/imobilizado/responsaveis/12').flush({ id: 12, nome: 'Ana Souza', matricula: 'M100', ativo: true, criadoEm: '' });
+      fixture.detectChanges();
+
+      digitar('campoCustom1', '');
+      comp.save();
+      fixture.detectChanges();
+
+      ctrl.expectNone(r => r.method === 'PUT');
+      expect(el().textContent).toContain('Campo obrigatório.');
+    });
+
+    it('edição de bem antigo sem valor no campo obrigatório não bloqueia o PUT', () => {
+      montar('42', CATEGORIAS, () => undefined, [def(1, 'Responsável técnico', { obrigatorio: true })]);
+      ctrl.expectOne(`${BENS}/42`).flush(bem({ camposCustomizados: [] }));
+      fixture.detectChanges();
+      ctrl.expectOne('/api/v1/imobilizado/responsaveis/12').flush({ id: 12, nome: 'Ana Souza', matricula: 'M100', ativo: true, criadoEm: '' });
+      fixture.detectChanges();
+
+      comp.save();
+
+      ctrl.expectOne(r => r.method === 'PUT' && r.url === `${BENS}/42`).flush(bem());
     });
   });
 });

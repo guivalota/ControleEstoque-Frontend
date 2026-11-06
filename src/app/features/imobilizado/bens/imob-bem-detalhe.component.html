@@ -15,6 +15,11 @@
         <button type="button" class="btn btn-sm btn-outline-secondary" (click)="imprimirEtiqueta()">
           <i class="bi bi-qr-code me-1"></i>Imprimir etiqueta
         </button>
+        @if (permissao.pode('imobilizado.bens.criar')) {
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="replicar()">
+            <i class="bi bi-files me-1"></i>Replicar
+          </button>
+        }
         @if (permissao.pode('imobilizado.ordens-servico.criar') && bemEditavel(b.status)) {
           <a class="btn btn-sm btn-outline-primary" routerLink="/imobilizado/ordens-servico/nova" [queryParams]="{ bemId: b.id }">
             <i class="bi bi-clipboard-plus me-1"></i>Abrir OS
@@ -55,6 +60,13 @@
         <button type="button" class="nav-link" [class.active]="aba() === 'dados'" role="tab" id="abaDados"
                 aria-controls="painelDados" [attr.aria-selected]="aba() === 'dados'"
                 [attr.tabindex]="aba() === 'dados' ? 0 : -1" (click)="selecionarAba('dados')" (keydown)="aoTeclarAba($event)">Dados</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button type="button" class="nav-link" [class.active]="aba() === 'fotos'" role="tab" id="abaFotos"
+                aria-controls="painelFotos" [attr.aria-selected]="aba() === 'fotos'"
+                [attr.tabindex]="aba() === 'fotos' ? 0 : -1" (click)="selecionarAba('fotos')" (keydown)="aoTeclarAba($event)">
+          <i class="bi bi-images me-1"></i>Fotos
+        </button>
       </li>
       <li class="nav-item" role="presentation">
         <button type="button" class="nav-link" [class.active]="aba() === 'historico'" role="tab" id="abaHistorico"
@@ -100,7 +112,26 @@
         </dl>
       </div>
     </div>
+    @if (b.camposCustomizados?.length) {
+      <div class="card border-0 shadow-sm mt-3" data-testid="campos-customizados">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-3">Campos adicionais</h6>
+          <dl class="row mb-0">
+            @for (c of b.camposCustomizados!; track c.campoId) {
+              <dt class="col-sm-3">{{ c.nome }}@if (!c.ativo) { <span class="badge bg-secondary-subtle text-secondary ms-1">inativo</span> }</dt>
+              <dd class="col-sm-9 text-break">{{ formatarCampo(c.tipo, c.valor) }}</dd>
+            }
+          </dl>
+        </div>
+      </div>
+    }
     </div>
+
+    @if (fotosVisitada()) {
+      <div id="painelFotos" role="tabpanel" aria-labelledby="abaFotos" [hidden]="aba() !== 'fotos'">
+        <app-imob-bem-fotos [bemId]="b.id" [podeEditar]="permissao.pode('imobilizado.bens.editar')" />
+      </div>
+    }
 
     @if (historicoVisitado()) {
       <div id="painelHistorico" role="tabpanel" aria-labelledby="abaHistorico" [hidden]="aba() !== 'historico'">
@@ -118,3 +149,4 @@
 
 <app-confirm-dialog />
 <app-imob-etiquetas-dialog />
+<app-imob-replicar-dialog (replicado)="aoReplicar($event)" />

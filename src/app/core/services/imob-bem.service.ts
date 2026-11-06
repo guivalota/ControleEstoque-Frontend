@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, catchError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ImobBem, ImobBemFiltro, ImobBemHistorico, SalvarImobBem } from '../models/imob-bem.model';
+import { ImobBem, ImobBemFiltro, ImobBemHistorico, ReplicarImobBem, ReplicarImobBemResultado, SalvarImobBem } from '../models/imob-bem.model';
 import { CodigoAnterior, DeParaItem, ResultadoDePara } from '../models/imob-renovacao.model';
 import { PagedResult } from '../models/paged-result.model';
 import { erroDeBlob } from '../utils/erro-blob';
@@ -44,6 +44,11 @@ export class ImobBemService {
 
   criar(req: SalvarImobBem) {
     return this.http.post<ImobBem>(this.url, req);
+  }
+
+  /** Cria uma cópia do bem para cada plaqueta (tudo ou nada). Plaqueta repetida ou em uso → 400 e nada é criado. */
+  replicar(id: number, req: ReplicarImobBem) {
+    return this.http.post<ReplicarImobBemResultado>(`${this.url}/${id}/replicar`, req);
   }
 
   atualizar(id: number, req: SalvarImobBem) {

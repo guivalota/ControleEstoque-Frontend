@@ -28,6 +28,15 @@ describe('ImobImportacaoService', () => {
     expect(nome).toBe('modelo-importacao-bens.csv');
   });
 
+  it('modelo xlsx: pede formato=xlsx e usa o nome padrão .xlsx', () => {
+    let nome = '';
+    service.modelo('xlsx').subscribe(a => nome = a.nome);
+    const req = ctrl.expectOne(`${BASE}/modelo?formato=xlsx`);
+    expect(req.request.responseType).toBe('blob');
+    req.flush(new Blob(['x']));
+    expect(nome).toBe('modelo-importacao-bens.xlsx');
+  });
+
   it('validar: envia multipart com arquivo e local padrão, sem Content-Type manual', () => {
     service.validar(arquivo, 5).subscribe();
     const req = ctrl.expectOne(`${BASE}/validar`);

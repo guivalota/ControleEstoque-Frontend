@@ -7,17 +7,22 @@ import { lerErroApi } from '../../../core/utils/erros-api';
 import { formatarData, formatarDataHora, formatarMoeda, formatarVidaUtil } from '../../../core/utils/imob-formato';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 import { ImobEtiquetasDialogComponent } from '../shared/imob-etiquetas-dialog.component';
+import { ImobReplicarDialogComponent } from '../shared/imob-replicar-dialog.component';
+import { ToastService } from '../../../core/services/toast.service';
+import { ReplicarImobBemResultado } from '../../../core/models/imob-bem.model';
 import { ImobBemHistoricoComponent } from './imob-bem-historico.component';
 import { ImobBemDepreciacaoComponent } from './imob-bem-depreciacao.component';
+import { ImobBemFotosComponent } from './imob-bem-fotos.component';
+import { formatarValorCampo } from '../../../core/utils/campo-customizado';
 
-type Aba = 'dados' | 'historico' | 'depreciacao';
-const ABAS: Aba[] = ['dados', 'historico', 'depreciacao'];
-const ID_ABA: Record<Aba, string> = { dados: '#abaDados', historico: '#abaHistorico', depreciacao: '#abaDepreciacao' };
+type Aba = 'dados' | 'fotos' | 'historico' | 'depreciacao';
+const ABAS: Aba[] = ['dados', 'fotos', 'historico', 'depreciacao'];
+const ID_ABA: Record<Aba, string> = { dados: '#abaDados', fotos: '#abaFotos', historico: '#abaHistorico', depreciacao: '#abaDepreciacao' };
 
 @Component({
   selector: 'app-imob-bem-detalhe',
   standalone: true,
-  imports: [RouterLink, ConfirmDialogComponent, ImobEtiquetasDialogComponent, ImobBemHistoricoComponent, ImobBemDepreciacaoComponent],
+  imports: [RouterLink, ConfirmDialogComponent, ImobEtiquetasDialogComponent, ImobReplicarDialogComponent, ImobBemHistoricoComponent, ImobBemDepreciacaoComponent, ImobBemFotosComponent],
   templateUrl: './imob-bem-detalhe.component.html'
 })
 export class ImobBemDetalheComponent implements OnInit {
@@ -28,6 +33,8 @@ export class ImobBemDetalheComponent implements OnInit {
 
   private confirmDialog = viewChild.required(ConfirmDialogComponent);
   private etiquetasDialog = viewChild.required(ImobEtiquetasDialogComponent);
+  private replicarDialog = viewChild.required(ImobReplicarDialogComponent);
+  private toast = inject(ToastService);
 
   readonly id = Number(this.route.snapshot.paramMap.get('id'));
   rotuloStatus = ROTULO_STATUS_BEM;
@@ -36,6 +43,7 @@ export class ImobBemDetalheComponent implements OnInit {
   formatarData = formatarData;
   formatarDataHora = formatarDataHora;
   formatarVidaUtil = formatarVidaUtil;
+  formatarCampo = formatarValorCampo;
   bemEditavel = bemEditavel;
 
   bem = signal<ImobBem | null>(null);
@@ -47,6 +55,7 @@ export class ImobBemDetalheComponent implements OnInit {
   aba = signal<Aba>('dados');
   /** O histórico só é buscado na primeira vez que a aba é aberta e depois fica montado. */
   historicoVisitado = signal(false);
+  fotosVisitada = signal(false);
   depreciacaoVisitada = signal(false);
 
   ngOnInit() {
@@ -69,6 +78,7 @@ export class ImobBemDetalheComponent implements OnInit {
 
   selecionarAba(aba: Aba) {
     this.aba.set(aba);
+    if (aba === 'fotos') this.fotosVisitada.set(true);
     if (aba === 'historico') this.historicoVisitado.set(true);
     if (aba === 'depreciacao') this.depreciacaoVisitada.set(true);
   }
@@ -90,6 +100,16 @@ export class ImobBemDetalheComponent implements OnInit {
 
   imprimirEtiqueta() {
     this.etiquetasDialog().abrir({ ids: [this.id] }, 'rolo-50x30');
+  }
+
+  replicar() {
+    const bem = this.bem();
+    if (bem) this.replicarDialog().abrir(bem);
+  }
+
+  aoReplicar(r: ReplicarImobBemResultado) {
+    this.toast.sucesso(`${r.total} ${r.total === 1 ? 'cópia criada' : 'cópias criadas'} a partir de ${r.origemPlaqueta}.`);
+    this.router.navigate(['/imobilizado/bens']);
   }
 
   async excluir() {

@@ -13,6 +13,7 @@ import {
 import { baixarBlob } from '../../../core/utils/download';
 import { lerErroApi } from '../../../core/utils/erros-api';
 import { formatarDataHora } from '../../../core/utils/imob-formato';
+import { textoCoordenadas, urlMapa } from '../../../core/utils/mapa';
 import { PaginacaoComponent } from '../shared/paginacao.component';
 import { SeletorLocalComponent } from '../shared/seletor-local.component';
 
@@ -38,6 +39,8 @@ export class ImobContagemComponent implements OnInit {
   classeSituacao = CLASSE_SITUACAO_PREVISTA;
   iconeSituacao = ICONE_SITUACAO_PREVISTA;
   formatarDataHora = formatarDataHora;
+  mapa = (l: ImobLeitura) => urlMapa(l.latitude, l.longitude);
+  coordenadas = (l: ImobLeitura) => textoCoordenadas(l.latitude, l.longitude) ?? '';
 
   inventario = signal<ImobInventario | null>(null);
   naoEncontrado = signal(false);

@@ -416,6 +416,10 @@ export const routes: Routes = [
             loadComponent: () => import('./features/imobilizado/depreciacao/imob-depreciacao-relatorios.component').then(m => m.ImobDepreciacaoRelatoriosComponent)
           },
           {
+            path: 'relatorios',
+            loadComponent: () => import('./features/imobilizado/relatorios/imob-relatorios.component').then(m => m.ImobRelatoriosComponent)
+          },
+          {
             path: 'depreciacao/ajuda',
             loadComponent: () => import('./features/imobilizado/depreciacao/imob-depreciacao-ajuda.component').then(m => m.ImobDepreciacaoAjudaComponent)
           },
@@ -436,6 +440,12 @@ export const routes: Routes = [
             canActivate: [permissaoGuard],
             data: { permissao: 'imobilizado.grupos.ver' },
             loadComponent: () => import('./features/imobilizado/grupos/imob-grupos.component').then(m => m.ImobGruposComponent)
+          },
+          {
+            path: 'campos-customizados',
+            canActivate: [permissaoGuard],
+            data: { permissao: 'imobilizado.campos-customizados.ver' },
+            loadComponent: () => import('./features/imobilizado/campos-customizados/imob-campos-customizados.component').then(m => m.ImobCamposCustomizadosComponent)
           },
           {
             path: 'departamentos',

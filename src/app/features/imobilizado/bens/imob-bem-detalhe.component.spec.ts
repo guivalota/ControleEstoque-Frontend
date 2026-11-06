@@ -5,9 +5,11 @@ import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angul
 import { ImobBemDetalheComponent } from './imob-bem-detalhe.component';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 import { ImobBem } from '../../../core/models/imob-bem.model';
+import { Modal } from 'bootstrap';
 import { provideAuthFake } from '../../../testing/auth-fake';
 
 const URL_BEM = '/api/v1/imobilizado/bens/42';
+const FOTOS = `${URL_BEM}/fotos`;
 
 const bem = (extra: Partial<ImobBem> = {}): ImobBem => ({
   id: 42, plaqueta: 'NB-0001', descricao: 'Notebook Dell Latitude', categoriaId: 3, categoriaNome: 'Informática',
@@ -180,11 +182,16 @@ describe('ImobBemDetalheComponent', () => {
     it('setas, Home e End trocam de aba e movem o foco', () => {
       tecla(abaDados(), 'ArrowRight');
       fixture.detectChanges();
+      expect(comp.aba()).toBe('fotos');
+      ctrl.expectOne(FOTOS).flush([]);
+      tecla(el().querySelector<HTMLElement>('#abaFotos')!, 'ArrowRight');
+      fixture.detectChanges();
       expect(comp.aba()).toBe('historico');
       expect(document.activeElement).toBe(abaHist());
       ctrl.expectOne(r => r.url === HIST).flush(vazio);
 
       tecla(abaHist(), 'ArrowLeft');
+      tecla(el().querySelector<HTMLElement>('#abaFotos')!, 'Home');
       fixture.detectChanges();
       expect(comp.aba()).toBe('dados');
       expect(document.activeElement).toBe(abaDados());
@@ -232,6 +239,26 @@ describe('ImobBemDetalheComponent', () => {
       expect(acoes()).not.toContain('Excluir');
     });
 
+    it('leitura não vê Replicar; operador e admin veem', () => {
+      montar('leitura');
+      carregar();
+      expect(acoes()).not.toContain('Replicar');
+      TestBed.resetTestingModule();
+      montar('operador');
+      carregar();
+      expect(acoes()).toContain('Replicar');
+    });
+
+    it('Replicar abre o diálogo com a plaqueta do bem', () => {
+      spyOn(Modal.prototype, 'show').and.stub();
+      montar('operador');
+      carregar();
+      const botao = Array.from(el().querySelectorAll('button')).find(b => (b.textContent ?? '').includes('Replicar'))!;
+      botao.click();
+      fixture.detectChanges();
+      expect(texto()).toContain('Replicar bem NB-0001');
+    });
+
     it('admin edita e exclui', () => {
       montar('admin');
       carregar();
@@ -244,6 +271,33 @@ describe('ImobBemDetalheComponent', () => {
       carregar(bem({ status: 'vendido' }));
       expect(acoes()).not.toContain('Editar');
       expect(texto()).toContain('Vendido');
+    });
+  });
+
+  describe('campos customizados', () => {
+    it('mostra os valores formatados (data, número, texto) e marca o campo inativo', () => {
+      montar();
+      carregar(bem({
+        camposCustomizados: [
+          { campoId: 1, nome: 'Cor', tipo: 'texto', ativo: true, valor: 'Azul' },
+          { campoId: 2, nome: 'Peso (kg)', tipo: 'numero', ativo: true, valor: '1234.5' },
+          { campoId: 3, nome: 'Garantia até', tipo: 'data', ativo: true, valor: '2026-03-10' },
+          { campoId: 4, nome: 'Antigo', tipo: 'texto', ativo: false, valor: 'velho' }
+        ]
+      }));
+      const bloco = el().querySelector('[data-testid="campos-customizados"]')!;
+      const t = (bloco.textContent ?? '').replace(/\s+/g, ' ');
+      expect(t).toContain('Campos adicionais');
+      expect(t).toContain('CorAzul');
+      expect(t).toContain('Peso (kg)1.234,5');
+      expect(t).toContain('Garantia até10/03/2026');
+      expect(t).toContain('Antigoinativovelho');
+    });
+
+    it('sem valores gravados não mostra o bloco', () => {
+      montar();
+      carregar(bem({ camposCustomizados: [] }));
+      expect(el().querySelector('[data-testid="campos-customizados"]')).toBeNull();
     });
   });
 });

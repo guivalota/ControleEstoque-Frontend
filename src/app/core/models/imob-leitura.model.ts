@@ -45,6 +45,9 @@ export interface ImobLeitura {
   lidoEm: string;
   origem: 'web' | 'csv' | 'app';
   observacao?: string | null;
+  /** Ponto GPS da leitura (E27); só o app envia. */
+  latitude?: number | null;
+  longitude?: number | null;
   criadoEm: string;
   anulada: boolean;
 }
@@ -60,6 +63,8 @@ export interface RegistrarImobLeitura {
   lidoEm?: string;
   clientId?: string;
   observacao?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface ImobLeituraFiltro {

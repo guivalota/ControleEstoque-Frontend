@@ -55,6 +55,15 @@ describe('ImobBemHistoricoComponent', () => {
     expect(texto()).toContain('Bem cadastrado (plaqueta NB-0001)');
   });
 
+  it('mostra foto adicionada e foto removida com o nome do arquivo', () => {
+    responder(pedido(1), [
+      e(30, { campo: 'foto', valorAnterior: null, valorNovo: 'frente.jpg' }),
+      e(31, { campo: 'foto', valorAnterior: 'velha.jpg', valorNovo: null, criadoEm: '2026-10-22T15:00:00Z' })
+    ]);
+    expect(texto()).toContain('Foto adicionada: frente.jpg');
+    expect(texto()).toContain('Foto removida: velha.jpg');
+  });
+
   it('mostra a exclusão do bem, com a plaqueta', () => {
     responder(pedido(1), [e(13, { campo: 'exclusao', valorAnterior: 'NB-0001', valorNovo: null })]);
     expect(texto()).toContain('Bem excluído (plaqueta NB-0001)');

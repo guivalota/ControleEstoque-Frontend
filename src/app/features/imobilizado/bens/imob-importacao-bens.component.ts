@@ -63,10 +63,10 @@ export class ImobImportacaoBensComponent implements OnInit {
     this.localPadrao.valueChanges.subscribe(() => this.invalidar());
   }
 
-  baixarModelo() {
+  baixarModelo(formato: 'csv' | 'xlsx' = 'csv') {
     this.baixandoModelo.set(true);
     this.erro.set('');
-    this.service.modelo().subscribe({
+    this.service.modelo(formato).subscribe({
       next: ({ blob, nome }) => { baixarBlob(blob, nome); this.baixandoModelo.set(false); },
       error: err => { this.erro.set(lerErroApi(err, 'Não foi possível baixar o modelo.').mensagem); this.baixandoModelo.set(false); }
     });
@@ -76,9 +76,12 @@ export class ImobImportacaoBensComponent implements OnInit {
     const arquivo = (event.target as HTMLInputElement).files?.[0] ?? null;
     this.invalidar();
     this.erroArquivo.set('');
-    if (arquivo && !/\.csv$/i.test(arquivo.name)) {
+    if (arquivo && !/\.(csv|txt|xlsx|xlsm)$/i.test(arquivo.name)) {
       this.arquivo.set(null);
-      this.erroArquivo.set('Envie um arquivo .csv. Em planilhas, use Arquivo → Salvar como → CSV.');
+      this.erroArquivo.set(
+        /\.xls$/i.test(arquivo.name)
+          ? 'O formato .xls (Excel antigo) não é aceito. No Excel, use Salvar como → Pasta de Trabalho do Excel (.xlsx) ou CSV.'
+          : 'Envie uma planilha .xlsx ou um arquivo .csv.');
       return;
     }
     this.arquivo.set(arquivo);

@@ -22,6 +22,12 @@ export interface RelatorioImportacao {
   categoriasNaoEncontradas: PendenciaImportacao[];
   locaisNaoEncontrados: PendenciaImportacao[];
   colunasIgnoradas: string[];
+  /** Campos customizados cujas colunas foram reconhecidas pelo cabeçalho. */
+  camposCustomizadosReconhecidos?: string[];
+  /** Observações que não impedem a importação (ex.: planilha com várias abas). */
+  avisos?: string[];
+  /** Formato do arquivo enviado. */
+  formato?: 'csv' | 'xlsx';
   hashArquivo: string;
   podeConfirmar: boolean;
 }

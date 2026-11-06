@@ -165,6 +165,38 @@
                     [class.is-invalid]="erroCampo('observacao')"></textarea>
           <div class="invalid-feedback">{{ erroCampo('observacao') }}</div>
         </div>
+        @if (camposDoBem().length) {
+          <h6 class="fw-semibold mt-4 mb-3">Campos adicionais</h6>
+          <div class="row g-3 mb-3" data-testid="campos-customizados">
+            @for (c of camposDoBem(); track c.id) {
+              <div class="col-12 col-md-6">
+                <label [for]="'campoCustom' + c.id" class="form-label">{{ c.nome }}@if (c.obrigatorio) { <span> *</span> }</label>
+                @switch (c.tipo) {
+                  @case ('lista') {
+                    <select [id]="'campoCustom' + c.id" class="form-select" [disabled]="bloqueado()" [class.is-invalid]="errosCampos()[c.id]"
+                            (change)="definirCampo(c.id, $any($event.target).value)">
+                      <option value="" [selected]="!valorCampo(c.id)">(nenhum)</option>
+                      @for (o of c.opcoes; track o) { <option [value]="o" [selected]="o.toLowerCase() === valorCampo(c.id).toLowerCase()">{{ o }}</option> }
+                    </select>
+                  }
+                  @case ('data') {
+                    <input [id]="'campoCustom' + c.id" type="date" class="form-control" [disabled]="bloqueado()" [class.is-invalid]="errosCampos()[c.id]"
+                           [value]="valorCampo(c.id)" (input)="definirCampo(c.id, $any($event.target).value)">
+                  }
+                  @case ('numero') {
+                    <input [id]="'campoCustom' + c.id" type="text" inputmode="decimal" class="form-control" [disabled]="bloqueado()" [class.is-invalid]="errosCampos()[c.id]"
+                           [value]="valorCampo(c.id)" (input)="definirCampo(c.id, $any($event.target).value)">
+                  }
+                  @default {
+                    <input [id]="'campoCustom' + c.id" type="text" maxlength="500" class="form-control" [disabled]="bloqueado()" [class.is-invalid]="errosCampos()[c.id]"
+                           [value]="valorCampo(c.id)" (input)="definirCampo(c.id, $any($event.target).value)">
+                  }
+                }
+                @if (errosCampos()[c.id]) { <div class="invalid-feedback d-block">{{ errosCampos()[c.id] }}</div> }
+              </div>
+            }
+          </div>
+        }
         @if (edicao) {
           <div class="form-text">
             O status do bem não é editável aqui; ele muda pelos fluxos de manutenção, baixa e inventário.
