@@ -9,6 +9,7 @@ import { Modal } from 'bootstrap';
 import { provideAuthFake } from '../../../testing/auth-fake';
 
 const URL_BEM = '/api/v1/imobilizado/bens/42';
+const FOTOS = `${URL_BEM}/fotos`;
 
 const bem = (extra: Partial<ImobBem> = {}): ImobBem => ({
   id: 42, plaqueta: 'NB-0001', descricao: 'Notebook Dell Latitude', categoriaId: 3, categoriaNome: 'Informática',
@@ -181,11 +182,16 @@ describe('ImobBemDetalheComponent', () => {
     it('setas, Home e End trocam de aba e movem o foco', () => {
       tecla(abaDados(), 'ArrowRight');
       fixture.detectChanges();
+      expect(comp.aba()).toBe('fotos');
+      ctrl.expectOne(FOTOS).flush([]);
+      tecla(el().querySelector<HTMLElement>('#abaFotos')!, 'ArrowRight');
+      fixture.detectChanges();
       expect(comp.aba()).toBe('historico');
       expect(document.activeElement).toBe(abaHist());
       ctrl.expectOne(r => r.url === HIST).flush(vazio);
 
       tecla(abaHist(), 'ArrowLeft');
+      tecla(el().querySelector<HTMLElement>('#abaFotos')!, 'Home');
       fixture.detectChanges();
       expect(comp.aba()).toBe('dados');
       expect(document.activeElement).toBe(abaDados());

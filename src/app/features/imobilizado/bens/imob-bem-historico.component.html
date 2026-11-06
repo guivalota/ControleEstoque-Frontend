@@ -37,6 +37,13 @@
                   @case ('exclusao') {
                     <i class="bi bi-trash text-danger me-1"></i>Bem excluído (plaqueta {{ valor('plaqueta', e.valorAnterior) }})
                   }
+                  @case ('foto') {
+                    @if (e.valorNovo) {
+                      <i class="bi bi-image text-success me-1"></i>Foto adicionada: <strong class="text-break">{{ e.valorNovo }}</strong>
+                    } @else {
+                      <i class="bi bi-image text-danger me-1"></i>Foto removida: <strong class="text-break">{{ e.valorAnterior }}</strong>
+                    }
+                  }
                   @default {
                     <span class="text-muted me-1">{{ rotulo(e.campo) }}:</span>
                     <span class="text-break">{{ valor(e.campo, e.valorAnterior, e.valorAnteriorDescricao) }}</span>

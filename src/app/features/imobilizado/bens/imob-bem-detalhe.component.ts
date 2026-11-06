@@ -12,15 +12,16 @@ import { ToastService } from '../../../core/services/toast.service';
 import { ReplicarImobBemResultado } from '../../../core/models/imob-bem.model';
 import { ImobBemHistoricoComponent } from './imob-bem-historico.component';
 import { ImobBemDepreciacaoComponent } from './imob-bem-depreciacao.component';
+import { ImobBemFotosComponent } from './imob-bem-fotos.component';
 
-type Aba = 'dados' | 'historico' | 'depreciacao';
-const ABAS: Aba[] = ['dados', 'historico', 'depreciacao'];
-const ID_ABA: Record<Aba, string> = { dados: '#abaDados', historico: '#abaHistorico', depreciacao: '#abaDepreciacao' };
+type Aba = 'dados' | 'fotos' | 'historico' | 'depreciacao';
+const ABAS: Aba[] = ['dados', 'fotos', 'historico', 'depreciacao'];
+const ID_ABA: Record<Aba, string> = { dados: '#abaDados', fotos: '#abaFotos', historico: '#abaHistorico', depreciacao: '#abaDepreciacao' };
 
 @Component({
   selector: 'app-imob-bem-detalhe',
   standalone: true,
-  imports: [RouterLink, ConfirmDialogComponent, ImobEtiquetasDialogComponent, ImobReplicarDialogComponent, ImobBemHistoricoComponent, ImobBemDepreciacaoComponent],
+  imports: [RouterLink, ConfirmDialogComponent, ImobEtiquetasDialogComponent, ImobReplicarDialogComponent, ImobBemHistoricoComponent, ImobBemDepreciacaoComponent, ImobBemFotosComponent],
   templateUrl: './imob-bem-detalhe.component.html'
 })
 export class ImobBemDetalheComponent implements OnInit {
@@ -52,6 +53,7 @@ export class ImobBemDetalheComponent implements OnInit {
   aba = signal<Aba>('dados');
   /** O histórico só é buscado na primeira vez que a aba é aberta e depois fica montado. */
   historicoVisitado = signal(false);
+  fotosVisitada = signal(false);
   depreciacaoVisitada = signal(false);
 
   ngOnInit() {
@@ -74,6 +76,7 @@ export class ImobBemDetalheComponent implements OnInit {
 
   selecionarAba(aba: Aba) {
     this.aba.set(aba);
+    if (aba === 'fotos') this.fotosVisitada.set(true);
     if (aba === 'historico') this.historicoVisitado.set(true);
     if (aba === 'depreciacao') this.depreciacaoVisitada.set(true);
   }
