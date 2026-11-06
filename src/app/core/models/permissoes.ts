@@ -6,6 +6,8 @@
 export const PERMISSOES = [
   'core.acesso.gerir',
   'core.acesso.ver',
+  'core.aprovacoes.decidir',
+  'core.aprovacoes.ver',
   'core.cep.ver',
   'core.clientes.criar',
   'core.clientes.editar',
@@ -193,7 +195,7 @@ export const PERMISSOES = [
   'producao.produtos.ver',
   'producao.rastreio.ver',
   'producao.relatorios.ver',
-  'producao.status.ver'
+  'producao.status.ver',
 ] as const;
 
 export type Permissao = (typeof PERMISSOES)[number];

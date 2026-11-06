@@ -7,6 +7,8 @@ import { Permissao } from './permissoes';
 export const DESCRICOES_PERMISSOES: Record<Permissao, string> = {
   'core.acesso.gerir': 'Gerir — Acesso (perfis, permissões e módulos dos usuários)',
   'core.acesso.ver': 'Ver — Acesso (perfis, permissões e módulos dos usuários)',
+  'core.aprovacoes.decidir': 'Decidir — Aprovações (aprovar ou recusar pedidos)',
+  'core.aprovacoes.ver': 'Ver — Aprovações',
   'core.cep.ver': 'Ver — Consulta de CEP',
   'core.clientes.criar': 'Criar — Clientes',
   'core.clientes.editar': 'Editar — Clientes',

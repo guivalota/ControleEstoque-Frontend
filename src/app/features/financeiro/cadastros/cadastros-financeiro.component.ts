@@ -5,6 +5,8 @@ import { FinanceiroCadastrosService } from '../../../core/services/financeiro-ca
 import { PermissaoService } from '../../../core/services/permissao.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { PodeDirective } from '../../../shared/permissao/pode.directive';
+import { FinanceiroRelatoriosService } from '../../../core/services/financeiro-relatorios.service';
+import { FinConfiguracao } from '../../../core/models/financeiro-relatorios.model';
 import {
   CategoriaFin, CentroCustoFin, ContaFin, MAX_NIVEIS_CATEGORIA, NaturezaCategoria, ROTULO_NATUREZA, ROTULO_TIPO_CONTA,
   TipoConta, montarArvoreCategorias
@@ -12,7 +14,7 @@ import {
 import { formatarData, formatarMoeda } from '../../../core/utils/imob-formato';
 import { lerErroApi, textoDoErro } from '../../../core/utils/erros-api';
 
-type Aba = 'contas' | 'categorias' | 'centros';
+type Aba = 'contas' | 'categorias' | 'centros' | 'config';
 
 /**
  * Cadastros do Financeiro (US-24-02): contas (caixa/banco), plano de categorias em árvore (até 3 níveis) e centros de custo.
@@ -159,6 +161,39 @@ type Aba = 'contas' | 'categorias' | 'centros';
       </div>
     }
 
+    <!-- ================================================== CONFIGURAÇÕES -->
+    @if (aba() === 'config') {
+      <p class="text-secondary small">Só quem tem a permissão de configurar a aprovação altera estes valores.</p>
+      <form class="card card-body" [formGroup]="formConfig" (submit)="$event.preventDefault(); salvarConfig()">
+        <div class="row g-3">
+          <div class="col-12 col-md-4">
+            <label class="form-label" for="cfMin">Exigir aprovação de pagamentos a partir de (R$)</label>
+            <input id="cfMin" type="number" step="0.01" min="0" class="form-control" formControlName="aprovacaoValorMinimo">
+            <div class="form-text">Título a pagar com valor igual ou acima disso só é baixado depois de aprovado por <strong>outro</strong> administrador. Zero desliga.</div>
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label" for="cfPrazo">Prazo padrão de vencimento (dias)</label>
+            <input id="cfPrazo" type="number" min="0" max="365" class="form-control" formControlName="prazoPadraoDias">
+            <div class="form-text">Para notas e retornos que chegam do Estoque e da Produção sem data de vencimento: emissão + este prazo.</div>
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label" for="cfCat">Categoria dos pagamentos importados</label>
+            <select id="cfCat" class="form-select" formControlName="categoriaPadraoPagarId">
+              <option [ngValue]="null">“Importados” (criada sozinha)</option>
+              @for (c of categoriasDespesa(); track c.id) { <option [ngValue]="c.id">{{ c.nome }}</option> }
+            </select>
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label" for="cfHor">Contas fixas: gerar até quantos meses à frente</label>
+            <input id="cfHor" type="number" min="1" max="24" class="form-control" formControlName="recorrenciaHorizonteMeses">
+          </div>
+        </div>
+        <div class="mt-3" *appPode="'financeiro.aprovacao.configurar'">
+          <button type="submit" class="btn btn-primary btn-sm" [disabled]="salvando()">Salvar configurações</button>
+        </div>
+      </form>
+    }
+
     <!-- ================================================ CENTROS DE CUSTO -->
     @if (aba() === 'centros') {
       <div class="d-flex justify-content-between align-items-center mb-2">
@@ -208,10 +243,12 @@ export class CadastrosFinanceiroComponent implements OnInit {
   private fb = inject(FormBuilder);
   private service = inject(FinanceiroCadastrosService);
   private toast = inject(ToastService);
+  private relatorios = inject(FinanceiroRelatoriosService);
   permissao = inject(PermissaoService);
 
   readonly abas: { id: Aba; rotulo: string }[] = [
-    { id: 'contas', rotulo: 'Contas' }, { id: 'categorias', rotulo: 'Categorias' }, { id: 'centros', rotulo: 'Centros de custo' }
+    { id: 'contas', rotulo: 'Contas' }, { id: 'categorias', rotulo: 'Categorias' }, { id: 'centros', rotulo: 'Centros de custo' },
+    { id: 'config', rotulo: 'Configurações' }
   ];
   readonly maxNiveis = MAX_NIVEIS_CATEGORIA;
 
@@ -241,6 +278,13 @@ export class CadastrosFinanceiroComponent implements OnInit {
     natureza: ['despesa' as NaturezaCategoria]
   });
   formCentro = this.fb.nonNullable.group({ nome: ['', [Validators.required, Validators.maxLength(120)]] });
+  formConfig = this.fb.group({
+    aprovacaoValorMinimo: [0, [Validators.required, Validators.min(0)]],
+    prazoPadraoDias: [30, [Validators.required, Validators.min(0), Validators.max(365)]],
+    categoriaPadraoPagarId: [null as number | null],
+    recorrenciaHorizonteMeses: [3, [Validators.required, Validators.min(1), Validators.max(24)]]
+  });
+  categoriasDespesa = computed(() => this.categorias().filter(c => c.natureza === 'despesa' && c.ativo));
 
   ngOnInit() { this.carregar('contas'); }
 
@@ -256,7 +300,11 @@ export class CadastrosFinanceiroComponent implements OnInit {
     const fim = { error: (e: unknown) => { this.carregando.set(false); this.erro.set(textoDoErro(lerErroApi(e, 'Não foi possível carregar.'), 'Não foi possível carregar.')); } };
     if (aba === 'contas') this.service.contas().subscribe({ next: l => { this.contas.set(l); this.carregando.set(false); }, ...fim });
     else if (aba === 'categorias') this.service.categorias().subscribe({ next: l => { this.categorias.set(l); this.carregando.set(false); }, ...fim });
-    else this.service.centros().subscribe({ next: l => { this.centros.set(l); this.carregando.set(false); }, ...fim });
+    else if (aba === 'centros') this.service.centros().subscribe({ next: l => { this.centros.set(l); this.carregando.set(false); }, ...fim });
+    else {
+      this.service.categorias().subscribe({ next: l => this.categorias.set(l), error: () => undefined });
+      this.relatorios.configuracao().subscribe({ next: c => { this.aplicarConfig(c); this.carregando.set(false); }, ...fim });
+    }
   }
 
   cancelar() { this.editando.set(null); this.idEdicao.set(null); }
@@ -338,6 +386,23 @@ export class CadastrosFinanceiroComponent implements OnInit {
   excluirCategoria(c: CategoriaFin) {
     if (!confirm(`Excluir a categoria "${c.nome}"?`)) return;
     this.executar(this.service.excluirCategoria(c.id), 'categorias', 'Categoria excluída.', 'Não foi possível excluir a categoria.', true);
+  }
+
+  // ---- configurações
+  private aplicarConfig(c: FinConfiguracao) {
+    this.formConfig.reset({
+      aprovacaoValorMinimo: c.aprovacaoValorMinimo, prazoPadraoDias: c.prazoPadraoDias,
+      categoriaPadraoPagarId: c.categoriaPadraoPagarId, recorrenciaHorizonteMeses: c.recorrenciaHorizonteMeses
+    });
+    if (!this.permissao.pode('financeiro.aprovacao.configurar')) this.formConfig.disable();
+  }
+  salvarConfig() {
+    if (this.formConfig.invalid) { this.formConfig.markAllAsTouched(); return; }
+    const v = this.formConfig.getRawValue();
+    this.executar(this.relatorios.salvarConfiguracao({
+      aprovacaoValorMinimo: Number(v.aprovacaoValorMinimo), prazoPadraoDias: Number(v.prazoPadraoDias),
+      categoriaPadraoPagarId: v.categoriaPadraoPagarId, recorrenciaHorizonteMeses: Number(v.recorrenciaHorizonteMeses)
+    }), 'config', 'Configurações salvas.', 'Não foi possível salvar as configurações.');
   }
 
   // ---- centros de custo

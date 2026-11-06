@@ -42,6 +42,10 @@ export class ManualComponent {
       {
         chave: 'producao', titulo: 'Produção', icone: 'bi-scissors', arquivo: 'docs/manual-producao.md',
         visivel: this.empresa.temModulo('producao') && this.permissao.podeUsarModulo('estoque')
+      },
+      {
+        chave: 'financeiro', titulo: 'Financeiro', icone: 'bi-cash-coin', arquivo: 'docs/manual-financeiro.md',
+        visivel: this.empresa.temModulo('financeiro') && this.permissao.podeUsarModulo('financeiro')
       }
     ];
     return todos.filter(m => m.visivel);
