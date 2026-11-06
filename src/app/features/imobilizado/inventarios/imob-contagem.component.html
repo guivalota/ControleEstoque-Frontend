@@ -97,7 +97,14 @@
                   {{ l.plaqueta }}
                   @if (l.plaquetaAnterior) { <span class="text-muted small ms-1">(ant. {{ l.plaquetaAnterior }})</span> }
                 </td>
-                <td>{{ l.localLidoNome }}</td>
+                <td>
+                  {{ l.localLidoNome }}
+                  @if (mapa(l); as url) {
+                    <a [href]="url" target="_blank" rel="noopener noreferrer" class="ms-1" [attr.aria-label]="'Ver no mapa: ' + coordenadas(l)" [title]="coordenadas(l)">
+                      <i class="bi bi-geo-alt"></i>
+                    </a>
+                  }
+                </td>
                 <td>{{ formatarDataHora(l.lidoEm) }}</td>
                 <td>{{ l.usuarioNome || '—' }}</td>
                 <td><span class="badge bg-light text-dark border">{{ l.origem }}</span></td>
