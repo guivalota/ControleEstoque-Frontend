@@ -368,6 +368,18 @@ export const routes: Routes = [
             loadComponent: () => import('./features/imobilizado/inventarios/imob-inventario-form.component').then(m => m.ImobInventarioFormComponent)
           },
           {
+            path: 'inventarios/:id/contagem',
+            canActivate: [permissaoGuard],
+            data: { permissao: 'imobilizado.inventarios-leituras.ver' },
+            loadComponent: () => import('./features/imobilizado/inventarios/imob-contagem.component').then(m => m.ImobContagemComponent)
+          },
+          {
+            path: 'inventarios/:id/conciliacao',
+            canActivate: [permissaoGuard],
+            data: { permissao: 'imobilizado.inventarios-conciliacao.ver' },
+            loadComponent: () => import('./features/imobilizado/inventarios/imob-conciliacao.component').then(m => m.ImobConciliacaoComponent)
+          },
+          {
             path: 'inventarios/:id',
             canActivate: [permissaoGuard],
             data: { permissao: 'imobilizado.inventarios.ver' },

@@ -55,6 +55,53 @@ export interface ImobLeitura {
 export interface ImobLeituraRegistrada extends ImobLeitura {
   reaproveitada: boolean;
   info: ImobLeituraInfo;
+  /** Resultado da conferência enviada junto (reavaliação). */
+  conferencia?: ResultadoConferencia | null;
+  conferenciaErro?: string | null;
+}
+
+/** Conferência da reavaliação (estado, valor de mercado, departamento encontrados). */
+export interface ImobConferenciaDados {
+  estadoId?: number | null;
+  valorMercado?: number | null;
+  departamentoId?: number | null;
+}
+
+export type ResultadoConferencia = 'gravada' | 'ignorada' | 'fora_do_esperado' | 'erro';
+
+export const ROTULO_RESULTADO_CONFERENCIA: Record<ResultadoConferencia, string> = {
+  gravada: 'Conferência gravada',
+  ignorada: 'Ignorada: já existe uma conferência mais recente',
+  fora_do_esperado: 'Bem fora do esperado deste ciclo',
+  erro: 'Conferência com erro'
+};
+
+export interface ImobConferenciaLoteItem extends ImobConferenciaDados {
+  bemId?: number;
+  plaqueta?: string;
+  lidoEm?: string;
+}
+
+export interface ResultadoConferenciaLote {
+  gravadas: number;
+  ignoradas: number;
+  foraDoEsperado: number;
+  comErro: number;
+  itens: { indice: number; bemId?: number | null; plaqueta?: string | null; resultado: ResultadoConferencia; erro?: string | null }[];
+}
+
+export interface RelatorioImportacaoConferencias {
+  somenteValidacao: boolean;
+  totalLinhas: number;
+  linhasValidas: number;
+  linhasComErro: number;
+  gravadas: number;
+  ignoradas: number;
+  foraDoEsperado: number;
+  totalErros: number;
+  errosTruncados: boolean;
+  erros: { linha: number; plaqueta?: string | null; campo: string; mensagem: string }[];
+  colunasIgnoradas: string[];
 }
 
 export interface RegistrarImobLeitura {
@@ -65,6 +112,8 @@ export interface RegistrarImobLeitura {
   observacao?: string;
   latitude?: number;
   longitude?: number;
+  /** Só em inventário de reavaliação. */
+  conferencia?: ImobConferenciaDados;
 }
 
 export interface ImobLeituraFiltro {
