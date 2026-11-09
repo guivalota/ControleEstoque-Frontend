@@ -1,14 +1,20 @@
 import { Component, ElementRef, OnInit, inject, signal, viewChild } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ImobInventarioService } from '../../../core/services/imob-inventario.service';
+import { ImobConferenciaService } from '../../../core/services/imob-conferencia.service';
+import { ImobDepartamentoService } from '../../../core/services/imob-departamento.service';
+import { ImobEstadoConservacaoService } from '../../../core/services/imob-estado-conservacao.service';
 import { ImobLeituraService } from '../../../core/services/imob-leitura.service';
 import { ImobLocalService } from '../../../core/services/imob-local.service';
 import { ImobInventario } from '../../../core/models/imob-inventario.model';
 import { ImobLocalArvore } from '../../../core/models/imob-local.model';
+import { ImobDepartamento } from '../../../core/models/imob-departamento.model';
+import { ImobEstadoConservacao } from '../../../core/models/imob-reavaliacao.model';
 import {
-  CLASSE_SITUACAO_PREVISTA, ICONE_SITUACAO_PREVISTA, ImobLeitura, ImobLeituraRegistrada,
-  RelatorioImportacaoLeituras, ROTULO_SITUACAO_PREVISTA
+  CLASSE_SITUACAO_PREVISTA, ICONE_SITUACAO_PREVISTA, ImobConferenciaDados, ImobLeitura, ImobLeituraRegistrada,
+  RelatorioImportacaoConferencias, RelatorioImportacaoLeituras, ResultadoConferenciaLote,
+  ROTULO_RESULTADO_CONFERENCIA, ROTULO_SITUACAO_PREVISTA
 } from '../../../core/models/imob-leitura.model';
 import { baixarBlob } from '../../../core/utils/download';
 import { lerErroApi } from '../../../core/utils/erros-api';
@@ -30,12 +36,16 @@ export class ImobContagemComponent implements OnInit {
   private inventarios = inject(ImobInventarioService);
   private service = inject(ImobLeituraService);
   private locais = inject(ImobLocalService);
+  private conferencias = inject(ImobConferenciaService);
+  private estadosApi = inject(ImobEstadoConservacaoService);
+  private departamentosApi = inject(ImobDepartamentoService);
   private route = inject(ActivatedRoute);
   private campoPlaqueta = viewChild<ElementRef<HTMLInputElement>>('campoPlaqueta');
 
   readonly id = Number(this.route.snapshot.paramMap.get('id'));
   readonly pageSize = PAGE_SIZE;
   rotuloSituacao = ROTULO_SITUACAO_PREVISTA;
+  rotuloConferencia = ROTULO_RESULTADO_CONFERENCIA;
   classeSituacao = CLASSE_SITUACAO_PREVISTA;
   iconeSituacao = ICONE_SITUACAO_PREVISTA;
   formatarDataHora = formatarDataHora;
@@ -49,6 +59,16 @@ export class ImobContagemComponent implements OnInit {
   local = new FormControl<number | null>(null);
   plaqueta = new FormControl('', { nonNullable: true });
   observacao = new FormControl('', { nonNullable: true });
+
+  // Conferência da reavaliação (só quando o inventário é de reavaliação)
+  estados = signal<ImobEstadoConservacao[]>([]);
+  departamentos = signal<ImobDepartamento[]>([]);
+  estado = new FormControl<number | null>(null);
+  valorMercado = new FormControl<number | null>(null, { validators: [Validators.min(0)] });
+  departamento = new FormControl<number | null>(null);
+  conferindo = signal(false);
+  /** Resultado da última conferência sem leitura. */
+  resultadoConferencia = signal<{ ok: boolean; texto: string } | null>(null);
 
   registrando = signal(false);
   erro = signal('');
@@ -65,6 +85,12 @@ export class ImobContagemComponent implements OnInit {
   carregando = signal(false);
   anulando = signal<number | null>(null);
 
+  // Importação CSV de conferências
+  arquivoConf = signal<File | null>(null);
+  relatorioConf = signal<RelatorioImportacaoConferencias | null>(null);
+  importandoConf = signal(false);
+  erroImportacaoConf = signal('');
+
   // Importação CSV
   arquivo = signal<File | null>(null);
   relatorio = signal<RelatorioImportacaoLeituras | null>(null);
@@ -72,16 +98,42 @@ export class ImobContagemComponent implements OnInit {
   erroImportacao = signal('');
 
   get emAndamento() { return this.inventario()?.status === 'em_andamento'; }
+  get reavaliacao() { return this.inventario()?.reavaliacao === true; }
 
   ngOnInit() {
     this.inventarios.obter(this.id).subscribe({
-      next: inv => { this.inventario.set(inv); if (inv.status === 'em_andamento') this.carregar(); },
+      next: inv => {
+        this.inventario.set(inv);
+        if (inv.status === 'em_andamento') this.carregar();
+        if (inv.reavaliacao) this.carregarListasConferencia();
+      },
       error: err => {
         if (err.status === 404) this.naoEncontrado.set(true);
         else this.erro.set(lerErroApi(err, 'Erro ao carregar o inventário.').mensagem);
       }
     });
     this.locais.arvore().subscribe({ next: a => this.arvore.set(a), error: () => this.arvore.set([]) });
+  }
+
+  private carregarListasConferencia() {
+    this.estadosApi.listar({ ativo: true, pageSize: 200 }).subscribe({ next: r => this.estados.set(r.items), error: () => this.estados.set([]) });
+    this.departamentosApi.listar({ ativo: true, pageSize: 1000 }).subscribe({ next: r => this.departamentos.set(r.items), error: () => this.departamentos.set([]) });
+  }
+
+  /** Dados de conferência preenchidos, ou `undefined` se nenhum campo foi informado (ou fora da reavaliação). */
+  private dadosConferencia(): ImobConferenciaDados | undefined {
+    if (!this.reavaliacao) return undefined;
+    const d: ImobConferenciaDados = {};
+    if (this.estado.value != null) d.estadoId = this.estado.value;
+    if (this.valorMercado.value != null) d.valorMercado = this.valorMercado.value;
+    if (this.departamento.value != null) d.departamentoId = this.departamento.value;
+    return Object.keys(d).length ? d : undefined;
+  }
+
+  private limparConferencia() {
+    this.estado.reset(null);
+    this.valorMercado.reset(null);
+    this.departamento.reset(null);
   }
 
   carregar(page = this.page()) {
@@ -104,17 +156,21 @@ export class ImobContagemComponent implements OnInit {
   registrar() {
     const plaqueta = this.plaqueta.value.trim();
     const localId = this.local.value;
+    this.resultadoConferencia.set(null);
     if (localId == null || !plaqueta) {
       this.erro.set(localId == null ? 'Selecione o local onde você está.' : 'Informe a plaqueta.');
       return;
     }
+    if (this.valorMercado.invalid) { this.erro.set('O valor de mercado não pode ser negativo.'); return; }
     const observacao = this.observacao.value.trim() || undefined;
-    const chave = `${plaqueta.toLowerCase()}|${localId}|${observacao ?? ''}`;
+    const conferencia = this.dadosConferencia();
+    const chave = `${plaqueta.toLowerCase()}|${localId}|${observacao ?? ''}|${JSON.stringify(conferencia ?? {})}`;
     const clientId = this.pendente?.chave === chave ? this.pendente.clientId : crypto.randomUUID();
     this.pendente = { chave, clientId };
     this.erro.set('');
     this.registrando.set(true);
-    this.service.registrar(this.id, { plaqueta, localId, clientId, observacao }).subscribe({
+    this.resultadoConferencia.set(null);
+    this.service.registrar(this.id, { plaqueta, localId, clientId, observacao, conferencia }).subscribe({
       next: r => {
         this.pendente = null;
         this.registrando.set(false);
@@ -122,6 +178,7 @@ export class ImobContagemComponent implements OnInit {
         this.sessao.update(l => [r, ...l].slice(0, MAX_FEEDBACK));
         this.plaqueta.reset('');
         this.observacao.reset('');
+        this.limparConferencia();
         this.carregar(1);
         this.campoPlaqueta()?.nativeElement.focus();
       },
@@ -131,6 +188,66 @@ export class ImobContagemComponent implements OnInit {
         this.registrando.set(false);
         this.erro.set(lerErroApi(err, 'Erro ao registrar a leitura.').mensagem);
       }
+    });
+  }
+
+  /** Registra só a conferência (estado/valor/departamento), sem criar leitura: não exige local. */
+  soConferir() {
+    const plaqueta = this.plaqueta.value.trim();
+    const dados = this.dadosConferencia();
+    if (!plaqueta) { this.erro.set('Informe a plaqueta.'); return; }
+    if (!dados) { this.erro.set('Informe ao menos o estado, o valor de mercado ou o departamento.'); return; }
+    if (this.valorMercado.invalid) { this.erro.set('O valor de mercado não pode ser negativo.'); return; }
+    this.erro.set('');
+    this.resultadoConferencia.set(null);
+    this.conferindo.set(true);
+    this.conferencias.enviarLote(this.id, [{ plaqueta, ...dados }]).subscribe({
+      next: r => {
+        this.conferindo.set(false);
+        this.resultadoConferencia.set(this.resumoConferencia(plaqueta, r));
+        if (r.gravadas > 0) { this.plaqueta.reset(''); this.limparConferencia(); this.campoPlaqueta()?.nativeElement.focus(); }
+      },
+      error: err => { this.conferindo.set(false); this.erro.set(lerErroApi(err, 'Erro ao registrar a conferência.').mensagem); }
+    });
+  }
+
+  private resumoConferencia(plaqueta: string, r: ResultadoConferenciaLote) {
+    const item = r.itens[0];
+    if (!item) return { ok: false, texto: 'Resposta sem resultado.' };
+    const base = `${plaqueta}: ${this.rotuloConferencia[item.resultado] ?? item.resultado}`;
+    return { ok: item.resultado === 'gravada', texto: item.erro ? `${base} — ${item.erro}` : base };
+  }
+
+  /** Texto do resultado da conferência enviada junto da leitura (vazio quando não houve conferência). */
+  textoConferencia(r: ImobLeituraRegistrada): string {
+    if (!r.conferencia) return '';
+    return r.conferenciaErro ? `${this.rotuloConferencia[r.conferencia]} — ${r.conferenciaErro}` : this.rotuloConferencia[r.conferencia];
+  }
+
+  baixarModeloConf() {
+    this.conferencias.modelo(this.id).subscribe({
+      next: a => baixarBlob(a.blob, a.nome),
+      error: err => this.erroImportacaoConf.set(lerErroApi(err, 'Erro ao baixar o modelo.').mensagem)
+    });
+  }
+
+  escolherArquivoConf(ev: Event) {
+    this.arquivoConf.set((ev.target as HTMLInputElement).files?.[0] ?? null);
+    this.relatorioConf.set(null);
+    this.erroImportacaoConf.set('');
+  }
+
+  validarConf() { this.enviarConf(true); }
+  importarConf() { this.enviarConf(false); }
+
+  private enviarConf(apenasValidar: boolean) {
+    const f = this.arquivoConf();
+    if (!f) return;
+    this.importandoConf.set(true);
+    this.erroImportacaoConf.set('');
+    this.conferencias.importar(this.id, f, apenasValidar).subscribe({
+      next: r => { this.relatorioConf.set(r); this.importandoConf.set(false); },
+      error: err => { this.importandoConf.set(false); this.erroImportacaoConf.set(lerErroApi(err, 'Erro ao importar o arquivo.').mensagem); }
     });
   }
 
