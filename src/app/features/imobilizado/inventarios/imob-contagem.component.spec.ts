@@ -21,6 +21,17 @@ describe('ImobContagemComponent — conferência da reavaliação', () => {
   const el = () => fixture.nativeElement as HTMLElement;
   const texto = () => (el().textContent ?? '').replace(/\s+/g, ' ');
   const listaLeituras = (r: { url: string }) => r.url === `${API}/inventarios/7/leituras`;
+  const listaConferencias = (r: { url: string }) => r.url === `${API}/inventarios/7/conferencias`;
+  const linha = (extra: object = {}) => ({
+    bemId: 1, plaqueta: 'NB-1', descricao: 'Notebook', localEsperadoNome: 'Matriz', encontrado: true, estadoNome: 'Bom',
+    valorMercado: 150, departamentoNome: 'Tecnologia', conferidoPorNome: 'Maria', conferidoEm: '2026-11-09T11:00:00Z', incompleto: false, ...extra
+  });
+  const resumo = { esperados: 3, encontrados: 2, naoEncontrados: 1, completos: 1, incompletos: 1 };
+  const respostaConferencias = (items: object[] = [linha(), linha({ bemId: 2, plaqueta: 'NB-2', estadoNome: null, valorMercado: null, incompleto: true }),
+    linha({ bemId: 3, plaqueta: 'NB-3', encontrado: false, estadoNome: null, valorMercado: null, conferidoEm: null })]) =>
+    ({ items, page: 1, pageSize: 20, total: items.length, resumo });
+  /** Atende o recarregamento da lista feito depois de gravar algo. */
+  const recarregouConferencias = (corpo = respostaConferencias()) => ctrl.expectOne(listaConferencias).flush(corpo);
 
   function montar(i: ImobInventario = inv()) {
     TestBed.configureTestingModule({
@@ -44,6 +55,7 @@ describe('ImobContagemComponent — conferência da reavaliação', () => {
       ctrl.expectOne(r => r.url === `${API}/departamentos`).flush({
         items: [{ id: 5, codigo: 'TI', nome: 'Tecnologia', ativo: true }], page: 1, pageSize: 1000, total: 1
       });
+      ctrl.expectOne(listaConferencias).flush(respostaConferencias());
     }
     fixture.detectChanges();
   }
@@ -81,6 +93,7 @@ describe('ImobContagemComponent — conferência da reavaliação', () => {
       info: { plaqueta: 'NB-1', noEsperado: true, leiturasAtivas: 1, situacaoPrevista: 'no_local_esperado' }
     });
     ctrl.expectOne(r => listaLeituras(r) && r.method === 'GET').flush({ items: [], page: 1, pageSize: 20, total: 0 });
+    recarregouConferencias();
     fixture.detectChanges();
     expect(texto()).toContain('Conferência gravada');
     expect(comp.estado.value).toBeNull();
@@ -116,6 +129,7 @@ describe('ImobContagemComponent — conferência da reavaliação', () => {
     const req = ctrl.expectOne(`${API}/inventarios/7/conferencias/lote`);
     expect(req.request.body).toEqual({ itens: [{ plaqueta: 'NB-4', departamentoId: 5 }] });
     req.flush({ gravadas: 1, ignoradas: 0, foraDoEsperado: 0, comErro: 0, itens: [{ indice: 0, plaqueta: 'NB-4', resultado: 'gravada' }] });
+    recarregouConferencias();
     fixture.detectChanges();
     expect(texto()).toContain('NB-4: Conferência gravada');
     expect(comp.plaqueta.value).toBe('');
@@ -129,8 +143,67 @@ describe('ImobContagemComponent — conferência da reavaliação', () => {
     ctrl.expectOne(`${API}/inventarios/7/conferencias/lote`).flush({
       gravadas: 0, ignoradas: 0, foraDoEsperado: 1, comErro: 0, itens: [{ indice: 0, plaqueta: 'NB-5', resultado: 'fora_do_esperado' }]
     });
+    recarregouConferencias();
     fixture.detectChanges();
     expect(texto()).toContain('fora do esperado');
     expect(comp.plaqueta.value).toBe('NB-5');
+  });
+
+  it('mostra o resumo e uma linha por bem esperado, marcando os incompletos', () => {
+    montar();
+    const c = el().querySelector('[data-testid="conferencias-ciclo"]') as HTMLElement;
+    const txt = (c.textContent ?? '').replace(/\s+/g, ' ');
+    expect(txt).toContain('3 esperados');
+    expect(txt).toContain('2 encontrados');
+    expect(txt).toContain('1 não encontrados');
+    expect(txt).toContain('1 sem estado ou sem valor');
+    expect(c.querySelectorAll('tbody tr').length).toBe(3);
+    expect(txt).toContain('NB-1');
+    expect(txt).toContain('Completo');
+    expect(txt).toContain('Incompleto');
+    expect(txt).toContain('Não encontrado');
+    expect(txt).toContain('R$');
+    expect(txt).toContain('Maria');
+  });
+
+  it('o filtro de situação e a busca vão para a API e voltam à primeira página', () => {
+    montar();
+    comp.confSituacao.setValue('incompletos');
+    comp.confBusca.setValue(' nb ');
+    comp.carregarConferencias(1);
+    const req = ctrl.expectOne(listaConferencias);
+    expect(req.request.params.get('situacao')).toBe('incompletos');
+    expect(req.request.params.get('busca')).toBe('nb');
+    expect(req.request.params.get('page')).toBe('1');
+    req.flush(respostaConferencias([linha({ bemId: 2, plaqueta: 'NB-2', incompleto: true })]));
+    fixture.detectChanges();
+    expect(el().querySelectorAll('[data-testid="conferencias-ciclo"] tbody tr').length).toBe(1);
+  });
+
+  it('"todos" não envia o filtro de situação', () => {
+    montar();
+    comp.carregarConferencias(1);
+    const req = ctrl.expectOne(listaConferencias);
+    expect(req.request.params.has('situacao')).toBeFalse();
+    req.flush(respostaConferencias());
+  });
+
+  it('erro ao listar as conferências mostra a mensagem do servidor', () => {
+    montar();
+    comp.carregarConferencias(1);
+    ctrl.expectOne(listaConferencias).flush({ error: 'Este inventário não é de reavaliação.' }, { status: 400, statusText: 'Bad Request' });
+    fixture.detectChanges();
+    expect(texto()).toContain('não é de reavaliação');
+  });
+
+  it('importar o CSV (e não só validar) recarrega a lista', () => {
+    montar();
+    comp.arquivoConf.set(new File(['plaqueta\nNB-1'], 'c.csv'));
+    comp.validarConf();
+    ctrl.expectOne(`${API}/inventarios/7/conferencias/importacao`).flush({ somenteValidacao: true, erros: [], colunasIgnoradas: [] });
+    comp.importarConf();
+    ctrl.expectOne(`${API}/inventarios/7/conferencias/importacao`).flush({ somenteValidacao: false, erros: [], colunasIgnoradas: [] });
+    recarregouConferencias();
+    expect(comp.relatorioConf()?.somenteValidacao).toBeFalse();
   });
 });
