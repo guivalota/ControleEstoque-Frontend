@@ -200,6 +200,57 @@
     </div>
 
     @if (reavaliacao) {
+      <div class="card border-0 shadow-sm mb-3" data-testid="conferencias-ciclo">
+        <div class="card-header bg-transparent d-flex flex-wrap gap-2 justify-content-between align-items-center">
+          <span class="fw-semibold">Conferências do ciclo</span>
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <select class="form-select form-select-sm w-auto" aria-label="Situação" [formControl]="confSituacao" (change)="carregarConferencias(1)">
+              @for (s of situacoesConferencia; track s) { <option [ngValue]="s">{{ rotuloSituacaoConferencia[s] }}</option> }
+            </select>
+            <input class="form-control form-control-sm" placeholder="Filtrar plaqueta ou descrição" aria-label="Filtrar conferências"
+                   [formControl]="confBusca" (keydown.enter)="carregarConferencias(1)">
+          </div>
+        </div>
+        @if (confResumo(); as r) {
+          <div class="card-body py-2 d-flex flex-wrap gap-2 small" aria-label="Resumo das conferências">
+            <span class="badge bg-light text-dark border">{{ r.esperados }} esperados</span>
+            <span class="badge bg-success-subtle text-success-emphasis">{{ r.encontrados }} encontrados</span>
+            <span class="badge bg-light text-dark border">{{ r.naoEncontrados }} não encontrados</span>
+            <span class="badge bg-success-subtle text-success-emphasis">{{ r.completos }} completos (estado e valor)</span>
+            @if (r.incompletos) { <span class="badge bg-warning-subtle text-warning-emphasis">{{ r.incompletos }} sem estado ou sem valor</span> }
+          </div>
+        }
+        @if (confErro()) { <div class="alert alert-danger py-2 mx-3" role="alert">{{ confErro() }}</div> }
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Plaqueta</th><th>Descrição</th><th>Local esperado</th><th>Situação</th><th>Estado</th><th class="text-end">Valor de mercado</th><th>Departamento</th><th>Conferido por</th></tr></thead>
+            <tbody>
+              @for (l of confLinhas(); track l.bemId) {
+                <tr>
+                  <td>{{ l.plaqueta }}</td>
+                  <td>{{ l.descricao || '—' }}</td>
+                  <td>{{ l.localEsperadoNome || '—' }}</td>
+                  <td>
+                    @if (!l.encontrado) { <span class="badge bg-light text-dark border">Não encontrado</span> }
+                    @else if (l.incompleto) { <span class="badge bg-warning-subtle text-warning-emphasis">Incompleto</span> }
+                    @else { <span class="badge bg-success-subtle text-success-emphasis">Completo</span> }
+                  </td>
+                  <td>{{ l.estadoNome || '—' }}</td>
+                  <td class="text-end">{{ l.valorMercado != null ? formatarMoeda(l.valorMercado) : '—' }}</td>
+                  <td>{{ l.departamentoNome || '—' }}</td>
+                  <td>
+                    @if (l.conferidoEm) { {{ l.conferidoPorNome || '—' }} <span class="text-muted small">{{ formatarDataHora(l.conferidoEm) }}</span> } @else { — }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="8" class="text-center text-muted py-3">{{ confCarregando() ? 'Carregando...' : 'Nenhum bem para este filtro.' }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacao [page]="confPage()" [pageSize]="pageSize" [total]="confTotal()" [disabled]="confCarregando()" (mudar)="carregarConferencias($event)" />
+      </div>
+
       <div class="card border-0 shadow-sm">
         <div class="card-header bg-transparent fw-semibold">Importar conferências por CSV</div>
         <div class="card-body">

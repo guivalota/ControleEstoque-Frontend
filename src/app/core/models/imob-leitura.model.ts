@@ -90,6 +90,57 @@ export interface ResultadoConferenciaLote {
   itens: { indice: number; bemId?: number | null; plaqueta?: string | null; resultado: ResultadoConferencia; erro?: string | null }[];
 }
 
+export type SituacaoConferencia = 'todos' | 'conferidos' | 'nao_encontrados' | 'incompletos';
+
+export const ROTULO_SITUACAO_CONFERENCIA: Record<SituacaoConferencia, string> = {
+  todos: 'Todos os bens esperados',
+  conferidos: 'Encontrados',
+  nao_encontrados: 'Ainda não encontrados',
+  incompletos: 'Encontrados sem estado ou sem valor'
+};
+
+export interface ImobConferenciaFiltro {
+  busca?: string;
+  situacao?: SituacaoConferencia;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ImobConferenciaLinha {
+  bemId: number;
+  plaqueta: string;
+  descricao?: string | null;
+  localEsperadoId?: number | null;
+  localEsperadoNome?: string | null;
+  encontrado: boolean;
+  estadoId?: number | null;
+  estadoNome?: string | null;
+  valorMercado?: number | null;
+  departamentoId?: number | null;
+  departamentoNome?: string | null;
+  conferidoPor?: string | null;
+  conferidoPorNome?: string | null;
+  conferidoEm?: string | null;
+  /** Encontrado, mas sem estado ou sem valor de mercado: o cálculo da reavaliação ficaria pendente. */
+  incompleto: boolean;
+}
+
+export interface ImobConferenciaResumo {
+  esperados: number;
+  encontrados: number;
+  naoEncontrados: number;
+  completos: number;
+  incompletos: number;
+}
+
+export interface ImobConferenciaLista {
+  items: ImobConferenciaLinha[];
+  page: number;
+  pageSize: number;
+  total: number;
+  resumo: ImobConferenciaResumo;
+}
+
 export interface RelatorioImportacaoConferencias {
   somenteValidacao: boolean;
   totalLinhas: number;

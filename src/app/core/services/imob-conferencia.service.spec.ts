@@ -14,6 +14,17 @@ describe('ImobConferenciaService', () => {
   });
   afterEach(() => ctrl.verify());
 
+  it('lista as conferências só com os filtros definidos', () => {
+    TestBed.inject(ImobConferenciaService).listar(7, { situacao: 'incompletos', busca: 'nb', page: 2 }).subscribe();
+    const req = ctrl.expectOne(r => r.url === BASE);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('situacao')).toBe('incompletos');
+    expect(req.request.params.get('busca')).toBe('nb');
+    expect(req.request.params.get('page')).toBe('2');
+    expect(req.request.params.has('pageSize')).toBeFalse();
+    req.flush({ items: [], page: 2, pageSize: 20, total: 0, resumo: {} });
+  });
+
   it('envia o lote em { itens } por plaqueta', () => {
     TestBed.inject(ImobConferenciaService).enviarLote(7, [{ plaqueta: 'NB-1', estadoId: 2, valorMercado: 150.5 }]).subscribe();
     const req = ctrl.expectOne(`${BASE}/lote`);

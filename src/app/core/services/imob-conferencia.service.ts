@@ -2,7 +2,10 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ImobConferenciaLoteItem, RelatorioImportacaoConferencias, ResultadoConferenciaLote } from '../models/imob-leitura.model';
+import {
+  ImobConferenciaFiltro, ImobConferenciaLista, ImobConferenciaLoteItem, RelatorioImportacaoConferencias, ResultadoConferenciaLote
+} from '../models/imob-leitura.model';
+import { montarParams } from '../utils/http-params';
 import { erroDeBlob } from '../utils/erro-blob';
 import { ArquivoExportado } from './imob-bem.service';
 
@@ -13,6 +16,11 @@ export class ImobConferenciaService {
 
   private url(inventarioId: number) {
     return `${environment.apiUrl}/v1/imobilizado/inventarios/${inventarioId}/conferencias`;
+  }
+
+  /** Um bem esperado por linha, com o que foi conferido, e o resumo do ciclo (independe do filtro). */
+  listar(inventarioId: number, filtro: ImobConferenciaFiltro = {}) {
+    return this.http.get<ImobConferenciaLista>(this.url(inventarioId), { params: montarParams(filtro) });
   }
 
   /** Até 1000 itens (por `bemId` ou `plaqueta`); itens inválidos não impedem os válidos. */
