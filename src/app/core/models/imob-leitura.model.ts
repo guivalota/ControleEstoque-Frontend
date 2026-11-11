@@ -123,6 +123,58 @@ export interface ImobConferenciaLinha {
   conferidoEm?: string | null;
   /** Encontrado, mas sem estado ou sem valor de mercado: o cálculo da reavaliação ficaria pendente. */
   incompleto: boolean;
+  /** Fotos de evidência da conferência (E28). */
+  qtdFotos: number;
+  primeiraFotoId?: number | null;
+}
+
+/** Uma alteração gravada na conferência (append-only; E28 / DSG-30 R3). */
+export interface ImobConferenciaEvento {
+  id: number;
+  /** encontrado, estado_id, valor_mercado, departamento_id, local_lido_id, observacao, foto_adicionada, foto_removida. */
+  campo: string;
+  valorAnterior?: string | null;
+  valorNovo?: string | null;
+  /** Nome (da época) quando o campo guarda um id de estado, departamento ou local. */
+  valorAnteriorNome?: string | null;
+  valorNovoNome?: string | null;
+  usuarioId: string;
+  usuarioNome?: string | null;
+  origem: 'app' | 'web' | 'csv';
+  lidoEm?: string | null;
+  criadoEm: string;
+}
+
+/** A conferência de um bem num ciclo: esperado (congelado) × encontrado e o histórico. */
+export interface ImobConferenciaDetalhe {
+  inventarioId: number;
+  inventarioNome: string;
+  inventarioStatus: string;
+  dataBase?: string | null;
+  bemId: number;
+  plaqueta: string;
+  descricao?: string | null;
+  localEsperadoId?: number | null;
+  localEsperadoNome?: string | null;
+  /** Nulo em ciclos iniciados antes da migration 0092 ou quando o bem não tinha departamento. */
+  departamentoEsperadoId?: number | null;
+  departamentoEsperadoNome?: string | null;
+  encontrado: boolean;
+  localLidoId?: number | null;
+  localLidoNome?: string | null;
+  estadoId?: number | null;
+  estadoNome?: string | null;
+  valorMercado?: number | null;
+  departamentoId?: number | null;
+  departamentoNome?: string | null;
+  observacao?: string | null;
+  conferidoPor?: string | null;
+  conferidoPorNome?: string | null;
+  conferidoEm?: string | null;
+  incompleto: boolean;
+  /** O ciclo está concluído: a conferência e as fotos são só leitura. */
+  somenteLeitura: boolean;
+  eventos: ImobConferenciaEvento[];
 }
 
 export interface ImobConferenciaResumo {

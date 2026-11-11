@@ -50,4 +50,36 @@ describe('ImobConferenciaService', () => {
     req.flush(new Blob(['x']), { headers: { 'Content-Disposition': 'attachment; filename="modelo-importacao-conferencias.csv"' } });
     expect(nome).toBe('modelo-importacao-conferencias.csv');
   });
+
+  it('obtém o detalhe da conferência de um bem', () => {
+    TestBed.inject(ImobConferenciaService).obter(7, 42).subscribe();
+    const req = ctrl.expectOne(`${BASE}/42`);
+    expect(req.request.method).toBe('GET');
+    req.flush({ bemId: 42, eventos: [] });
+  });
+
+  it('fotos de evidência: lista, envia (multipart com origem), exclui e baixa o conteúdo', () => {
+    const s = TestBed.inject(ImobConferenciaService);
+
+    s.fotos(7, 42).subscribe();
+    ctrl.expectOne(`${BASE}/42/fotos`).flush([]);
+
+    s.enviarFoto(7, 42, new File(['x'], 'ev.jpg', { type: 'image/jpeg' })).subscribe();
+    const envio = ctrl.expectOne(`${BASE}/42/fotos`);
+    expect(envio.request.method).toBe('POST');
+    const form = envio.request.body as FormData;
+    expect((form.get('arquivo') as File).name).toBe('ev.jpg');
+    expect(form.get('origem')).toBe('web');
+    envio.flush({ id: 1 });
+
+    s.excluirFoto(7, 42, 1).subscribe();
+    const del = ctrl.expectOne(r => r.method === 'DELETE' && r.url === `${BASE}/42/fotos/1`);
+    expect(del.request.params.get('origem')).toBe('web');
+    del.flush(null, { status: 204, statusText: 'No Content' });
+
+    s.conteudoFoto(7, 42, 1).subscribe();
+    const conteudo = ctrl.expectOne(`${BASE}/42/fotos/1/conteudo`);
+    expect(conteudo.request.responseType).toBe('blob');
+    conteudo.flush(new Blob(['img']));
+  });
 });

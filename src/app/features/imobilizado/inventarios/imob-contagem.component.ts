@@ -6,6 +6,7 @@ import { ImobConferenciaService } from '../../../core/services/imob-conferencia.
 import { ImobDepartamentoService } from '../../../core/services/imob-departamento.service';
 import { ImobEstadoConservacaoService } from '../../../core/services/imob-estado-conservacao.service';
 import { ImobLeituraService } from '../../../core/services/imob-leitura.service';
+import { PermissaoService } from '../../../core/services/permissao.service';
 import { ImobLocalService } from '../../../core/services/imob-local.service';
 import { ImobInventario } from '../../../core/models/imob-inventario.model';
 import { ImobLocalArvore } from '../../../core/models/imob-local.model';
@@ -23,6 +24,7 @@ import { formatarDataHora, formatarMoeda } from '../../../core/utils/imob-format
 import { textoCoordenadas, urlMapa } from '../../../core/utils/mapa';
 import { PaginacaoComponent } from '../shared/paginacao.component';
 import { SeletorLocalComponent } from '../shared/seletor-local.component';
+import { ImobConferenciaDetalheComponent } from './imob-conferencia-detalhe.component';
 
 const PAGE_SIZE = 20;
 const MAX_FEEDBACK = 15;
@@ -30,7 +32,7 @@ const MAX_FEEDBACK = 15;
 @Component({
   selector: 'app-imob-contagem',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, PaginacaoComponent, SeletorLocalComponent],
+  imports: [ReactiveFormsModule, RouterLink, PaginacaoComponent, SeletorLocalComponent, ImobConferenciaDetalheComponent],
   templateUrl: './imob-contagem.component.html'
 })
 export class ImobContagemComponent implements OnInit {
@@ -38,6 +40,7 @@ export class ImobContagemComponent implements OnInit {
   private service = inject(ImobLeituraService);
   private locais = inject(ImobLocalService);
   private conferencias = inject(ImobConferenciaService);
+  permissao = inject(PermissaoService);
   private estadosApi = inject(ImobEstadoConservacaoService);
   private departamentosApi = inject(ImobDepartamentoService);
   private route = inject(ActivatedRoute);
@@ -132,6 +135,13 @@ export class ImobContagemComponent implements OnInit {
   private carregarListasConferencia() {
     this.estadosApi.listar({ ativo: true, pageSize: 200 }).subscribe({ next: r => this.estados.set(r.items), error: () => this.estados.set([]) });
     this.departamentosApi.listar({ ativo: true, pageSize: 1000 }).subscribe({ next: r => this.departamentos.set(r.items), error: () => this.departamentos.set([]) });
+  }
+
+  /** Bem cuja conferência está aberta no detalhe (esperado × encontrado, fotos e histórico); nulo = fechado. */
+  confDetalheBemId = signal<number | null>(null);
+
+  abrirDetalheConferencia(bemId: number) {
+    this.confDetalheBemId.set(this.confDetalheBemId() === bemId ? null : bemId);
   }
 
   carregarConferencias(page = this.confPage()) {

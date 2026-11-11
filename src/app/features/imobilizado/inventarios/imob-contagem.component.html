@@ -223,10 +223,10 @@
         @if (confErro()) { <div class="alert alert-danger py-2 mx-3" role="alert">{{ confErro() }}</div> }
         <div class="table-responsive">
           <table class="table table-sm align-middle mb-0">
-            <thead><tr><th>Plaqueta</th><th>Descrição</th><th>Local esperado</th><th>Situação</th><th>Estado</th><th class="text-end">Valor de mercado</th><th>Departamento</th><th>Conferido por</th></tr></thead>
+            <thead><tr><th>Plaqueta</th><th>Descrição</th><th>Local esperado</th><th>Situação</th><th>Estado</th><th class="text-end">Valor de mercado</th><th>Departamento</th><th>Conferido por</th><th class="text-center">Fotos</th><th></th></tr></thead>
             <tbody>
               @for (l of confLinhas(); track l.bemId) {
-                <tr>
+                <tr [class.table-active]="confDetalheBemId() === l.bemId">
                   <td>{{ l.plaqueta }}</td>
                   <td>{{ l.descricao || '—' }}</td>
                   <td>{{ l.localEsperadoNome || '—' }}</td>
@@ -241,15 +241,31 @@
                   <td>
                     @if (l.conferidoEm) { {{ l.conferidoPorNome || '—' }} <span class="text-muted small">{{ formatarDataHora(l.conferidoEm) }}</span> } @else { — }
                   </td>
+                  <td class="text-center">
+                    @if (l.qtdFotos > 0) { <span class="badge bg-light text-dark border" [attr.aria-label]="l.qtdFotos + ' foto(s)'"><i class="bi bi-camera me-1"></i>{{ l.qtdFotos }}</span> } @else { <span class="text-muted">—</span> }
+                  </td>
+                  <td class="text-end">
+                    <button type="button" class="btn btn-sm btn-outline-primary" [attr.aria-label]="'Detalhe da conferência de ' + l.plaqueta"
+                            [attr.aria-expanded]="confDetalheBemId() === l.bemId" (click)="abrirDetalheConferencia(l.bemId)">
+                      <i class="bi bi-search me-1"></i>Detalhe
+                    </button>
+                  </td>
                 </tr>
               } @empty {
-                <tr><td colspan="8" class="text-center text-muted py-3">{{ confCarregando() ? 'Carregando...' : 'Nenhum bem para este filtro.' }}</td></tr>
+                <tr><td colspan="10" class="text-center text-muted py-3">{{ confCarregando() ? 'Carregando...' : 'Nenhum bem para este filtro.' }}</td></tr>
               }
             </tbody>
           </table>
         </div>
         <app-paginacao [page]="confPage()" [pageSize]="pageSize" [total]="confTotal()" [disabled]="confCarregando()" (mudar)="carregarConferencias($event)" />
       </div>
+
+      @if (confDetalheBemId(); as bemDetalhe) {
+        <app-imob-conferencia-detalhe [inventarioId]="id" [bemId]="bemDetalhe"
+          [podeEnviar]="permissao.pode('imobilizado.inventarios-leituras.criar')"
+          [podeExcluir]="permissao.pode('imobilizado.inventarios-leituras.excluir')"
+          (alterou)="carregarConferencias()" (fechar)="confDetalheBemId.set(null)" />
+      }
 
       <div class="card border-0 shadow-sm">
         <div class="card-header bg-transparent fw-semibold">Importar conferências por CSV</div>
