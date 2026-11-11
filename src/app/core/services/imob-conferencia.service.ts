@@ -3,12 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  ImobConferenciaDetalhe, ImobConferenciaFiltro, ImobConferenciaLista, ImobConferenciaLoteItem, RelatorioImportacaoConferencias, ResultadoConferenciaLote
+  ImobConferenciaDetalhe, ImobConferenciaDoBem, ImobConferenciaFiltro, ImobConferenciaLista, ImobConferenciaLoteItem, RelatorioImportacaoConferencias, ResultadoConferenciaLote
 } from '../models/imob-leitura.model';
 import { montarParams } from '../utils/http-params';
 import { erroDeBlob } from '../utils/erro-blob';
 import { ArquivoExportado } from './imob-bem.service';
 import { Anexo } from '../models/anexo.model';
+import { PagedResult } from '../models/paged-result.model';
 
 /** Conferência da reavaliação sem leitura de plaqueta (US-19-11). Só em inventário de reavaliação em andamento. */
 @Injectable({ providedIn: 'root' })
@@ -27,6 +28,12 @@ export class ImobConferenciaService {
   /** Esperado (congelado) × encontrado de um bem no ciclo, com o histórico de gravações (E28). 404 se não há conferência. */
   obter(inventarioId: number, bemId: number) {
     return this.http.get<ImobConferenciaDetalhe>(`${this.url(inventarioId)}/${bemId}`);
+  }
+
+  /** Conferências do bem em todos os ciclos de reavaliação, do mais recente ao mais antigo (E28 / US-28-03). */
+  doBem(bemId: number, page = 1, pageSize = 20) {
+    return this.http.get<PagedResult<ImobConferenciaDoBem>>(
+      `${environment.apiUrl}/v1/imobilizado/bens/${bemId}/conferencias`, { params: montarParams({ page, pageSize }) });
   }
 
   // ── Fotos de evidência da conferência (E28 / US-28-02): pertencem à conferência, não ao cadastro do bem ──

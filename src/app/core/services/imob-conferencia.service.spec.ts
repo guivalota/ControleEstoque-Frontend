@@ -82,4 +82,12 @@ describe('ImobConferenciaService', () => {
     expect(conteudo.request.responseType).toBe('blob');
     conteudo.flush(new Blob(['img']));
   });
+  it('histórico do bem: lista as conferências do bem com paginação', () => {
+    TestBed.inject(ImobConferenciaService).doBem(42, 2, 10).subscribe();
+    const req = ctrl.expectOne(r => r.url === '/api/v1/imobilizado/bens/42/conferencias');
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('page')).toBe('2');
+    expect(req.request.params.get('pageSize')).toBe('10');
+    req.flush({ items: [], page: 2, pageSize: 10, total: 0 });
+  });
 });

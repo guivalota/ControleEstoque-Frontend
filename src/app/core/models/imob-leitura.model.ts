@@ -145,6 +145,31 @@ export interface ImobConferenciaEvento {
   criadoEm: string;
 }
 
+/** Uma conferência do bem num ciclo, na ficha do bem (E28 / US-28-03). */
+export interface ImobConferenciaDoBem {
+  inventarioId: number;
+  inventarioNome: string;
+  inventarioStatus: string;
+  dataBase?: string | null;
+  encontrado: boolean;
+  estadoId?: number | null;
+  estadoNome?: string | null;
+  valorMercado?: number | null;
+  departamentoId?: number | null;
+  departamentoNome?: string | null;
+  localLidoId?: number | null;
+  localLidoNome?: string | null;
+  observacao?: string | null;
+  conferidoPor?: string | null;
+  conferidoPorNome?: string | null;
+  conferidoEm?: string | null;
+  incompleto: boolean;
+  /** O ciclo está concluído: resultado oficial, somente leitura. */
+  cicloConcluido: boolean;
+  qtdFotos: number;
+  primeiraFotoId?: number | null;
+}
+
 /** A conferência de um bem num ciclo: esperado (congelado) × encontrado e o histórico. */
 export interface ImobConferenciaDetalhe {
   inventarioId: number;

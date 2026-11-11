@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
+import { Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ImobBemService } from '../../../core/services/imob-bem.service';
 import { PermissaoService } from '../../../core/services/permissao.service';
@@ -13,16 +13,19 @@ import { ReplicarImobBemResultado } from '../../../core/models/imob-bem.model';
 import { ImobBemHistoricoComponent } from './imob-bem-historico.component';
 import { ImobBemDepreciacaoComponent } from './imob-bem-depreciacao.component';
 import { ImobBemFotosComponent } from './imob-bem-fotos.component';
+import { ImobBemConferenciasComponent } from './imob-bem-conferencias.component';
 import { formatarValorCampo } from '../../../core/utils/campo-customizado';
 
-type Aba = 'dados' | 'fotos' | 'historico' | 'depreciacao';
-const ABAS: Aba[] = ['dados', 'fotos', 'historico', 'depreciacao'];
-const ID_ABA: Record<Aba, string> = { dados: '#abaDados', fotos: '#abaFotos', historico: '#abaHistorico', depreciacao: '#abaDepreciacao' };
+type Aba = 'dados' | 'fotos' | 'conferencias' | 'historico' | 'depreciacao';
+const ABAS: Aba[] = ['dados', 'fotos', 'conferencias', 'historico', 'depreciacao'];
+const ID_ABA: Record<Aba, string> = {
+  dados: '#abaDados', fotos: '#abaFotos', conferencias: '#abaConferencias', historico: '#abaHistorico', depreciacao: '#abaDepreciacao'
+};
 
 @Component({
   selector: 'app-imob-bem-detalhe',
   standalone: true,
-  imports: [RouterLink, ConfirmDialogComponent, ImobEtiquetasDialogComponent, ImobReplicarDialogComponent, ImobBemHistoricoComponent, ImobBemDepreciacaoComponent, ImobBemFotosComponent],
+  imports: [RouterLink, ConfirmDialogComponent, ImobEtiquetasDialogComponent, ImobReplicarDialogComponent, ImobBemHistoricoComponent, ImobBemDepreciacaoComponent, ImobBemFotosComponent, ImobBemConferenciasComponent],
   templateUrl: './imob-bem-detalhe.component.html'
 })
 export class ImobBemDetalheComponent implements OnInit {
@@ -56,6 +59,7 @@ export class ImobBemDetalheComponent implements OnInit {
   /** O histórico só é buscado na primeira vez que a aba é aberta e depois fica montado. */
   historicoVisitado = signal(false);
   fotosVisitada = signal(false);
+  conferenciasVisitada = signal(false);
   depreciacaoVisitada = signal(false);
 
   ngOnInit() {
@@ -79,18 +83,25 @@ export class ImobBemDetalheComponent implements OnInit {
   selecionarAba(aba: Aba) {
     this.aba.set(aba);
     if (aba === 'fotos') this.fotosVisitada.set(true);
+    if (aba === 'conferencias') this.conferenciasVisitada.set(true);
     if (aba === 'historico') this.historicoVisitado.set(true);
     if (aba === 'depreciacao') this.depreciacaoVisitada.set(true);
   }
 
+  /** "Conferências" só aparece para quem pode ver as leituras do inventário (o servidor é a autoridade). */
+  podeVerConferencias = computed(() => this.permissao.pode('imobilizado.inventarios-leituras.ver'));
+
+  abasVisiveis = computed(() => ABAS.filter(a => a !== 'conferencias' || this.podeVerConferencias()));
+
   /** Setas, Home e End alternam as abas (padrão WAI-ARIA de tabs). */
   aoTeclarAba(ev: KeyboardEvent) {
-    const atual = ABAS.indexOf(this.aba());
+    const abas = this.abasVisiveis();
+    const atual = abas.indexOf(this.aba());
     const alvo: Aba | null =
-      ev.key === 'ArrowRight' ? ABAS[Math.min(atual + 1, ABAS.length - 1)]
-      : ev.key === 'ArrowLeft' ? ABAS[Math.max(atual - 1, 0)]
-      : ev.key === 'End' ? ABAS[ABAS.length - 1]
-      : ev.key === 'Home' ? ABAS[0]
+      ev.key === 'ArrowRight' ? abas[Math.min(atual + 1, abas.length - 1)]
+      : ev.key === 'ArrowLeft' ? abas[Math.max(atual - 1, 0)]
+      : ev.key === 'End' ? abas[abas.length - 1]
+      : ev.key === 'Home' ? abas[0]
       : null;
     if (!alvo) return;
     ev.preventDefault();
