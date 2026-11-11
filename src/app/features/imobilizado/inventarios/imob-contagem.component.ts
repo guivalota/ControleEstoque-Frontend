@@ -25,6 +25,7 @@ import { textoCoordenadas, urlMapa } from '../../../core/utils/mapa';
 import { PaginacaoComponent } from '../shared/paginacao.component';
 import { SeletorLocalComponent } from '../shared/seletor-local.component';
 import { ImobConferenciaDetalheComponent } from './imob-conferencia-detalhe.component';
+import { ImobAplicacaoCadastroComponent } from './imob-aplicacao-cadastro.component';
 
 const PAGE_SIZE = 20;
 const MAX_FEEDBACK = 15;
@@ -32,7 +33,7 @@ const MAX_FEEDBACK = 15;
 @Component({
   selector: 'app-imob-contagem',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, PaginacaoComponent, SeletorLocalComponent, ImobConferenciaDetalheComponent],
+  imports: [ReactiveFormsModule, RouterLink, PaginacaoComponent, SeletorLocalComponent, ImobConferenciaDetalheComponent, ImobAplicacaoCadastroComponent],
   templateUrl: './imob-contagem.component.html'
 })
 export class ImobContagemComponent implements OnInit {

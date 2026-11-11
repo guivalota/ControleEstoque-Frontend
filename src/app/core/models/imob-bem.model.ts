@@ -36,6 +36,8 @@ export interface ImobBem {
   localId: number; localNome: string;
   responsavelId?: number | null; responsavelNome?: string | null;
   departamentoId?: number | null; departamentoNome?: string | null;
+  /** Somente leitura: só muda ao aplicar o resultado de uma conferência (E28 / US-28-04). */
+  estadoConservacaoId?: number | null; estadoConservacaoNome?: string | null;
   /** Somente leitura: herdado da categoria. */
   grupoId?: number | null; grupoNome?: string | null;
   dataAquisicao?: string | null;

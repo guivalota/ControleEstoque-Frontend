@@ -236,7 +236,7 @@
                     @else { <span class="badge bg-success-subtle text-success-emphasis">Completo</span> }
                   </td>
                   <td>{{ l.estadoNome || '—' }}</td>
-                  <td class="text-end">{{ l.valorMercado != null ? formatarMoeda(l.valorMercado) : '—' }}</td>
+                  <td class="text-end">{{ l.valorMercado !== null && l.valorMercado !== undefined ? formatarMoeda(l.valorMercado) : '—' }}</td>
                   <td>{{ l.departamentoNome || '—' }}</td>
                   <td>
                     @if (l.conferidoEm) { {{ l.conferidoPorNome || '—' }} <span class="text-muted small">{{ formatarDataHora(l.conferidoEm) }}</span> } @else { — }
@@ -265,6 +265,10 @@
           [podeEnviar]="permissao.pode('imobilizado.inventarios-leituras.criar')"
           [podeExcluir]="permissao.pode('imobilizado.inventarios-leituras.excluir')"
           (alterou)="carregarConferencias()" (fechar)="confDetalheBemId.set(null)" />
+      }
+
+      @if (inventario()?.status === 'concluido' && permissao.pode('imobilizado.inventarios-conferencias.aplicar')) {
+        <app-imob-aplicacao-cadastro [inventarioId]="id" />
       }
 
       <div class="card border-0 shadow-sm">

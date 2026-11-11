@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  ImobAplicacaoPedidoItem, ImobAplicacaoPrevia, ImobAplicacaoResposta, SituacaoAplicacao,
   ImobConferenciaDetalhe, ImobConferenciaDoBem, ImobConferenciaFiltro, ImobConferenciaLista, ImobConferenciaLoteItem, RelatorioImportacaoConferencias, ResultadoConferenciaLote
 } from '../models/imob-leitura.model';
 import { montarParams } from '../utils/http-params';
@@ -34,6 +35,22 @@ export class ImobConferenciaService {
   doBem(bemId: number, page = 1, pageSize = 20) {
     return this.http.get<PagedResult<ImobConferenciaDoBem>>(
       `${environment.apiUrl}/v1/imobilizado/bens/${bemId}/conferencias`, { params: montarParams({ page, pageSize }) });
+  }
+
+  // ── Aplicar ao cadastro (E28 / US-28-04): só com o inventário concluído e a permissão `inventarios-conferencias.aplicar` ──
+
+  previaAplicacao(inventarioId: number, filtro: { situacao?: SituacaoAplicacao; busca?: string; page?: number; pageSize?: number } = {}) {
+    return this.http.get<ImobAplicacaoPrevia>(`${this.url(inventarioId)}/aplicacao`, { params: montarParams(filtro) });
+  }
+
+  /** `confirmarCadastroAlterado` aceita aplicar mesmo que o cadastro tenha mudado depois da conferência. */
+  aplicar(inventarioId: number, itens: ImobAplicacaoPedidoItem[], confirmarCadastroAlterado = false) {
+    return this.http.post<ImobAplicacaoResposta>(`${this.url(inventarioId)}/aplicar`, { itens, confirmarCadastroAlterado });
+  }
+
+  /** Desfaz a última aplicação de cada bem × campo (nova aplicação com o valor anterior; nada é apagado). */
+  reverterAplicacao(inventarioId: number, itens: ImobAplicacaoPedidoItem[], confirmarCadastroAlterado = false) {
+    return this.http.post<ImobAplicacaoResposta>(`${this.url(inventarioId)}/aplicar/reverter`, { itens, confirmarCadastroAlterado });
   }
 
   // ── Fotos de evidência da conferência (E28 / US-28-02): pertencem à conferência, não ao cadastro do bem ──

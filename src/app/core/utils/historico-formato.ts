@@ -12,6 +12,9 @@ const ROTULOS: Record<string, string> = {
   categoria_id: 'Categoria',
   local_id: 'Local',
   departamento_id: 'Departamento',
+  estado_conservacao_id: 'Estado de conservação',
+  aplicacao_conferencia: 'Atualizado pela conferência',
+  aplicacao_conferencia_desfeita: 'Atualização da conferência desfeita',
   responsavel_id: 'Responsável',
   data_aquisicao: 'Data de aquisição',
   valor_aquisicao: 'Valor de aquisição',
@@ -24,7 +27,7 @@ const ROTULOS: Record<string, string> = {
   status: 'Status'
 };
 
-const REFERENCIAS = new Set(['categoria_id', 'local_id', 'responsavel_id', 'departamento_id']);
+const REFERENCIAS = new Set(['categoria_id', 'local_id', 'responsavel_id', 'departamento_id', 'estado_conservacao_id']);
 const STATUS_BEM = new Set(['status']);
 const VALORES = new Set(['valor_aquisicao', 'valor_residual']);
 
@@ -43,6 +46,7 @@ export function rotuloCampoHistorico(campo: string): string {
 export function formatarValorHistorico(campo: string, valor: string | null | undefined, descricao?: string | null): string {
   if (valor === null || valor === undefined || valor.trim() === '') return '—';
   if (REFERENCIAS.has(campo)) return descricao?.trim() || `#${valor}`;
+  if (campo === 'aplicacao_conferencia' || campo === 'aplicacao_conferencia_desfeita') return `Inventário #${valor}`;
   if (VALORES.has(campo)) {
     const n = Number(valor);
     return Number.isFinite(n) ? formatarMoeda(n) : valor;

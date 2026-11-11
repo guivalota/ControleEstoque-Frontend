@@ -272,3 +272,73 @@ export interface RelatorioImportacaoLeituras {
   erros: { linha: number; plaqueta?: string | null; campo: string; mensagem: string }[];
   colunasIgnoradas: string[];
 }
+
+/** Situação do filtro da prévia de aplicação ao cadastro (E28 / US-28-04). */
+export type SituacaoAplicacao = 'diferencas' | 'aplicados' | 'todos';
+
+export const ROTULO_SITUACAO_APLICACAO: Record<SituacaoAplicacao, string> = {
+  diferencas: 'Só o que difere do cadastro',
+  aplicados: 'Já aplicados',
+  todos: 'Todos os encontrados'
+};
+
+/** Campos que a conferência pode atualizar no cadastro. O local fica de fora (DSG-30 R7). */
+export type CampoAplicavel = 'departamento_id' | 'estado_conservacao_id';
+
+/** Um bem encontrado no ciclo: cadastro atual × encontrado. */
+export interface ImobAplicacaoLinha {
+  bemId: number;
+  plaqueta: string;
+  descricao?: string | null;
+  bemStatus: string;
+  departamentoAtualId?: number | null; departamentoAtualNome?: string | null;
+  departamentoEsperadoId?: number | null; departamentoEsperadoNome?: string | null;
+  departamentoEncontradoId?: number | null; departamentoEncontradoNome?: string | null;
+  departamentoAplicado: boolean;
+  departamentoDiferente: boolean;
+  /** O cadastro mudou depois do início do ciclo: aplicar exige confirmar. */
+  departamentoCadastroAlterado: boolean;
+  estadoAtualId?: number | null; estadoAtualNome?: string | null;
+  estadoEncontradoId?: number | null; estadoEncontradoNome?: string | null;
+  estadoAplicado: boolean;
+  estadoDiferente: boolean;
+  localCadastroId?: number | null; localCadastroNome?: string | null;
+  localLidoId?: number | null; localLidoNome?: string | null;
+  /** Lido em outro local: não é aplicado aqui (conciliação / OS de transferência). */
+  localDivergente: boolean;
+  aplicavel: boolean;
+}
+
+export interface ImobAplicacaoPrevia {
+  items: ImobAplicacaoLinha[];
+  page: number;
+  pageSize: number;
+  total: number;
+  inventarioId: number;
+  inventarioStatus: string;
+  /** Só com o inventário concluído. */
+  podeAplicar: boolean;
+}
+
+export interface ImobAplicacaoPedidoItem {
+  bemId: number;
+  campos: CampoAplicavel[];
+}
+
+export interface ImobAplicacaoItemResultado {
+  bemId: number;
+  campo: string;
+  /** aplicado | revertido | sem_mudanca | cadastro_alterado | sem_conferencia | nao_encontrado | sem_valor | valor_invalido | bem_baixado | nada_a_reverter | campo_invalido */
+  resultado: string;
+  mensagem?: string | null;
+  anterior?: string | null;
+  novo?: string | null;
+}
+
+export interface ImobAplicacaoResposta {
+  aplicados: number;
+  revertidos: number;
+  semMudanca: number;
+  naoAplicados: number;
+  itens: ImobAplicacaoItemResultado[];
+}
