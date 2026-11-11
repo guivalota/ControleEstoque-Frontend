@@ -265,6 +265,8 @@
           [podeEnviar]="permissao.pode('imobilizado.inventarios-leituras.criar')"
           [podeExcluir]="permissao.pode('imobilizado.inventarios-leituras.excluir')"
           [podeEditar]="permissao.pode('imobilizado.inventarios-leituras.criar')"
+          [podeVerBem]="permissao.pode('imobilizado.bens.ver')"
+          [podeEditarBem]="permissao.pode('imobilizado.bens.editar')"
           (alterou)="carregarConferencias()" (fechar)="confDetalheBemId.set(null)" />
       }
 
@@ -313,6 +315,67 @@
           }
         </div>
       </div>
+    } @else {
+      <div class="card border-0 shadow-sm mb-3" data-testid="itens-conferidos">
+        <div class="card-header bg-transparent d-flex flex-wrap gap-2 justify-content-between align-items-center">
+          <span class="fw-semibold">Itens conferidos</span>
+          <input class="form-control form-control-sm w-auto" placeholder="Filtrar plaqueta ou descrição" aria-label="Filtrar itens conferidos"
+                 [formControl]="confBusca" (keydown.enter)="carregarConferencias(1)">
+        </div>
+        @if (confResumo(); as r) {
+          <div class="card-body py-2 d-flex flex-wrap gap-2 small" aria-label="Resumo dos itens">
+            <span class="badge bg-light text-dark border">{{ r.esperados }} esperados</span>
+            <span class="badge bg-success-subtle text-success-emphasis">{{ r.encontrados }} lidos</span>
+            <span class="badge bg-light text-dark border">{{ r.naoEncontrados }} esperados ainda não lidos</span>
+          </div>
+        }
+        <p class="small text-muted px-3 mb-2">
+          Cada bem lido vira um item do inventário. Clique em <strong>Detalhe</strong> para ver o item, as fotos tiradas na conferência e o histórico,
+          e para abrir ou editar o bem.
+        </p>
+        @if (confErro()) { <div class="alert alert-danger py-2 mx-3" role="alert">{{ confErro() }}</div> }
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Plaqueta</th><th>Descrição</th><th>Local esperado</th><th>Conferido por</th><th class="text-center">Fotos</th><th></th></tr></thead>
+            <tbody>
+              @for (l of confLinhas(); track l.bemId) {
+                <tr [class.table-active]="confDetalheBemId() === l.bemId">
+                  <td>
+                    {{ l.plaqueta }}
+                    @if (!l.encontrado) { <span class="badge bg-light text-dark border ms-1">Leitura anulada</span> }
+                  </td>
+                  <td>{{ l.descricao || '—' }}</td>
+                  <td>{{ l.localEsperadoNome || 'Fora do esperado' }}</td>
+                  <td>
+                    @if (l.conferidoEm) { {{ l.conferidoPorNome || '—' }} <span class="text-muted small">{{ formatarDataHora(l.conferidoEm) }}</span> } @else { — }
+                  </td>
+                  <td class="text-center">
+                    @if (l.qtdFotos > 0) { <span class="badge bg-light text-dark border" [attr.aria-label]="l.qtdFotos + ' foto(s)'"><i class="bi bi-camera me-1"></i>{{ l.qtdFotos }}</span> } @else { <span class="text-muted">—</span> }
+                  </td>
+                  <td class="text-end">
+                    <button type="button" class="btn btn-sm btn-outline-primary" [attr.aria-label]="'Detalhe do item ' + l.plaqueta"
+                            [attr.aria-expanded]="confDetalheBemId() === l.bemId" (click)="abrirDetalheConferencia(l.bemId)">
+                      <i class="bi bi-search me-1"></i>Detalhe
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="text-center text-muted py-3">{{ confCarregando() ? 'Carregando...' : 'Nenhum bem foi lido neste inventário ainda.' }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacao [page]="confPage()" [pageSize]="pageSize" [total]="confTotal()" [disabled]="confCarregando()" (mudar)="carregarConferencias($event)" />
+      </div>
+
+      @if (confDetalheBemId(); as bemDetalhe) {
+        <app-imob-conferencia-detalhe [inventarioId]="id" [bemId]="bemDetalhe"
+          [podeEnviar]="permissao.pode('imobilizado.inventarios-leituras.criar')"
+          [podeExcluir]="permissao.pode('imobilizado.inventarios-leituras.excluir')"
+          [podeVerBem]="permissao.pode('imobilizado.bens.ver')"
+          [podeEditarBem]="permissao.pode('imobilizado.bens.editar')"
+          (alterou)="carregarConferencias()" (fechar)="confDetalheBemId.set(null)" />
+      }
     }
   }
 </div>

@@ -123,7 +123,9 @@ export class ImobContagemComponent implements OnInit {
       next: inv => {
         this.inventario.set(inv);
         if (inv.status === 'em_andamento') this.carregar();
-        if (inv.reavaliacao) { this.carregarListasConferencia(); this.carregarConferencias(1); }
+        if (inv.reavaliacao) this.carregarListasConferencia();
+        // A conferência existe em todo inventário: a leitura do bem cria a dele (DSG-30 R15).
+        this.carregarConferencias(1);
       },
       error: err => {
         if (err.status === 404) this.naoEncontrado.set(true);
@@ -163,7 +165,7 @@ export class ImobContagemComponent implements OnInit {
 
   /** Atualiza a lista depois de gravar algo (só em reavaliação), mantendo filtro e página. */
   private atualizarConferencias() {
-    if (this.reavaliacao) this.carregarConferencias();
+    this.carregarConferencias();
   }
 
   /** Dados de conferência preenchidos, ou `undefined` se nenhum campo foi informado (ou fora da reavaliação). */

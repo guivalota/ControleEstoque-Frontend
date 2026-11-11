@@ -162,6 +162,8 @@ export interface ImobConferenciaEvento {
 /** Uma conferência do bem num ciclo, na ficha do bem (E28 / US-28-03). */
 export interface ImobConferenciaDoBem {
   inventarioId: number;
+  /** Reavaliação ou contagem comum. */
+  inventarioReavaliacao: boolean;
   inventarioNome: string;
   inventarioStatus: string;
   dataBase?: string | null;
@@ -187,6 +189,8 @@ export interface ImobConferenciaDoBem {
 /** A conferência de um bem num ciclo: esperado (congelado) × encontrado e o histórico. */
 export interface ImobConferenciaDetalhe {
   inventarioId: number;
+  /** Reavaliação (estado, valor, departamento e edição) ou comum (só leitura, foto e histórico). */
+  inventarioReavaliacao: boolean;
   inventarioNome: string;
   inventarioStatus: string;
   dataBase?: string | null;
@@ -225,6 +229,8 @@ export interface ImobConferenciaResumo {
 }
 
 export interface ImobConferenciaLista {
+  /** Reavaliação: estado, valor e departamento se aplicam. Inventário comum: só leitura, foto e histórico (DSG-30 R15). */
+  inventarioReavaliacao: boolean;
   items: ImobConferenciaLinha[];
   page: number;
   pageSize: number;

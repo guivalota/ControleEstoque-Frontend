@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { ImobBemConferenciasComponent } from './imob-bem-conferencias.component';
 import { ImobConferenciaDoBem } from '../../../core/models/imob-leitura.model';
@@ -8,7 +9,7 @@ import { ImobConferenciaDoBem } from '../../../core/models/imob-leitura.model';
 const BASE = '/api/v1/imobilizado/bens/42/conferencias';
 
 const conf = (inventarioId: number, extra: Partial<ImobConferenciaDoBem> = {}): ImobConferenciaDoBem => ({
-  inventarioId, inventarioNome: `Ciclo ${inventarioId}`, inventarioStatus: 'concluido', dataBase: '2026-11-01',
+  inventarioId, inventarioReavaliacao: true, inventarioNome: `Ciclo ${inventarioId}`, inventarioStatus: 'concluido', dataBase: '2026-11-01',
   encontrado: true, estadoId: 5, estadoNome: 'ZZC Bom', valorMercado: 750.5, departamentoNome: 'ZZC Tecnologia',
   localLidoNome: 'ZZC Sala 1', conferidoPorNome: 'Admin Testes', conferidoEm: '2026-11-11T12:15:38Z',
   incompleto: false, cicloConcluido: true, qtdFotos: 0, ...extra
@@ -22,7 +23,7 @@ describe('ImobBemConferenciasComponent', () => {
   const texto = () => (el().textContent ?? '').replace(/\s+/g, ' ').replace(/ /g, ' ');
 
   function montar() {
-    TestBed.configureTestingModule({ imports: [ImobBemConferenciasComponent], providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({ imports: [ImobBemConferenciasComponent], providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
     ctrl = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(ImobBemConferenciasComponent);
     fixture.componentRef.setInput('bemId', 42);

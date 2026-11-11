@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { Component, OnChanges, OnDestroy, SimpleChanges, inject, input, output, signal, viewChild } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -25,7 +26,7 @@ export const FOTO_CONFERENCIA_MAX = 5;
 @Component({
   selector: 'app-imob-conferencia-detalhe',
   standalone: true,
-  imports: [ConfirmDialogComponent, ReactiveFormsModule],
+  imports: [ConfirmDialogComponent, ReactiveFormsModule, RouterLink],
   template: `
     <div class="card border-0 shadow-sm mb-3" data-testid="conferencia-detalhe">
       <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
@@ -33,9 +34,21 @@ export const FOTO_CONFERENCIA_MAX = 5;
           Conferência · {{ detalhe()?.plaqueta ?? '…' }}
           @if (detalhe()?.descricao) { <span class="text-muted fw-normal small">{{ detalhe()?.descricao }}</span> }
         </span>
-        <button type="button" class="btn btn-sm btn-outline-primary" aria-label="Fechar detalhe" (click)="fechar.emit()">
-          <i class="bi bi-x-lg me-1"></i>Fechar
-        </button>
+        <div class="d-flex flex-wrap gap-2">
+          @if (podeVerBem()) {
+            <a class="btn btn-sm btn-outline-primary" [routerLink]="['/imobilizado/bens', bemId()]" data-testid="abrir-bem">
+              <i class="bi bi-box-arrow-up-right me-1"></i>Abrir bem
+            </a>
+          }
+          @if (podeEditarBem()) {
+            <a class="btn btn-sm btn-outline-primary" [routerLink]="['/imobilizado/bens', bemId(), 'editar']" data-testid="editar-bem">
+              <i class="bi bi-pencil-square me-1"></i>Editar bem
+            </a>
+          }
+          <button type="button" class="btn btn-sm btn-outline-primary" aria-label="Fechar detalhe" (click)="fechar.emit()">
+            <i class="bi bi-x-lg me-1"></i>Fechar
+          </button>
+        </div>
       </div>
 
       @if (erro()) { <div class="alert alert-danger py-2 mx-3 mt-3 mb-0" role="alert">{{ erro() }}</div> }
@@ -46,7 +59,7 @@ export const FOTO_CONFERENCIA_MAX = 5;
         @let d = detalhe()!;
         <div class="card-body">
           <p class="small text-muted mb-2">
-            Ciclo <strong>{{ d.inventarioNome }}</strong>
+            {{ d.inventarioReavaliacao ? 'Ciclo' : 'Inventário' }} <strong>{{ d.inventarioNome }}</strong>
             @if (d.somenteLeitura) { <span class="badge bg-secondary ms-1" data-testid="somente-leitura">Concluído · somente leitura</span> }
           </p>
 
@@ -56,14 +69,17 @@ export const FOTO_CONFERENCIA_MAX = 5;
               <tbody>
                 <tr><th scope="row">Local</th><td>{{ d.localEsperadoNome || '—' }}</td><td>{{ d.localLidoNome || '—' }}</td></tr>
                 <tr><th scope="row">Departamento</th><td>{{ d.departamentoEsperadoNome || '—' }}</td><td>{{ d.departamentoNome || '—' }}</td></tr>
-                <tr><th scope="row">Estado de conservação</th><td class="text-muted">—</td><td>{{ d.estadoNome || '—' }}</td></tr>
-                <tr><th scope="row">Valor de mercado</th><td class="text-muted">—</td><td>{{ d.valorMercado !== null && d.valorMercado !== undefined ? formatarMoeda(d.valorMercado) : '—' }}</td></tr>
-                <tr><th scope="row">Observação</th><td class="text-muted">—</td><td>{{ d.observacao || '—' }}</td></tr>
+                @if (d.inventarioReavaliacao) {
+                  <tr><th scope="row">Estado de conservação</th><td class="text-muted">—</td><td>{{ d.estadoNome || '—' }}</td></tr>
+                  <tr><th scope="row">Valor de mercado</th><td class="text-muted">—</td><td>{{ d.valorMercado !== null && d.valorMercado !== undefined ? formatarMoeda(d.valorMercado) : '—' }}</td></tr>
+                  <tr><th scope="row">Observação</th><td class="text-muted">—</td><td>{{ d.observacao || '—' }}</td></tr>
+                }
                 <tr>
                   <th scope="row">Situação</th>
                   <td></td>
                   <td>
                     @if (!d.encontrado) { <span class="badge bg-light text-dark border">Não encontrado</span> }
+                    @else if (!d.inventarioReavaliacao) { <span class="badge bg-success-subtle text-success-emphasis">Encontrado</span> }
                     @else if (d.incompleto) { <span class="badge bg-warning-subtle text-warning-emphasis">Incompleto</span> }
                     @else { <span class="badge bg-success-subtle text-success-emphasis">Completo</span> }
                     @if (d.conferidoEm) { <span class="text-muted small ms-2">{{ d.conferidoPorNome || '—' }} · {{ formatarDataHora(d.conferidoEm) }}</span> }
@@ -73,7 +89,7 @@ export const FOTO_CONFERENCIA_MAX = 5;
             </table>
           </div>
 
-          @if (podeEditar() && !d.somenteLeitura) {
+          @if (podeEditar() && d.inventarioReavaliacao && !d.somenteLeitura) {
             @if (!editando()) {
               <button type="button" class="btn btn-sm btn-outline-primary mb-3" data-testid="editar" (click)="abrirEdicao()">
                 <i class="bi bi-pencil me-1"></i>Editar conferência
@@ -204,6 +220,10 @@ export class ImobConferenciaDetalheComponent implements OnChanges, OnDestroy {
   podeExcluir = input(false);
   /** `inventarios-leituras.criar`: corrigir estado, valor, departamento e observação (só com o ciclo em andamento). */
   podeEditar = input(false);
+  /** `bens.ver`: mostra "Abrir bem". */
+  podeVerBem = input(false);
+  /** `bens.editar`: mostra "Editar bem" (o servidor continua sendo a autoridade). */
+  podeEditarBem = input(false);
 
   fechar = output<void>();
   /** Fotos enviadas ou excluídas: a lista do ciclo atualiza a contagem. */
