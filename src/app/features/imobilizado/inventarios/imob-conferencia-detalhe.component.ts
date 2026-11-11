@@ -1,5 +1,10 @@
 import { Component, OnChanges, OnDestroy, SimpleChanges, inject, input, output, signal, viewChild } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ImobDepartamentoService } from '../../../core/services/imob-departamento.service';
+import { ImobEstadoConservacaoService } from '../../../core/services/imob-estado-conservacao.service';
+import { ImobDepartamento } from '../../../core/models/imob-departamento.model';
+import { ImobEstadoConservacao } from '../../../core/models/imob-reavaliacao.model';
 import { ImobConferenciaService } from '../../../core/services/imob-conferencia.service';
 import { Anexo, FOTO_BEM_MAX_BYTES, FOTO_BEM_TIPOS } from '../../../core/models/anexo.model';
 import { ImobConferenciaDetalhe } from '../../../core/models/imob-leitura.model';
@@ -20,7 +25,7 @@ export const FOTO_CONFERENCIA_MAX = 5;
 @Component({
   selector: 'app-imob-conferencia-detalhe',
   standalone: true,
-  imports: [ConfirmDialogComponent],
+  imports: [ConfirmDialogComponent, ReactiveFormsModule],
   template: `
     <div class="card border-0 shadow-sm mb-3" data-testid="conferencia-detalhe">
       <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
@@ -67,6 +72,51 @@ export const FOTO_CONFERENCIA_MAX = 5;
               </tbody>
             </table>
           </div>
+
+          @if (podeEditar() && !d.somenteLeitura) {
+            @if (!editando()) {
+              <button type="button" class="btn btn-sm btn-outline-primary mb-3" data-testid="editar" (click)="abrirEdicao()">
+                <i class="bi bi-pencil me-1"></i>Editar conferência
+              </button>
+            } @else {
+              <form class="border rounded p-3 mb-3" data-testid="form-edicao" [formGroup]="form" (submit)="$event.preventDefault(); salvarEdicao()">
+                <div class="row g-2">
+                  <div class="col-md-4">
+                    <label class="form-label small mb-1" for="confEstado">Estado de conservação</label>
+                    <select id="confEstado" class="form-select form-select-sm" formControlName="estadoId">
+                      <option [ngValue]="null">Não informado</option>
+                      @for (e of estados(); track e.id) { <option [ngValue]="e.id">{{ e.nome }}</option> }
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small mb-1" for="confValor">Valor de mercado (R$)</label>
+                    <input id="confValor" type="number" step="0.01" min="0" class="form-control form-control-sm" formControlName="valorMercado">
+                    @if (form.controls.valorMercado.invalid && form.controls.valorMercado.touched) { <div class="text-danger small">Informe um valor maior ou igual a zero.</div> }
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small mb-1" for="confDepto">Departamento encontrado</label>
+                    <select id="confDepto" class="form-select form-select-sm" formControlName="departamentoId">
+                      <option [ngValue]="null">Não informado</option>
+                      @for (dep of departamentos(); track dep.id) { <option [ngValue]="dep.id">{{ dep.nome }}</option> }
+                    </select>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label small mb-1" for="confObs">Observação</label>
+                    <textarea id="confObs" rows="2" maxlength="500" class="form-control form-control-sm" formControlName="observacao"></textarea>
+                  </div>
+                </div>
+                <p class="small text-muted mt-2 mb-2">
+                  Vale a gravação mais recente e fica registrada no histórico (origem Web). Campo deixado em branco <strong>não apaga</strong> o que já está gravado.
+                </p>
+                <div class="d-flex gap-2">
+                  <button type="submit" class="btn btn-sm btn-primary" data-testid="salvar-edicao" [disabled]="salvando()">
+                    @if (salvando()) { <span class="spinner-border spinner-border-sm me-1"></span> }Salvar
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="salvando()" (click)="cancelarEdicao()">Cancelar</button>
+                </div>
+              </form>
+            }
+          }
 
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
             <h6 class="fw-semibold mb-0">
@@ -142,6 +192,8 @@ export const FOTO_CONFERENCIA_MAX = 5;
 })
 export class ImobConferenciaDetalheComponent implements OnChanges, OnDestroy {
   private service = inject(ImobConferenciaService);
+  private estadosApi = inject(ImobEstadoConservacaoService);
+  private departamentosApi = inject(ImobDepartamentoService);
   private confirmDialog = viewChild.required(ConfirmDialogComponent);
 
   inventarioId = input.required<number>();
@@ -150,6 +202,8 @@ export class ImobConferenciaDetalheComponent implements OnChanges, OnDestroy {
   podeEnviar = input(false);
   /** `inventarios-leituras.excluir` */
   podeExcluir = input(false);
+  /** `inventarios-leituras.criar`: corrigir estado, valor, departamento e observação (só com o ciclo em andamento). */
+  podeEditar = input(false);
 
   fechar = output<void>();
   /** Fotos enviadas ou excluídas: a lista do ciclo atualiza a contagem. */
@@ -171,6 +225,18 @@ export class ImobConferenciaDetalheComponent implements OnChanges, OnDestroy {
   excluindo = signal<number | null>(null);
   erro = signal('');
 
+  // Edição da conferência (corrigir o que veio do app, por exemplo)
+  editando = signal(false);
+  salvando = signal(false);
+  estados = signal<ImobEstadoConservacao[]>([]);
+  departamentos = signal<ImobDepartamento[]>([]);
+  form = new FormGroup({
+    estadoId: new FormControl<number | null>(null),
+    valorMercado: new FormControl<number | null>(null, { validators: [Validators.min(0)] }),
+    departamentoId: new FormControl<number | null>(null),
+    observacao: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(500)] })
+  });
+
   ngOnChanges(mudancas: SimpleChanges) {
     if (mudancas['bemId'] || mudancas['inventarioId']) this.carregar();
   }
@@ -184,9 +250,51 @@ export class ImobConferenciaDetalheComponent implements OnChanges, OnDestroy {
     this.urls.set({});
   }
 
+  /** Abre o formulário já com o que está gravado; as listas (estados e departamentos ativos) vêm na primeira vez. */
+  abrirEdicao() {
+    const d = this.detalhe();
+    if (!d) return;
+    this.form.reset({
+      estadoId: d.estadoId ?? null, valorMercado: d.valorMercado ?? null,
+      departamentoId: d.departamentoId ?? null, observacao: d.observacao ?? ''
+    });
+    this.erro.set('');
+    this.editando.set(true);
+    if (this.estados().length === 0) {
+      this.estadosApi.listar({ ativo: true, pageSize: 200 }).subscribe({ next: r => this.estados.set(r.items), error: () => undefined });
+    }
+    if (this.departamentos().length === 0) {
+      this.departamentosApi.listar({ ativo: true, pageSize: 1000 }).subscribe({ next: r => this.departamentos.set(r.items), error: () => undefined });
+    }
+  }
+
+  cancelarEdicao() {
+    this.editando.set(false);
+  }
+
+  salvarEdicao() {
+    if (this.form.invalid || this.salvando()) { this.form.markAllAsTouched(); return; }
+    const v = this.form.getRawValue();
+    this.salvando.set(true);
+    this.erro.set('');
+    this.service.conferir(this.inventarioId(), this.bemId(), {
+      estadoId: v.estadoId, valorMercado: v.valorMercado, departamentoId: v.departamentoId, observacao: v.observacao.trim() || null
+    }).subscribe({
+      next: r => {
+        this.salvando.set(false);
+        if (r.resultado !== 'gravada') { this.erro.set(r.erro || 'A conferência não foi gravada (já existe uma mais recente).'); return; }
+        this.editando.set(false);
+        this.recarregarDetalhe();
+        this.alterou.emit();
+      },
+      error: err => { this.salvando.set(false); this.erro.set(lerErroApi(err, 'Não foi possível gravar a conferência.').mensagem); }
+    });
+  }
+
   private carregar() {
     this.carregando.set(true);
     this.erro.set('');
+    this.editando.set(false);
     this.detalhe.set(null);
     this.fotos.set([]);
     this.liberarUrls();

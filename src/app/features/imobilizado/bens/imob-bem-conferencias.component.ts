@@ -71,7 +71,7 @@ const PAGE_SIZE = 20;
 
     @if (aberto(); as inventarioId) {
       <app-imob-conferencia-detalhe [inventarioId]="inventarioId" [bemId]="bemId()"
-        [podeEnviar]="podeEnviar()" [podeExcluir]="podeExcluir()"
+        [podeEnviar]="podeEnviar()" [podeExcluir]="podeExcluir()" [podeEditar]="podeEnviar()"
         (alterou)="carregar()" (fechar)="aberto.set(null)" />
     }
   `

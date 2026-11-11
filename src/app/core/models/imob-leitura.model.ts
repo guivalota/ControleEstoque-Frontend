@@ -67,6 +67,20 @@ export interface ImobConferenciaDados {
   departamentoId?: number | null;
 }
 
+/** Edição da conferência pela web (`PUT conferencias/{bemId}`): campos vazios não apagam o que já está gravado. */
+export interface ImobConferenciaEdicao extends ImobConferenciaDados {
+  /** Até 500 caracteres. */
+  observacao?: string | null;
+}
+
+export interface ResultadoConferenciaUnica {
+  indice: number;
+  bemId?: number | null;
+  plaqueta?: string | null;
+  resultado: 'gravada' | 'ignorada' | 'fora_do_esperado' | 'erro';
+  erro?: string | null;
+}
+
 export type ResultadoConferencia = 'gravada' | 'ignorada' | 'fora_do_esperado' | 'erro';
 
 export const ROTULO_RESULTADO_CONFERENCIA: Record<ResultadoConferencia, string> = {

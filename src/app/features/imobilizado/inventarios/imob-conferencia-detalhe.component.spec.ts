@@ -154,4 +154,123 @@ describe('ImobConferenciaDetalheComponent', () => {
     const botao = Array.from(el().querySelectorAll('button')).find(b => (b.textContent ?? '').includes('Adicionar fotos')) as HTMLButtonElement;
     expect(botao.disabled).toBeTrue();
   });
+
+  describe('edição da conferência', () => {
+    const listasEstados = () => ctrl.expectOne(r => r.url === '/api/v1/imobilizado/estados-conservacao');
+    const listasDeptos = () => ctrl.expectOne(r => r.url === '/api/v1/imobilizado/departamentos');
+    const editar = () => el().querySelector<HTMLButtonElement>('[data-testid="editar"]');
+
+    function abrir() {
+      editar()!.click();
+      fixture.detectChanges();
+      listasEstados().flush({ items: [{ id: 5, nome: 'ZZC Bom', notaEc: 8, notaVidaRemanescente: 7 }, { id: 6, nome: 'ZZC Ruim', notaEc: 3, notaVidaRemanescente: 2 }], page: 1, pageSize: 200, total: 2 });
+      listasDeptos().flush({ items: [{ id: 3, nome: 'ZZC Tecnologia' }], page: 1, pageSize: 1000, total: 1 });
+      fixture.detectChanges();
+    }
+
+    beforeEach(() => {
+      montar({ podeEnviar: false, podeExcluir: false });
+      fixture.componentRef.setInput('podeEditar', true);
+    });
+
+    it('com a permissão e o ciclo em andamento mostra o botão e abre o formulário já preenchido', () => {
+      carregar(detalhe());
+      expect(editar()).not.toBeNull();
+
+      abrir();
+
+      expect(el().querySelector('[data-testid="form-edicao"]')).not.toBeNull();
+      expect(comp.form.getRawValue()).toEqual({ estadoId: 5, valorMercado: 750.5, departamentoId: 3, observacao: 'Tampo riscado' });
+      expect(texto()).toContain('não apaga');
+    });
+
+    it('sem permissão ou com o ciclo concluído não oferece edição', () => {
+      carregar(detalhe({ somenteLeitura: true }));
+      expect(editar()).toBeNull();
+    });
+
+    it('sem permissão de editar não oferece o botão', () => {
+      fixture.componentRef.setInput('podeEditar', false);
+      carregar(detalhe());
+      expect(editar()).toBeNull();
+    });
+
+    it('salvar envia o PUT com os campos, recarrega o detalhe e avisa a lista do ciclo', () => {
+      carregar(detalhe());
+      abrir();
+      let avisou = 0;
+      comp.alterou.subscribe(() => avisou++);
+      comp.form.patchValue({ estadoId: 6, valorMercado: 90, observacao: '  Pé quebrado  ' });
+
+      comp.salvarEdicao();
+      const put = ctrl.expectOne(r => r.method === 'PUT' && r.url === BASE);
+      expect(put.request.body).toEqual({ estadoId: 6, valorMercado: 90, departamentoId: 3, observacao: 'Pé quebrado' });
+      put.flush({ indice: 0, bemId: 17, resultado: 'gravada' });
+      ctrl.expectOne(BASE).flush(detalhe({ estadoNome: 'ZZC Ruim', valorMercado: 90, observacao: 'Pé quebrado' }));
+      fixture.detectChanges();
+
+      expect(comp.editando()).toBeFalse();
+      expect(avisou).toBe(1);
+      expect(texto()).toContain('Pé quebrado');
+      expect(texto()).toContain('ZZC Ruim');
+    });
+
+    it('observação em branco vai como nula (não apaga a gravada)', () => {
+      carregar(detalhe());
+      abrir();
+      comp.form.patchValue({ observacao: '   ' });
+
+      comp.salvarEdicao();
+      const put = ctrl.expectOne(r => r.method === 'PUT' && r.url === BASE);
+      expect(put.request.body.observacao).toBeNull();
+      put.flush({ indice: 0, bemId: 17, resultado: 'gravada' });
+      ctrl.expectOne(BASE).flush(detalhe());
+    });
+
+    it('valor negativo não envia', () => {
+      carregar(detalhe());
+      abrir();
+      comp.form.patchValue({ valorMercado: -5 });
+
+      comp.salvarEdicao();
+
+      ctrl.expectNone(r => r.method === 'PUT');
+      expect(comp.form.controls.valorMercado.invalid).toBeTrue();
+    });
+
+    it('erro do servidor (ex.: fora da equipe) aparece e mantém o formulário aberto', () => {
+      carregar(detalhe());
+      abrir();
+
+      comp.salvarEdicao();
+      ctrl.expectOne(r => r.method === 'PUT' && r.url === BASE).flush(
+        { error: 'Somente a equipe do inventário (ou um administrador) pode registrar conferências.' }, { status: 403, statusText: 'Forbidden' });
+      fixture.detectChanges();
+
+      expect(comp.editando()).toBeTrue();
+      expect(texto()).toContain('Somente a equipe do inventário');
+    });
+
+    it('resultado "ignorada" avisa que já existe gravação mais recente', () => {
+      carregar(detalhe());
+      abrir();
+
+      comp.salvarEdicao();
+      ctrl.expectOne(r => r.method === 'PUT' && r.url === BASE).flush({ indice: 0, bemId: 17, resultado: 'ignorada' });
+      fixture.detectChanges();
+
+      expect(comp.editando()).toBeTrue();
+      expect(texto()).toContain('mais recente');
+    });
+
+    it('cancelar fecha o formulário sem chamar o servidor', () => {
+      carregar(detalhe());
+      abrir();
+
+      comp.cancelarEdicao();
+
+      expect(comp.editando()).toBeFalse();
+      ctrl.expectNone(r => r.method === 'PUT');
+    });
+  });
 });

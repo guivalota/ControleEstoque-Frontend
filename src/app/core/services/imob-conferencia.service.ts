@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  ImobConferenciaEdicao, ResultadoConferenciaUnica,
   ImobAplicacaoPedidoItem, ImobAplicacaoPrevia, ImobAplicacaoResposta, SituacaoAplicacao,
   ImobConferenciaDetalhe, ImobConferenciaDoBem, ImobConferenciaFiltro, ImobConferenciaLista, ImobConferenciaLoteItem, RelatorioImportacaoConferencias, ResultadoConferenciaLote
 } from '../models/imob-leitura.model';
@@ -29,6 +30,14 @@ export class ImobConferenciaService {
   /** Esperado (congelado) × encontrado de um bem no ciclo, com o histórico de gravações (E28). 404 se não há conferência. */
   obter(inventarioId: number, bemId: number) {
     return this.http.get<ImobConferenciaDetalhe>(`${this.url(inventarioId)}/${bemId}`);
+  }
+
+  /**
+   * Grava a conferência de um bem do ciclo (`PUT`): estado, valor de mercado, departamento e observação. Só com o inventário em
+   * andamento e para a equipe do inventário (ou admin). Vale a gravação mais recente (esta usa "agora"); campo vazio não apaga.
+   */
+  conferir(inventarioId: number, bemId: number, dados: ImobConferenciaEdicao) {
+    return this.http.put<ResultadoConferenciaUnica>(`${this.url(inventarioId)}/${bemId}`, dados);
   }
 
   /** Conferências do bem em todos os ciclos de reavaliação, do mais recente ao mais antigo (E28 / US-28-03). */

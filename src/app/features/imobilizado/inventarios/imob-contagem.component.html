@@ -264,6 +264,7 @@
         <app-imob-conferencia-detalhe [inventarioId]="id" [bemId]="bemDetalhe"
           [podeEnviar]="permissao.pode('imobilizado.inventarios-leituras.criar')"
           [podeExcluir]="permissao.pode('imobilizado.inventarios-leituras.excluir')"
+          [podeEditar]="permissao.pode('imobilizado.inventarios-leituras.criar')"
           (alterou)="carregarConferencias()" (fechar)="confDetalheBemId.set(null)" />
       }
 
