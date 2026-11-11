@@ -119,4 +119,11 @@ describe('agruparHistorico', () => {
   it('lista vazia gera nenhum grupo', () => {
     expect(agruparHistorico([])).toEqual([]);
   });
+  it('aplicação de conferência: estado pelo nome e origem como inventário', () => {
+    expect(rotuloCampoHistorico('estado_conservacao_id')).toBe('Estado de conservação');
+    expect(formatarValorHistorico('estado_conservacao_id', '5', 'ZZC Bom')).toBe('ZZC Bom');
+    expect(rotuloCampoHistorico('aplicacao_conferencia')).toBe('Atualizado pela conferência');
+    expect(formatarValorHistorico('aplicacao_conferencia', '3')).toBe('Inventário #3');
+    expect(rotuloCampoHistorico('aplicacao_conferencia_desfeita')).toBe('Atualização da conferência desfeita');
+  });
 });

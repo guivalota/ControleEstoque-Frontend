@@ -139,6 +139,7 @@ export const PERMISSOES = [
   'imobilizado.inventarios-conciliacao.reabrir',
   'imobilizado.inventarios-conciliacao.resolver',
   'imobilizado.inventarios-conciliacao.ver',
+  'imobilizado.inventarios-conferencias.aplicar',
   'imobilizado.inventarios-leituras.criar',
   'imobilizado.inventarios-leituras.excluir',
   'imobilizado.inventarios-leituras.importacao',

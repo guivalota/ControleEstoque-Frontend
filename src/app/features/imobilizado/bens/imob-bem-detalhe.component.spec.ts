@@ -10,6 +10,7 @@ import { provideAuthFake } from '../../../testing/auth-fake';
 
 const URL_BEM = '/api/v1/imobilizado/bens/42';
 const FOTOS = `${URL_BEM}/fotos`;
+const CONFS = `${URL_BEM}/conferencias`;
 
 const bem = (extra: Partial<ImobBem> = {}): ImobBem => ({
   id: 42, plaqueta: 'NB-0001', descricao: 'Notebook Dell Latitude', categoriaId: 3, categoriaNome: 'Informática',
@@ -185,6 +186,10 @@ describe('ImobBemDetalheComponent', () => {
       expect(comp.aba()).toBe('fotos');
       ctrl.expectOne(FOTOS).flush([]);
       tecla(el().querySelector<HTMLElement>('#abaFotos')!, 'ArrowRight');
+      fixture.detectChanges();
+      expect(comp.aba()).toBe('conferencias');
+      ctrl.expectOne(r => r.url === CONFS).flush(vazio);
+      tecla(el().querySelector<HTMLElement>('#abaConferencias')!, 'ArrowRight');
       fixture.detectChanges();
       expect(comp.aba()).toBe('historico');
       expect(document.activeElement).toBe(abaHist());

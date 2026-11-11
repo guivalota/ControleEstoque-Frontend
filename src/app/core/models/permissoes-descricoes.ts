@@ -140,6 +140,7 @@ export const DESCRICOES_PERMISSOES: Record<Permissao, string> = {
   'imobilizado.inventarios-conciliacao.reabrir': 'Reabrir — Conciliação do inventário',
   'imobilizado.inventarios-conciliacao.resolver': 'Resolver divergência — Conciliação do inventário',
   'imobilizado.inventarios-conciliacao.ver': 'Ver — Conciliação do inventário',
+  'imobilizado.inventarios-conferencias.aplicar': 'Aplicar ao cadastro — Conferências do inventário',
   'imobilizado.inventarios-leituras.criar': 'Criar — Leituras do inventário',
   'imobilizado.inventarios-leituras.excluir': 'Excluir — Leituras do inventário',
   'imobilizado.inventarios-leituras.importacao': 'Importar leituras — Leituras do inventário',

@@ -68,6 +68,15 @@
           <i class="bi bi-images me-1"></i>Fotos
         </button>
       </li>
+      @if (podeVerConferencias()) {
+        <li class="nav-item" role="presentation">
+          <button type="button" class="nav-link" [class.active]="aba() === 'conferencias'" role="tab" id="abaConferencias"
+                  aria-controls="painelConferencias" [attr.aria-selected]="aba() === 'conferencias'"
+                  [attr.tabindex]="aba() === 'conferencias' ? 0 : -1" (click)="selecionarAba('conferencias')" (keydown)="aoTeclarAba($event)">
+            <i class="bi bi-clipboard-check me-1"></i>Conferências
+          </button>
+        </li>
+      }
       <li class="nav-item" role="presentation">
         <button type="button" class="nav-link" [class.active]="aba() === 'historico'" role="tab" id="abaHistorico"
                 aria-controls="painelHistorico" [attr.aria-selected]="aba() === 'historico'"
@@ -99,6 +108,9 @@
           <dt class="col-sm-3">Local</dt><dd class="col-sm-9">{{ b.localNome }}</dd>
           <dt class="col-sm-3">Responsável</dt><dd class="col-sm-9">{{ b.responsavelNome || '—' }}</dd>
           <dt class="col-sm-3">Departamento</dt><dd class="col-sm-9">{{ b.departamentoNome || '—' }}</dd>
+          <dt class="col-sm-3">Estado de conservação</dt>
+          <dd class="col-sm-9">{{ b.estadoConservacaoNome || '—' }}
+            <span class="text-muted small">(atualizado ao aplicar o resultado de uma conferência)</span></dd>
           <dt class="col-sm-3">Data de aquisição</dt><dd class="col-sm-9">{{ formatarData(b.dataAquisicao) }}</dd>
           <dt class="col-sm-3">Valor de aquisição</dt><dd class="col-sm-9">{{ formatarMoeda(b.valorAquisicao) }}</dd>
           <dt class="col-sm-3">Valor residual</dt><dd class="col-sm-9">{{ formatarMoeda(b.valorResidual) }}</dd>
@@ -130,6 +142,14 @@
     @if (fotosVisitada()) {
       <div id="painelFotos" role="tabpanel" aria-labelledby="abaFotos" [hidden]="aba() !== 'fotos'">
         <app-imob-bem-fotos [bemId]="b.id" [podeEditar]="permissao.pode('imobilizado.bens.editar')" />
+      </div>
+    }
+
+    @if (conferenciasVisitada() && podeVerConferencias()) {
+      <div id="painelConferencias" role="tabpanel" aria-labelledby="abaConferencias" [hidden]="aba() !== 'conferencias'">
+        <app-imob-bem-conferencias [bemId]="b.id"
+          [podeEnviar]="permissao.pode('imobilizado.inventarios-leituras.criar')"
+          [podeExcluir]="permissao.pode('imobilizado.inventarios-leituras.excluir')" />
       </div>
     }
 

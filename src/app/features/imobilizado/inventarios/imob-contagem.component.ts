@@ -6,6 +6,7 @@ import { ImobConferenciaService } from '../../../core/services/imob-conferencia.
 import { ImobDepartamentoService } from '../../../core/services/imob-departamento.service';
 import { ImobEstadoConservacaoService } from '../../../core/services/imob-estado-conservacao.service';
 import { ImobLeituraService } from '../../../core/services/imob-leitura.service';
+import { PermissaoService } from '../../../core/services/permissao.service';
 import { ImobLocalService } from '../../../core/services/imob-local.service';
 import { ImobInventario } from '../../../core/models/imob-inventario.model';
 import { ImobLocalArvore } from '../../../core/models/imob-local.model';
@@ -13,15 +14,18 @@ import { ImobDepartamento } from '../../../core/models/imob-departamento.model';
 import { ImobEstadoConservacao } from '../../../core/models/imob-reavaliacao.model';
 import {
   CLASSE_SITUACAO_PREVISTA, ICONE_SITUACAO_PREVISTA, ImobConferenciaDados, ImobLeitura, ImobLeituraRegistrada,
-  RelatorioImportacaoConferencias, RelatorioImportacaoLeituras, ResultadoConferenciaLote,
-  ROTULO_RESULTADO_CONFERENCIA, ROTULO_SITUACAO_PREVISTA
+  ImobConferenciaLinha, ImobConferenciaResumo, RelatorioImportacaoConferencias, RelatorioImportacaoLeituras,
+  ResultadoConferenciaLote, ROTULO_RESULTADO_CONFERENCIA, ROTULO_SITUACAO_CONFERENCIA, ROTULO_SITUACAO_PREVISTA,
+  SituacaoConferencia
 } from '../../../core/models/imob-leitura.model';
 import { baixarBlob } from '../../../core/utils/download';
 import { lerErroApi } from '../../../core/utils/erros-api';
-import { formatarDataHora } from '../../../core/utils/imob-formato';
+import { formatarDataHora, formatarMoeda } from '../../../core/utils/imob-formato';
 import { textoCoordenadas, urlMapa } from '../../../core/utils/mapa';
 import { PaginacaoComponent } from '../shared/paginacao.component';
 import { SeletorLocalComponent } from '../shared/seletor-local.component';
+import { ImobConferenciaDetalheComponent } from './imob-conferencia-detalhe.component';
+import { ImobAplicacaoCadastroComponent } from './imob-aplicacao-cadastro.component';
 
 const PAGE_SIZE = 20;
 const MAX_FEEDBACK = 15;
@@ -29,7 +33,7 @@ const MAX_FEEDBACK = 15;
 @Component({
   selector: 'app-imob-contagem',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, PaginacaoComponent, SeletorLocalComponent],
+  imports: [ReactiveFormsModule, RouterLink, PaginacaoComponent, SeletorLocalComponent, ImobConferenciaDetalheComponent, ImobAplicacaoCadastroComponent],
   templateUrl: './imob-contagem.component.html'
 })
 export class ImobContagemComponent implements OnInit {
@@ -37,6 +41,7 @@ export class ImobContagemComponent implements OnInit {
   private service = inject(ImobLeituraService);
   private locais = inject(ImobLocalService);
   private conferencias = inject(ImobConferenciaService);
+  permissao = inject(PermissaoService);
   private estadosApi = inject(ImobEstadoConservacaoService);
   private departamentosApi = inject(ImobDepartamentoService);
   private route = inject(ActivatedRoute);
@@ -49,6 +54,9 @@ export class ImobContagemComponent implements OnInit {
   classeSituacao = CLASSE_SITUACAO_PREVISTA;
   iconeSituacao = ICONE_SITUACAO_PREVISTA;
   formatarDataHora = formatarDataHora;
+  formatarMoeda = formatarMoeda;
+  rotuloSituacaoConferencia = ROTULO_SITUACAO_CONFERENCIA;
+  situacoesConferencia = Object.keys(ROTULO_SITUACAO_CONFERENCIA) as SituacaoConferencia[];
   mapa = (l: ImobLeitura) => urlMapa(l.latitude, l.longitude);
   coordenadas = (l: ImobLeitura) => textoCoordenadas(l.latitude, l.longitude) ?? '';
 
@@ -85,6 +93,16 @@ export class ImobContagemComponent implements OnInit {
   carregando = signal(false);
   anulando = signal<number | null>(null);
 
+  // Lista das conferências do ciclo (o que já foi informado e o que falta)
+  confLinhas = signal<ImobConferenciaLinha[]>([]);
+  confResumo = signal<ImobConferenciaResumo | null>(null);
+  confTotal = signal(0);
+  confPage = signal(1);
+  confCarregando = signal(false);
+  confErro = signal('');
+  confSituacao = new FormControl<SituacaoConferencia>('todos', { nonNullable: true });
+  confBusca = new FormControl('', { nonNullable: true });
+
   // Importação CSV de conferências
   arquivoConf = signal<File | null>(null);
   relatorioConf = signal<RelatorioImportacaoConferencias | null>(null);
@@ -105,7 +123,7 @@ export class ImobContagemComponent implements OnInit {
       next: inv => {
         this.inventario.set(inv);
         if (inv.status === 'em_andamento') this.carregar();
-        if (inv.reavaliacao) this.carregarListasConferencia();
+        if (inv.reavaliacao) { this.carregarListasConferencia(); this.carregarConferencias(1); }
       },
       error: err => {
         if (err.status === 404) this.naoEncontrado.set(true);
@@ -118,6 +136,34 @@ export class ImobContagemComponent implements OnInit {
   private carregarListasConferencia() {
     this.estadosApi.listar({ ativo: true, pageSize: 200 }).subscribe({ next: r => this.estados.set(r.items), error: () => this.estados.set([]) });
     this.departamentosApi.listar({ ativo: true, pageSize: 1000 }).subscribe({ next: r => this.departamentos.set(r.items), error: () => this.departamentos.set([]) });
+  }
+
+  /** Bem cuja conferência está aberta no detalhe (esperado × encontrado, fotos e histórico); nulo = fechado. */
+  confDetalheBemId = signal<number | null>(null);
+
+  abrirDetalheConferencia(bemId: number) {
+    this.confDetalheBemId.set(this.confDetalheBemId() === bemId ? null : bemId);
+  }
+
+  carregarConferencias(page = this.confPage()) {
+    this.confCarregando.set(true);
+    this.confErro.set('');
+    this.conferencias.listar(this.id, {
+      situacao: this.confSituacao.value === 'todos' ? undefined : this.confSituacao.value,
+      busca: this.confBusca.value.trim() || undefined,
+      page, pageSize: PAGE_SIZE
+    }).subscribe({
+      next: r => {
+        this.confLinhas.set(r.items); this.confTotal.set(r.total); this.confPage.set(r.page);
+        this.confResumo.set(r.resumo); this.confCarregando.set(false);
+      },
+      error: err => { this.confCarregando.set(false); this.confErro.set(lerErroApi(err, 'Erro ao carregar as conferências.').mensagem); }
+    });
+  }
+
+  /** Atualiza a lista depois de gravar algo (só em reavaliação), mantendo filtro e página. */
+  private atualizarConferencias() {
+    if (this.reavaliacao) this.carregarConferencias();
   }
 
   /** Dados de conferência preenchidos, ou `undefined` se nenhum campo foi informado (ou fora da reavaliação). */
@@ -180,6 +226,7 @@ export class ImobContagemComponent implements OnInit {
         this.observacao.reset('');
         this.limparConferencia();
         this.carregar(1);
+        this.atualizarConferencias();
         this.campoPlaqueta()?.nativeElement.focus();
       },
       error: err => {
@@ -205,6 +252,7 @@ export class ImobContagemComponent implements OnInit {
       next: r => {
         this.conferindo.set(false);
         this.resultadoConferencia.set(this.resumoConferencia(plaqueta, r));
+        this.atualizarConferencias();
         if (r.gravadas > 0) { this.plaqueta.reset(''); this.limparConferencia(); this.campoPlaqueta()?.nativeElement.focus(); }
       },
       error: err => { this.conferindo.set(false); this.erro.set(lerErroApi(err, 'Erro ao registrar a conferência.').mensagem); }
@@ -246,7 +294,11 @@ export class ImobContagemComponent implements OnInit {
     this.importandoConf.set(true);
     this.erroImportacaoConf.set('');
     this.conferencias.importar(this.id, f, apenasValidar).subscribe({
-      next: r => { this.relatorioConf.set(r); this.importandoConf.set(false); },
+      next: r => {
+        this.relatorioConf.set(r);
+        this.importandoConf.set(false);
+        if (!apenasValidar) this.atualizarConferencias();
+      },
       error: err => { this.importandoConf.set(false); this.erroImportacaoConf.set(lerErroApi(err, 'Erro ao importar o arquivo.').mensagem); }
     });
   }
