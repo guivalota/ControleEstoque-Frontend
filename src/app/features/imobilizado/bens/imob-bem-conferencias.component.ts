@@ -34,6 +34,7 @@ const PAGE_SIZE = 20;
               <tr [class.table-active]="aberto() === c.inventarioId">
                 <td>
                   {{ c.inventarioNome }}
+                  <span class="badge bg-light text-dark border ms-1">{{ c.inventarioReavaliacao ? 'Reavaliação' : 'Contagem' }}</span>
                   @if (c.cicloConcluido) { <span class="badge bg-secondary ms-1">Concluído</span> }
                   @else { <span class="badge bg-info-subtle text-info-emphasis ms-1">Em andamento</span> }
                 </td>

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { ImobConferenciaDetalheComponent } from './imob-conferencia-detalhe.component';
 import { Anexo } from '../../../core/models/anexo.model';
@@ -13,7 +14,7 @@ const foto = (id: number): Anexo => ({
 });
 
 const detalhe = (extra: Partial<ImobConferenciaDetalhe> = {}): ImobConferenciaDetalhe => ({
-  inventarioId: 3, inventarioNome: 'ZZC Reavaliação', inventarioStatus: 'em_andamento', dataBase: '2026-11-01',
+  inventarioId: 3, inventarioReavaliacao: true, inventarioNome: 'ZZC Reavaliação', inventarioStatus: 'em_andamento', dataBase: '2026-11-01',
   bemId: 17, plaqueta: 'ZZC-0001', descricao: 'Mesa',
   localEsperadoId: 7, localEsperadoNome: 'ZZC Sala 1', departamentoEsperadoId: 3, departamentoEsperadoNome: 'ZZC Tecnologia',
   encontrado: true, localLidoId: 7, localLidoNome: 'ZZC Sala 1', estadoId: 5, estadoNome: 'ZZC Bom',
@@ -35,7 +36,7 @@ describe('ImobConferenciaDetalheComponent', () => {
   const texto = () => (el().textContent ?? '').replace(/\s+/g, ' ').replace(/ /g, ' ');
 
   function montar(opcoes: { podeEnviar?: boolean; podeExcluir?: boolean } = {}) {
-    TestBed.configureTestingModule({ imports: [ImobConferenciaDetalheComponent], providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({ imports: [ImobConferenciaDetalheComponent], providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
     ctrl = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(ImobConferenciaDetalheComponent);
     fixture.componentRef.setInput('inventarioId', 3);
@@ -271,6 +272,59 @@ describe('ImobConferenciaDetalheComponent', () => {
 
       expect(comp.editando()).toBeFalse();
       ctrl.expectNone(r => r.method === 'PUT');
+    });
+  });
+
+  describe('inventário comum (DSG-30 R15)', () => {
+    const comum = (extra: Partial<ImobConferenciaDetalhe> = {}) => detalhe({
+      inventarioReavaliacao: false, inventarioNome: 'Conferencia 11/2026', estadoId: null, estadoNome: null, valorMercado: null,
+      departamentoId: null, departamentoNome: null, observacao: null, incompleto: false,
+      eventos: [{ id: 1, campo: 'encontrado', valorAnterior: 'false', valorNovo: 'true', usuarioId: 'u1', usuarioNome: 'Admin Testes', origem: 'app', criadoEm: '2026-11-11T12:15:40Z' }],
+      ...extra
+    });
+
+    beforeEach(() => {
+      montar({ podeEnviar: true, podeExcluir: true });
+      fixture.componentRef.setInput('podeEditar', true);
+    });
+
+    it('mostra o item lido, o local, as fotos e o histórico — sem estado, valor nem edição de conferência', () => {
+      carregar(comum(), [foto(1)]);
+
+      const t = texto();
+      expect(t).toContain('Inventário Conferencia 11/2026');
+      expect(t).toContain('Encontrado');
+      expect(t).toContain('ZZC Sala 1');
+      expect(t).toContain('(1 de 5)');
+      expect(t).toContain('Encontrado: Não → Sim');
+      expect(t).not.toContain('Estado de conservação');
+      expect(t).not.toContain('Valor de mercado');
+      expect(t).not.toContain('Completo');
+      expect(el().querySelector('[data-testid="editar"]')).toBeNull();
+      expect(el().querySelector('button[aria-label^="Excluir foto"]')).not.toBeNull();
+    });
+
+    it('item com a leitura anulada aparece como não encontrado', () => {
+      carregar(comum({ encontrado: false, eventos: [] }));
+      expect(texto()).toContain('Não encontrado');
+    });
+
+    it('"Abrir bem" e "Editar bem" aparecem só com as permissões do bem', () => {
+      fixture.componentRef.setInput('podeVerBem', true);
+      fixture.componentRef.setInput('podeEditarBem', true);
+      carregar(comum());
+
+      const abrir = el().querySelector<HTMLAnchorElement>('[data-testid="abrir-bem"]')!;
+      const editar = el().querySelector<HTMLAnchorElement>('[data-testid="editar-bem"]')!;
+      expect(abrir.getAttribute('href')).toContain('/imobilizado/bens/17');
+      expect(editar.getAttribute('href')).toContain('/imobilizado/bens/17/editar');
+    });
+
+    it('sem permissão no bem não oferece os atalhos', () => {
+      carregar(comum());
+
+      expect(el().querySelector('[data-testid="abrir-bem"]')).toBeNull();
+      expect(el().querySelector('[data-testid="editar-bem"]')).toBeNull();
     });
   });
 });

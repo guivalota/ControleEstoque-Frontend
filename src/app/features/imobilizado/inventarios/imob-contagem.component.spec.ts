@@ -29,9 +29,14 @@ describe('ImobContagemComponent — conferência da reavaliação', () => {
   const resumo = { esperados: 3, encontrados: 2, naoEncontrados: 1, completos: 1, incompletos: 1 };
   const respostaConferencias = (items: object[] = [linha(), linha({ bemId: 2, plaqueta: 'NB-2', estadoNome: null, valorMercado: null, incompleto: true }),
     linha({ bemId: 3, plaqueta: 'NB-3', encontrado: false, estadoNome: null, valorMercado: null, conferidoEm: null })]) =>
-    ({ items, page: 1, pageSize: 20, total: items.length, resumo });
+    ({ inventarioReavaliacao: true, items, page: 1, pageSize: 20, total: items.length, resumo });
+  /** Lista de um inventário comum: bens lidos, sem estado nem valor. */
+  const respostaComum = (items: object[] = []) =>
+    ({ inventarioReavaliacao: false, items, page: 1, pageSize: 20, total: items.length, resumo: { esperados: 10, encontrados: items.length, naoEncontrados: 10 - items.length, completos: 0, incompletos: 0 } });
   /** Atende o recarregamento da lista feito depois de gravar algo. */
   const recarregouConferencias = (corpo = respostaConferencias()) => ctrl.expectOne(listaConferencias).flush(corpo);
+
+  let itensComuns: object[] = [];
 
   function montar(i: ImobInventario = inv()) {
     TestBed.configureTestingModule({
@@ -56,16 +61,72 @@ describe('ImobContagemComponent — conferência da reavaliação', () => {
         items: [{ id: 5, codigo: 'TI', nome: 'Tecnologia', ativo: true }], page: 1, pageSize: 1000, total: 1
       });
       ctrl.expectOne(listaConferencias).flush(respostaConferencias());
+    } else {
+      // a conferência existe em todo inventário: a leitura do bem cria a dele
+      ctrl.expectOne(listaConferencias).flush(respostaComum(itensComuns));
     }
     fixture.detectChanges();
   }
 
   afterEach(() => ctrl.verify());
 
-  it('inventário comum não mostra campos nem CSV de conferência e não carrega as listas', () => {
+  it('inventário comum não mostra campos nem CSV de conferência e não carrega as listas de estado e departamento', () => {
     montar(inv({ reavaliacao: false }));
     expect(texto()).not.toContain('Conferência da reavaliação');
     expect(texto()).not.toContain('Importar conferências');
+    expect(texto()).not.toContain('Conferências do ciclo');
+  });
+
+  describe('inventário comum: itens conferidos (E28 / DSG-30 R15)', () => {
+    const item = (extra: object = {}) => ({
+      bemId: 17, plaqueta: 'DEMO-0009', descricao: 'Estacao de trabalho', localEsperadoNome: 'Filial Sul', encontrado: true,
+      conferidoPorNome: 'Usuario', conferidoEm: '2026-11-11T17:06:00Z', incompleto: false, qtdFotos: 3, primeiraFotoId: 1, ...extra
+    });
+
+    it('mostra o cartão "Itens conferidos" com o resumo, as fotos e o botão Detalhe', () => {
+      itensComuns = [item(), item({ bemId: 18, plaqueta: 'DEMO-0010', localEsperadoNome: null, qtdFotos: 0 })];
+      montar(inv({ reavaliacao: false }));
+
+      expect(el().querySelector('[data-testid="itens-conferidos"]')).not.toBeNull();
+      const t = texto();
+      expect(t).toContain('DEMO-0009');
+      expect(t).toContain('Fora do esperado');
+      expect(t).toContain('10 esperados');
+      expect(t).toContain('2 lidos');
+      expect(el().querySelector('[aria-label="3 foto(s)"]')).not.toBeNull();
+      expect(el().querySelector('button[aria-label="Detalhe do item DEMO-0009"]')).not.toBeNull();
+    });
+
+    it('sem leituras mostra a mensagem vazia', () => {
+      itensComuns = [];
+      montar(inv({ reavaliacao: false }));
+      expect(texto()).toContain('Nenhum bem foi lido neste inventário ainda');
+    });
+
+    it('item com a leitura anulada é sinalizado', () => {
+      itensComuns = [item({ encontrado: false })];
+      montar(inv({ reavaliacao: false }));
+      expect(texto()).toContain('Leitura anulada');
+    });
+
+    it('Detalhe abre a conferência do item e os atalhos para o bem seguem as permissões', () => {
+      itensComuns = [item()];
+      montar(inv({ reavaliacao: false }));
+
+      el().querySelector<HTMLButtonElement>('button[aria-label="Detalhe do item DEMO-0009"]')!.click();
+      fixture.detectChanges();
+
+      expect(comp.confDetalheBemId()).toBe(17);
+      ctrl.expectOne(`${API}/inventarios/7/conferencias/17`).flush({
+        inventarioId: 7, inventarioReavaliacao: false, inventarioNome: 'Conferencia 11/2026', inventarioStatus: 'em_andamento', bemId: 17,
+        plaqueta: 'DEMO-0009', encontrado: true, incompleto: false, somenteLeitura: false, eventos: []
+      });
+      ctrl.expectOne(`${API}/inventarios/7/conferencias/17/fotos`).flush([]);
+      fixture.detectChanges();
+      expect(texto()).toContain('Conferência · DEMO-0009');
+      expect(el().querySelector('[data-testid="abrir-bem"]')).not.toBeNull();
+      expect(el().querySelector('[data-testid="editar-bem"]')).not.toBeNull();
+    });
   });
 
   it('reavaliação mostra os campos de conferência, o botão e o CSV de conferências', () => {
